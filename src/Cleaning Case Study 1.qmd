@@ -16,7 +16,7 @@ options(scipen = 999)
 ### Cleaning Raw BOP Data
 
 ```{r}
-case_one_raw <- read_csv("case_study_1_data_july_24_2025.csv")
+case_one_raw <- read_csv("../data/case_study_1_data_july_24_2025.csv")
 ```
 
 ```{r}
@@ -29,7 +29,7 @@ case_one_raw |>
     ENTRY_FIRST_WORD = str_extract(BOP_ACCOUNTING_ENTRY, "^[^,]+"),
     FULL_INDICATOR = paste(ENTRY_FIRST_WORD, INDICATOR, sep = " - ")
   ) |> 
-  select(-c(BOP_ACCOUNTING_ENTRY, INDICATOR, ENTRY_FIRST_WORD, FREQUENCY)) |> 
+  select(-c(BOP_ACCOUNTING_ENTRY, INDICATOR, ENTRY_FIRST_WORD, FREQUENCY, SCALE)) |> 
   select(COUNTRY, TIME_PERIOD, FULL_INDICATOR, everything()) -> case_one_new_cols
 ```
 
@@ -63,7 +63,7 @@ unique(case_one_final_cols$FULL_INDICATOR)
 ### Cleaning Raw GDP Data
 
 ```{r}
-gdp_raw <- read_csv("dataset_2025-07-24T18_28_31.898465539Z_DEFAULT_INTEGRATION_IMF.RES_WEO_6.0.0.csv")
+gdp_raw <- read_csv("../data/dataset_2025-07-24T18_28_31.898465539Z_DEFAULT_INTEGRATION_IMF.RES_WEO_6.0.0.csv")
 ```
 ```{r}
 head(gdp_raw)
@@ -114,8 +114,7 @@ head(case_one_joined)
 
 ```{r}
 case_one_joined |> 
-  mutate(UNIT = paste0(UNIT, ", Nominal (Current Prices)")) |> 
-  select(-SCALE) -> case_one_join_clean
+  mutate(UNIT = paste0(UNIT, ", Nominal (Current Prices)")) -> case_one_join_clean
 
 ```
 
@@ -156,15 +155,13 @@ full_case_one_grouped |>
 full_case_one_grouped |> write_csv("case_one_grouped.csv")
 ```
 
-```{r}
-full_case_one_grouped |> 
-  filter(COUNTRY == "Iceland")
-```
-
-
 ### Analysis
 
 #### Analyze Each Country
+
+```{r}
+indicator_cols <- names(full_case_one_grouped)[6:ncol(full_case_one_grouped)]
+```
 
 ```{r}
 country_summary <- full_case_one_grouped |> 
@@ -192,14 +189,9 @@ country_summary_long <- country_summary |>
 ```
 
 
-
 ### Side-by-side Boxplots
 
 #### By Countries
-
-```{r}
-indicator_cols <- names(full_case_one_grouped)[6:ncol(full_case_one_grouped)]
-```
 
 ```{r}
 full_case_one_grouped |> 
@@ -287,11 +279,6 @@ full_case_one_grouped_no_lux <- full_case_one_grouped |>
   filter(COUNTRY != "Luxembourg")
 ```
 
-```{r}
-full_case_one_grouped |> 
-  filter(COUNTRY == "Iceland")
-```
-
 
 ### Time-Series Plots
 
@@ -313,11 +300,6 @@ dated_full_case_one_grouped_no_lux |>
   geom_line()
 ```
 
-```{r}
-
-plot(dated_full_case_one_grouped_no_lux$Date, dated_full_case_one_grouped_no_lux$`Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank_PGDP`)
-```
-
 
 
 ```{r}
@@ -333,7 +315,7 @@ dated_full_case_one_grouped_no_lux |>
 
 
 
-### Summary Stats and Time-Series Plots
+#### Summary Stats and Time-Series Plots
 
 ```{r}
 generate_indicator_report <- function(indicator_name, data) {
@@ -435,7 +417,7 @@ for (ind in indicator_cols) {
 
 ```
 
-### Sample Cleaning Case One Data
+#### Sample Cleaning Case One Data
 
 ```{r}
 case_one_raw
