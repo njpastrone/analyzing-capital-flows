@@ -1,0 +1,766 @@
+"""
+Simple Capital Flows Report Dashboard - Case Study 1
+Streamlit version of the Case_Study_1_Report_Template
+"""
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
+import warnings
+from pathlib import Path
+import sys
+import io
+
+# Add core modules to path
+sys.path.append(str(Path(__file__).parent.parent))
+
+warnings.filterwarnings('ignore')
+
+def create_indicator_nicknames():
+    """Create readable nicknames for indicators"""
+    return {
+        'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct Investment',
+        'Assets - Other investment, Debt instruments': 'Assets - Other Investment (Debt)',
+        'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other Investment (Banks)',
+        'Assets - Portfolio investment, Debt securities': 'Assets - Portfolio (Debt)',
+        'Assets - Portfolio investment, Equity and investment fund shares': 'Assets - Portfolio (Equity)',
+        'Assets - Portfolio investment, Total financial assets/liabilities': 'Assets - Portfolio (Total)',
+        'Liabilities - Direct investment, Total financial assets/liabilities': 'Liabilities - Direct Investment',
+        'Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Liabilities - Other Investment (Banks)',
+        'Liabilities - Portfolio investment, Debt securities': 'Liabilities - Portfolio (Debt)',
+        'Liabilities - Portfolio investment, Equity and investment fund shares': 'Liabilities - Portfolio (Equity)',
+        'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio (Total)',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment'
+    }
+
+def get_nickname(indicator_name):
+    """Get nickname for indicator, fallback to shortened version"""
+    nicknames = create_indicator_nicknames()
+    return nicknames.get(indicator_name, indicator_name[:25] + '...' if len(indicator_name) > 25 else indicator_name)
+
+def get_investment_type_order(indicator_name):
+    """
+    Extract sorting key for indicators: Type of Investment -> Disaggregation -> Accounting Entry
+    Returns tuple for sorting: (investment_type_order, disaggregation_order, accounting_entry_order)
+    """
+    # Investment type mapping
+    if 'Direct investment' in indicator_name:
+        inv_type = 0  # Direct
+    elif 'Portfolio investment' in indicator_name:
+        inv_type = 1  # Portfolio  
+    elif 'Other investment' in indicator_name:
+        inv_type = 2  # Other
+    else:
+        inv_type = 9  # Unknown
+    
+    # Disaggregation mapping (for Portfolio and Other)
+    if 'Total financial assets/liabilities' in indicator_name:
+        disagg = 0  # Total (comes first)
+    elif 'Debt' in indicator_name:
+        if 'Deposit taking corporations' in indicator_name:
+            disagg = 2  # Debt - Banks (more specific)
+        else:
+            disagg = 1  # Debt - General
+    elif 'Equity' in indicator_name:
+        disagg = 3  # Equity
+    else:
+        disagg = 9  # No disaggregation or other
+    
+    # Accounting entry mapping
+    if indicator_name.startswith('Assets'):
+        acc_entry = 0
+    elif indicator_name.startswith('Liabilities'):
+        acc_entry = 1
+    elif indicator_name.startswith('Net'):
+        acc_entry = 2
+    else:
+        acc_entry = 9
+    
+    return (inv_type, disagg, acc_entry)
+
+def sort_indicators_by_type(indicators):
+    """Sort indicators by investment type, disaggregation, then accounting entry"""
+    # Convert to clean names if they have _PGDP suffix
+    clean_indicators = [ind.replace('_PGDP', '') if ind.endswith('_PGDP') else ind for ind in indicators]
+    
+    # Sort using the custom key
+    sorted_clean = sorted(clean_indicators, key=get_investment_type_order)
+    
+    # Convert back to original format if needed
+    if any(ind.endswith('_PGDP') for ind in indicators):
+        return [ind + '_PGDP' for ind in sorted_clean]
+    else:
+        return sorted_clean
+
+# Set styling for econometrics (clean, academic style)
+plt.style.use('default')
+plt.rcParams.update({
+    'font.size': 12,
+    'font.family': 'serif',
+    'axes.linewidth': 1.2,
+    'axes.spines.top': False,
+    'axes.spines.right': False,
+    'axes.grid': True,
+    'grid.alpha': 0.3,
+    'figure.facecolor': 'white',
+    'axes.facecolor': 'white'
+})
+
+# Colorblind-friendly econometrics palette (blues, oranges, teals)
+ECON_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
+# More accessible: blue, orange, green, red, purple, brown
+COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
+sns.set_palette(COLORBLIND_SAFE)
+
+# Page configuration
+st.set_page_config(
+    page_title="Capital Flows Report - Case Study 1",
+    page_icon="📊",
+    layout="wide"
+)
+
+def load_default_data():
+    """Load default Case Study 1 data"""
+    try:
+        # Default file paths
+        data_dir = Path(__file__).parent.parent.parent / "data"
+        bop_file = data_dir / "case_study_1_data_july_24_2025.csv"
+        gdp_file = data_dir / "dataset_2025-07-24T18_28_31.898465539Z_DEFAULT_INTEGRATION_IMF.RES_WEO_6.0.0.csv"
+        
+        if not bop_file.exists() or not gdp_file.exists():
+            st.error("Default data files not found. Please check file paths.")
+            return None, None, None
+        
+        # Load and process data (simplified version of the notebook processing)
+        case_one_raw = pd.read_csv(bop_file)
+        gdp_raw = pd.read_csv(gdp_file)
+        
+        # Process BOP data
+        case_one_clean = case_one_raw.copy()
+        case_one_clean['ENTRY_FIRST_WORD'] = case_one_clean['BOP_ACCOUNTING_ENTRY'].str.extract(r'^([^,]+)')
+        case_one_clean['FULL_INDICATOR'] = case_one_clean['ENTRY_FIRST_WORD'] + ' - ' + case_one_clean['INDICATOR']
+        
+        # Drop columns and process time
+        columns_to_drop = ['BOP_ACCOUNTING_ENTRY', 'INDICATOR', 'ENTRY_FIRST_WORD', 'FREQUENCY', 'SCALE']
+        case_one_clean = case_one_clean.drop(columns=columns_to_drop)
+        case_one_clean[['YEAR', 'QUARTER']] = case_one_clean['TIME_PERIOD'].str.split('-', expand=True)
+        case_one_clean['YEAR'] = case_one_clean['YEAR'].astype(int)
+        case_one_clean['QUARTER'] = case_one_clean['QUARTER'].str.extract(r'(\d+)').astype(int)
+        case_one_clean = case_one_clean.drop('TIME_PERIOD', axis=1)
+        
+        # Pivot BOP data
+        bop_pivoted = case_one_clean.pivot_table(
+            index=['COUNTRY', 'YEAR', 'QUARTER', 'UNIT'],
+            columns='FULL_INDICATOR',
+            values='OBS_VALUE',
+            aggfunc='first'
+        ).reset_index()
+        
+        # Process GDP data
+        gdp_clean = gdp_raw[['COUNTRY', 'TIME_PERIOD', 'INDICATOR', 'OBS_VALUE']].copy()
+        gdp_pivoted = gdp_clean.pivot_table(
+            index=['COUNTRY', 'TIME_PERIOD'],
+            columns='INDICATOR',
+            values='OBS_VALUE',
+            aggfunc='first'
+        ).reset_index()
+        
+        # Join datasets
+        merged_data = bop_pivoted.merge(
+            gdp_pivoted,
+            left_on=['COUNTRY', 'YEAR'],
+            right_on=['COUNTRY', 'TIME_PERIOD'],
+            how='left'
+        ).drop('TIME_PERIOD', axis=1, errors='ignore')
+        
+        # Identify columns
+        gdp_col = 'Gross domestic product (GDP), Current prices, US dollar'
+        metadata_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']
+        indicator_cols = [col for col in merged_data.columns if col not in metadata_cols + [gdp_col]]
+        
+        # Normalize to % of GDP
+        normalized_data = merged_data[metadata_cols + [gdp_col]].copy()
+        for col in indicator_cols:
+            normalized_data[f"{col}_PGDP"] = (merged_data[col] * 4 / merged_data[gdp_col]) * 100
+        
+        normalized_data['UNIT'] = "% of GDP (annualized)"
+        
+        # Create groups and remove Luxembourg
+        normalized_data['GROUP'] = normalized_data['COUNTRY'].apply(
+            lambda x: 'Iceland' if x == 'Iceland' else 'Eurozone'
+        )
+        final_data = normalized_data[normalized_data['COUNTRY'] != 'Luxembourg'].copy()
+        
+        # Get analysis indicators and sort them properly
+        analysis_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
+        analysis_indicators = sort_indicators_by_type(analysis_indicators)
+        
+        return final_data, analysis_indicators, {
+            'bop_shape': case_one_raw.shape,
+            'gdp_shape': gdp_raw.shape,
+            'final_shape': final_data.shape,
+            'n_indicators': len(analysis_indicators)
+        }
+        
+    except Exception as e:
+        st.error(f"Error loading data: {str(e)}")
+        return None, None, None
+
+def calculate_group_statistics(data, group_col, indicators):
+    """Calculate comprehensive statistics by group"""
+    results = []
+    
+    for group in data[group_col].unique():
+        group_data = data[data[group_col] == group]
+        
+        for indicator in indicators:
+            # Make sure we only process indicators that actually exist in the data
+            if indicator in data.columns:
+                values = group_data[indicator].dropna()
+                
+                if len(values) > 1:
+                    mean_val = values.mean()
+                    std_val = values.std()
+                    cv = (std_val / abs(mean_val)) * 100 if mean_val != 0 else np.inf
+                    
+                    results.append({
+                        'Group': group,
+                        'Indicator': indicator.replace('_PGDP', ''),
+                        'N': len(values),
+                        'Mean': mean_val,
+                        'Std_Dev': std_val,
+                        'Skewness': stats.skew(values),
+                        'CV_Percent': cv
+                    })
+            else:
+                print(f"Warning: Indicator {indicator} not found in data columns")
+    
+    return pd.DataFrame(results)
+
+def create_boxplot_data(data, indicators):
+    """Create dataset for boxplot visualization"""
+    stats_data = []
+    
+    for group in ['Iceland', 'Eurozone']:
+        group_data = data[data['GROUP'] == group]
+        
+        for indicator in indicators:
+            values = group_data[indicator].dropna()
+            if len(values) > 1:
+                mean_val = values.mean()
+                std_val = values.std()
+                
+                stats_data.append({
+                    'GROUP': group,
+                    'Indicator': indicator.replace('_PGDP', ''),
+                    'Statistic': 'Mean',
+                    'Value': mean_val
+                })
+                
+                stats_data.append({
+                    'GROUP': group,
+                    'Indicator': indicator.replace('_PGDP', ''),
+                    'Statistic': 'Standard Deviation', 
+                    'Value': std_val
+                })
+    
+    return pd.DataFrame(stats_data)
+
+def perform_volatility_tests(data, indicators):
+    """Perform F-tests comparing Iceland vs Eurozone volatility"""
+    test_results = []
+    
+    for indicator in indicators:
+        iceland_data = data[data['GROUP'] == 'Iceland'][indicator].dropna()
+        eurozone_data = data[data['GROUP'] == 'Eurozone'][indicator].dropna()
+        
+        if len(iceland_data) > 1 and len(eurozone_data) > 1:
+            iceland_var = iceland_data.var()
+            eurozone_var = eurozone_data.var()
+            
+            f_stat = iceland_var / eurozone_var if eurozone_var != 0 else np.inf
+            df1, df2 = len(iceland_data) - 1, len(eurozone_data) - 1
+            
+            # Two-tailed p-value
+            p_value = 2 * min(stats.f.cdf(f_stat, df1, df2), 1 - stats.f.cdf(f_stat, df1, df2))
+            
+            test_results.append({
+                'Indicator': indicator.replace('_PGDP', ''),
+                'F_Statistic': f_stat,
+                'P_Value': p_value,
+                'Iceland_Higher_Volatility': iceland_var > eurozone_var,
+                'Significant_5pct': p_value < 0.05,
+                'Significant_1pct': p_value < 0.01
+            })
+    
+    return pd.DataFrame(test_results)
+
+def main():
+    """Main report application"""
+    
+    # Title and header
+    st.title("📊 Capital Flow Volatility Analysis")
+    st.subheader("Case Study 1: Iceland vs. Eurozone Comparison")
+    
+    st.markdown("""
+    **Research Question:** Should Iceland adopt the Euro as its currency?
+    
+    **Hypothesis:** Iceland's capital flows show more volatility than the Eurozone bloc average
+    
+    ---
+    """)
+    
+    # Data and Methodology section
+    with st.expander("📋 Data and Methodology", expanded=False):
+        st.markdown("""
+        ### Data Sources
+        - **Balance of Payments Data:** IMF, quarterly frequency (1999-2024)
+        - **GDP Data:** IMF World Economic Outlook, annual frequency
+        - **Countries:** Iceland vs. 10 initial Euro adopters (excluding Luxembourg)
+        
+        ### Methodology
+        1. **Data Normalization:** All BOP flows converted to annualized % of GDP
+        2. **Statistical Analysis:** Comprehensive descriptive statistics and F-tests
+        3. **Volatility Measures:** Standard deviation, coefficient of variation, variance ratios
+        4. **Hypothesis Testing:** F-tests for equality of variances between groups
+        
+        ### Countries Analyzed
+        - **Iceland:** Independent monetary policy with floating exchange rate
+        - **Eurozone Bloc:** Austria, Belgium, Finland, France, Germany, Ireland, Italy, Netherlands, Portugal, Spain
+        """)
+    
+    # Load data
+    with st.spinner("Loading and processing data..."):
+        final_data, analysis_indicators, metadata = load_default_data()
+    
+    if final_data is None:
+        st.stop()
+    
+    # Data overview
+    st.success("✅ Data loaded successfully!")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Observations", f"{metadata['final_shape'][0]:,}")
+    with col2:
+        st.metric("Indicators", metadata['n_indicators'])
+    with col3:
+        st.metric("Countries", final_data['COUNTRY'].nunique())
+    with col4:
+        st.metric("Time Period", f"{final_data['YEAR'].min()}-{final_data['YEAR'].max()}")
+    
+    st.markdown("---")
+    
+    # Calculate all statistics
+    group_stats = calculate_group_statistics(final_data, 'GROUP', analysis_indicators)
+    boxplot_data = create_boxplot_data(final_data, analysis_indicators)
+    test_results = perform_volatility_tests(final_data, analysis_indicators)
+    
+    # 1. Summary Statistics and Boxplots
+    st.header("1. Summary Statistics and Boxplots")
+    
+    # Create individual boxplots with standard sizing
+    # First boxplot - Means (very compact size)
+    fig1, ax1 = plt.subplots(1, 1, figsize=(4, 3))
+    
+    # Boxplot for Means
+    mean_data = boxplot_data[boxplot_data['Statistic'] == 'Mean']
+    mean_iceland = mean_data[mean_data['GROUP'] == 'Iceland']['Value']
+    mean_eurozone = mean_data[mean_data['GROUP'] == 'Eurozone']['Value']
+    
+    bp1 = ax1.boxplot([mean_eurozone, mean_iceland], labels=['Eurozone', 'Iceland'], patch_artist=True)
+    bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+    bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+    
+    ax1.set_title('Panel A: Distribution of Means Across All Capital Flow Indicators', 
+                  fontweight='bold', fontsize=10, pad=10)
+    ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
+    ax1.tick_params(axis='both', which='major', labelsize=8)
+    ax1.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Add summary stats to plot
+    ax1.text(0.02, 0.98, f'Eurozone Avg: {mean_eurozone.mean():.2f}%\nIceland Avg: {mean_iceland.mean():.2f}%', 
+             transform=ax1.transAxes, verticalalignment='top', fontsize=8,
+             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+    
+    plt.tight_layout()
+    st.pyplot(fig1)
+    
+    # Download button for means boxplot
+    buf1 = io.BytesIO()
+    fig1.savefig(buf1, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    buf1.seek(0)
+    
+    st.download_button(
+        label="📥 Download Means Boxplot (PNG)",
+        data=buf1.getvalue(),
+        file_name="case_study_1_means_boxplot.png",
+        mime="image/png",
+        key="download_means"
+    )
+    
+    # Second boxplot - Standard Deviations (very compact size)
+    fig2, ax2 = plt.subplots(1, 1, figsize=(4, 3))
+    
+    std_data = boxplot_data[boxplot_data['Statistic'] == 'Standard Deviation']
+    std_iceland = std_data[std_data['GROUP'] == 'Iceland']['Value']
+    std_eurozone = std_data[std_data['GROUP'] == 'Eurozone']['Value']
+    
+    bp2 = ax2.boxplot([std_eurozone, std_iceland], labels=['Eurozone', 'Iceland'], patch_artist=True)
+    bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+    bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+    
+    ax2.set_title('Panel B: Distribution of Standard Deviations Across All Capital Flow Indicators', 
+                  fontweight='bold', fontsize=10, pad=10)
+    ax2.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
+    ax2.tick_params(axis='both', which='major', labelsize=8)
+    
+    # Add summary stats to plot (fix newline character display)
+    volatility_ratio = std_iceland.mean() / std_eurozone.mean()
+    ax2.text(0.02, 0.98, f'Eurozone Avg: {std_eurozone.mean():.2f}%\nIceland Avg: {std_iceland.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
+             transform=ax2.transAxes, verticalalignment='top', fontsize=8,
+             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+    
+    ax2.set_title('Distribution of Standard Deviations: Iceland vs Eurozone Capital Flow Volatility', 
+                 fontweight='bold', fontsize=10, pad=10)
+    plt.tight_layout()
+    
+    st.pyplot(fig2)
+    
+    # Download button for std dev boxplot
+    buf2 = io.BytesIO()
+    fig2.savefig(buf2, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    buf2.seek(0)
+    
+    st.download_button(
+        label="📥 Download Std Dev Boxplot (PNG)",
+        data=buf2.getvalue(),
+        file_name="case_study_1_stddev_boxplot.png",
+        mime="image/png",
+        key="download_stddev"
+    )
+    
+    # Summary statistics from boxplots
+    iceland_mean_avg = mean_iceland.mean()
+    eurozone_mean_avg = mean_eurozone.mean()
+    iceland_std_avg = std_iceland.mean()
+    eurozone_std_avg = std_eurozone.mean()
+    volatility_ratio = iceland_std_avg / eurozone_std_avg
+    
+    st.markdown("### Comprehensive Statistical Summary from Boxplots:")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        **Means Across All Indicators:**
+        - Eurozone: {eurozone_mean_avg:.2f}% (median: {mean_eurozone.median():.2f}%)
+        - Iceland: {iceland_mean_avg:.2f}% (median: {mean_iceland.median():.2f}%)
+        """)
+    
+    with col2:
+        st.markdown(f"""
+        **Standard Deviations Across All Indicators:**
+        - Eurozone: {eurozone_std_avg:.2f}% (median: {std_eurozone.median():.2f}%)
+        - Iceland: {iceland_std_avg:.2f}% (median: {std_iceland.median():.2f}%)
+        """)
+    
+    st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than Eurozone on average")
+    
+    st.markdown("---")
+    
+    # 2. Comprehensive Statistical Summary Table
+    st.header("2. Comprehensive Statistical Summary Table")
+    
+    st.markdown("**All Indicators - Iceland vs Eurozone Statistics**")
+    
+    # Create a clean table with one row per indicator (both groups side-by-side)
+    # Sort indicators properly first
+    sorted_indicators = sort_indicators_by_type(analysis_indicators)
+    table_data = []
+    for indicator in sorted_indicators:
+        clean_name = indicator.replace('_PGDP', '')
+        nickname = get_nickname(clean_name)
+        indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
+        
+        # Get stats for both groups
+        iceland_stats = indicator_stats[indicator_stats['Group'] == 'Iceland'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Iceland']) > 0 else None
+        eurozone_stats = indicator_stats[indicator_stats['Group'] == 'Eurozone'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Eurozone']) > 0 else None
+        
+        if iceland_stats is not None and eurozone_stats is not None:
+            table_data.append({
+                'Indicator': nickname,
+                'Iceland Mean': f"{iceland_stats['Mean']:.2f}",
+                'Iceland Std Dev': f"{iceland_stats['Std_Dev']:.2f}",
+                'Iceland CV%': f"{iceland_stats['CV_Percent']:.1f}",
+                'Eurozone Mean': f"{eurozone_stats['Mean']:.2f}",
+                'Eurozone Std Dev': f"{eurozone_stats['Std_Dev']:.2f}",
+                'Eurozone CV%': f"{eurozone_stats['CV_Percent']:.1f}",
+                'CV Ratio (Ice/Euro)': f"{iceland_stats['CV_Percent']/eurozone_stats['CV_Percent']:.2f}" if eurozone_stats['CV_Percent'] != 0 else "∞"
+            })
+    
+    # Create DataFrame and display as table
+    summary_df = pd.DataFrame(table_data)
+    
+    # Style the table for better readability
+    styled_table = summary_df.style.set_properties(**{
+        'text-align': 'center',
+        'font-size': '10px',
+        'border': '1px solid #ddd'
+    }).set_table_styles([
+        {'selector': 'th', 'props': [('background-color', '#f0f0f0'), ('font-weight', 'bold'), ('font-size', '11px')]},
+        {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f9f9f9')]},
+        {'selector': 'td:first-child', 'props': [('text-align', 'left'), ('font-weight', 'bold')]}  # Left-align indicator names
+    ])
+    
+    st.dataframe(styled_table, use_container_width=True, hide_index=True)
+    
+    st.info(f"**Summary:** Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
+    
+    # Create summary with CV ratios for download
+    summary_pivot = group_stats.pivot_table(
+        index='Indicator',
+        columns='Group',
+        values=['Mean', 'Std_Dev', 'Skewness', 'CV_Percent'],
+        aggfunc='first'
+    )
+    
+    comprehensive_table = pd.DataFrame({
+        'Mean_Eurozone': summary_pivot[('Mean', 'Eurozone')],
+        'Mean_Iceland': summary_pivot[('Mean', 'Iceland')],
+        'StdDev_Eurozone': summary_pivot[('Std_Dev', 'Eurozone')],
+        'StdDev_Iceland': summary_pivot[('Std_Dev', 'Iceland')],
+        'Skew_Eurozone': summary_pivot[('Skewness', 'Eurozone')],
+        'Skew_Iceland': summary_pivot[('Skewness', 'Iceland')],
+        'CV_Eurozone': summary_pivot[('CV_Percent', 'Eurozone')],
+        'CV_Iceland': summary_pivot[('CV_Percent', 'Iceland')]
+    })
+    
+    comprehensive_table['CV_Ratio_Iceland_Eurozone'] = (
+        comprehensive_table['CV_Iceland'] / comprehensive_table['CV_Eurozone']
+    ).round(2)
+    
+    avg_cv_ratio = comprehensive_table['CV_Ratio_Iceland_Eurozone'].mean()
+    higher_cv_count = (comprehensive_table['CV_Ratio_Iceland_Eurozone'] > 1).sum()
+    
+    st.markdown(f"""
+    **CV Ratio Summary (Iceland/Eurozone):**
+    - Average CV Ratio: {avg_cv_ratio:.2f}
+    - Indicators where Iceland > Eurozone: {higher_cv_count}/{len(comprehensive_table)} ({higher_cv_count/len(comprehensive_table)*100:.1f}%)
+    """)
+    
+    st.markdown("---")
+    
+    # 3. Hypothesis Testing Results
+    st.header("3. Hypothesis Testing Results")
+    
+    st.markdown("""
+    **F-Tests for Equal Variances (Iceland vs. Eurozone)**
+    
+    - **H₀:** Equal volatility  
+    - **H₁:** Different volatility  
+    - **α = 0.05**
+    """)
+    
+    # Create a clean static table for hypothesis tests
+    results_display = test_results.copy()
+    
+    # Sort by investment type rather than F-statistic
+    results_display['Sort_Key'] = results_display['Indicator'].apply(get_investment_type_order)
+    results_display = results_display.sort_values('Sort_Key')
+    
+    # Add nicknames and format for display
+    results_display['Indicator_Nick'] = results_display['Indicator'].apply(get_nickname)
+    results_display['Significant'] = results_display.apply(
+        lambda row: '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else '', 
+        axis=1
+    )
+    results_display['Higher Volatility'] = results_display['Iceland_Higher_Volatility'].map({True: 'Iceland', False: 'Eurozone'})
+    
+    # Create formatted table
+    test_table_data = []
+    for _, row in results_display.iterrows():
+        test_table_data.append({
+            'Indicator': row['Indicator_Nick'],
+            'F-Statistic': f"{row['F_Statistic']:.2f}",
+            'P-Value': f"{row['P_Value']:.4f}",
+            'Significance': row['Significant'],
+            'Higher Volatility': row['Higher Volatility']
+        })
+    
+    test_df = pd.DataFrame(test_table_data)
+    
+    # Display as static table with better formatting
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        # Style the test results table
+        styled_test_table = test_df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '11px',
+            'border': '1px solid #ddd'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('text-align', 'center')]},
+            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f9f9f9')]},
+            {'selector': 'td:first-child', 'props': [('text-align', 'left')]}  # Left-align indicator names
+        ])
+        
+        st.dataframe(styled_test_table, use_container_width=True, hide_index=True)
+        st.caption("Significance levels: *** p<0.001, ** p<0.01, * p<0.05")
+    
+    with col2:
+        st.markdown("**Legend:**")
+        st.markdown("- **F-Statistic**: Ratio of variances")
+        st.markdown("- **P-Value**: Statistical significance")
+        st.markdown("- **Higher Volatility**: Which group shows more volatility")
+    
+    # Test summary
+    total_indicators = len(test_results)
+    iceland_higher_count = test_results['Iceland_Higher_Volatility'].sum()
+    sig_5pct_count = test_results['Significant_5pct'].sum()
+    sig_1pct_count = test_results['Significant_1pct'].sum()
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Iceland Higher Volatility", f"{iceland_higher_count}/{total_indicators}", f"{iceland_higher_count/total_indicators*100:.1f}%")
+    with col2:
+        st.metric("Significant (5%)", f"{sig_5pct_count}/{total_indicators}", f"{sig_5pct_count/total_indicators*100:.1f}%")
+    with col3:
+        st.metric("Significant (1%)", f"{sig_1pct_count}/{total_indicators}", f"{sig_1pct_count/total_indicators*100:.1f}%")
+    
+    conclusion = "Strong evidence supports" if iceland_higher_count/total_indicators > 0.6 else "Mixed evidence for"
+    st.success(f"**Conclusion:** {conclusion} the hypothesis that Iceland has higher capital flow volatility.")
+    
+    st.markdown("---")
+    
+    # 4. Time Series Visualization
+    st.header("4. Time Series Analysis")
+    
+    # Create date column
+    final_data_copy = final_data.copy()
+    final_data_copy['Date'] = pd.to_datetime(
+        final_data_copy['YEAR'].astype(str) + '-' + 
+        ((final_data_copy['QUARTER'] - 1) * 3 + 1).astype(str) + '-01'
+    )
+    
+    # Show ALL indicators, sorted properly
+    selected_indicators = sort_indicators_by_type(analysis_indicators)
+    
+    st.markdown(f"**Showing all {len(selected_indicators)} indicators sorted by investment type**")
+    
+    # Create individual time series plots for better readability and downloads
+    time_series_figures = []
+    
+    for i, indicator in enumerate(selected_indicators):
+        # Create individual plot for each indicator (very compact size)
+        fig_ts, ax = plt.subplots(1, 1, figsize=(6, 2.5))
+        
+        clean_name = indicator.replace('_PGDP', '')
+        nickname = get_nickname(clean_name)
+        
+        # Plot Iceland
+        iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland']
+        ax.plot(iceland_data['Date'], iceland_data[indicator], 
+                color=COLORBLIND_SAFE[1], linewidth=2.5, label='Iceland', marker='o', markersize=4)
+        
+        # Plot Eurozone average
+        eurozone_avg = final_data_copy[final_data_copy['GROUP'] == 'Eurozone'].groupby('Date')[indicator].mean()
+        ax.plot(eurozone_avg.index, eurozone_avg.values, 
+                color=COLORBLIND_SAFE[0], linewidth=2.5, label='Eurozone Average', marker='s', markersize=3)
+        
+        # Formatting
+        f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
+        panel_letter = chr(65 + i)  # A, B, C, etc.
+        ax.set_title(f'Panel {panel_letter}: {nickname} (F-statistic: {f_stat:.2f})', 
+                    fontweight='bold', fontsize=9, pad=8)
+        ax.set_ylabel('% of GDP (annualized)', fontsize=8)
+        ax.set_xlabel('Year', fontsize=8)
+        ax.tick_params(axis='both', which='major', labelsize=7)
+        ax.legend(loc='best', fontsize=8, frameon=True, fancybox=False, shadow=False)
+        ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+        
+        plt.tight_layout()
+        st.pyplot(fig_ts)
+        
+        # Individual download button for each time series
+        buf_ts = io.BytesIO()
+        fig_ts.savefig(buf_ts, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+        buf_ts.seek(0)
+        
+        clean_filename = nickname.replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        st.download_button(
+            label=f"📥 Download {nickname} Time Series (PNG)",
+            data=buf_ts.getvalue(),
+            file_name=f"case_study_1_{clean_filename}_timeseries.png",
+            mime="image/png",
+            key=f"download_ts_{i}"
+        )
+        
+        time_series_figures.append(fig_ts)
+    
+    st.markdown("---")
+    
+    # 5. Key Findings Summary
+    st.header("5. Key Findings Summary")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(f"""
+        ### Statistical Evidence:
+        - **{iceland_higher_count/total_indicators*100:.1f}% of capital flow indicators** show higher volatility in Iceland
+        - **{sig_5pct_count/total_indicators*100:.1f}% of indicators** show statistically significant differences (p<0.05)
+        - **Iceland's average volatility** is {volatility_ratio:.2f} times higher than Eurozone countries
+        - **Most significant differences** in portfolio investment and direct investment flows
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### Policy Implications:
+        - Evidence supports the hypothesis that Iceland has higher capital flow volatility
+        - Euro adoption could potentially reduce financial volatility for Iceland
+        - Greater macroeconomic stability possible through currency union
+        - Consider implementation timeline and structural adjustments needed
+        """)
+    
+    # Download section
+    st.markdown("---")
+    st.header("6. Download Results")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        # Download comprehensive table
+        csv = comprehensive_table.to_csv(index=True)
+        st.download_button(
+            label="📥 Download Summary Table (CSV)",
+            data=csv,
+            file_name="case_study_1_summary_statistics.csv",
+            mime="text/csv"
+        )
+    
+    with col2:
+        # Download test results
+        csv = test_results.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Test Results (CSV)",
+            data=csv,
+            file_name="case_study_1_hypothesis_tests.csv",
+            mime="text/csv"
+        )
+    
+    with col3:
+        # Download group statistics
+        csv = group_stats.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Group Statistics (CSV)",
+            data=csv,
+            file_name="case_study_1_group_statistics.csv",
+            mime="text/csv"
+        )
+
+if __name__ == "__main__":
+    main()
