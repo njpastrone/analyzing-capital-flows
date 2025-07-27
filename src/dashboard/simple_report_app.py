@@ -666,12 +666,12 @@ def main():
         # Plot Iceland
         iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland']
         ax.plot(iceland_data['Date'], iceland_data[indicator], 
-                color=COLORBLIND_SAFE[1], linewidth=2.5, label='Iceland', marker='o', markersize=4)
+                color=COLORBLIND_SAFE[1], linewidth=1.5, label='Iceland')
         
         # Plot Eurozone average
         eurozone_avg = final_data_copy[final_data_copy['GROUP'] == 'Eurozone'].groupby('Date')[indicator].mean()
         ax.plot(eurozone_avg.index, eurozone_avg.values, 
-                color=COLORBLIND_SAFE[0], linewidth=2.5, label='Eurozone Average', marker='s', markersize=3)
+                color=COLORBLIND_SAFE[0], linewidth=1.5, label='Eurozone Average')
         
         # Formatting
         f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
@@ -915,11 +915,11 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             # Plot data exactly like app
             iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland']
             ax.plot(iceland_data['Date'], iceland_data[indicator], 
-                    color=COLORBLIND_SAFE[1], linewidth=2.5, label='Iceland', marker='o', markersize=4)
+                    color=COLORBLIND_SAFE[1], linewidth=1.5, label='Iceland')
             
             eurozone_avg = final_data_copy[final_data_copy['GROUP'] == 'Eurozone'].groupby('Date')[indicator].mean()
             ax.plot(eurozone_avg.index, eurozone_avg.values, 
-                    color=COLORBLIND_SAFE[0], linewidth=2.5, label='Eurozone Average', marker='s', markersize=3)
+                    color=COLORBLIND_SAFE[0], linewidth=1.5, label='Eurozone Average')
             
             # Formatting exactly like app
             f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
