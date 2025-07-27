@@ -13,6 +13,8 @@ import warnings
 from pathlib import Path
 import sys
 import io
+from datetime import datetime
+import base64
 
 # Add core modules to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -730,7 +732,7 @@ def main():
     st.markdown("---")
     st.header("6. Download Results")
     
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         # Download comprehensive table
@@ -761,6 +763,377 @@ def main():
             file_name="case_study_1_group_statistics.csv",
             mime="text/csv"
         )
+    
+    with col4:
+        # Generate and download HTML report  
+        if st.button("📄 Generate HTML Report", type="secondary"):
+            with st.spinner("Generating HTML report..."):
+                html_file = generate_html_report(final_data, analysis_indicators, test_results, group_stats, boxplot_data)
+                
+                if html_file and Path(html_file).exists():
+                    with open(html_file, "r", encoding='utf-8') as f:
+                        html_data = f.read()
+                    
+                    st.download_button(
+                        label="📥 Download HTML Report",
+                        data=html_data,
+                        file_name=f"capital_flows_report_{datetime.now().strftime('%Y%m%d')}.html",
+                        mime="text/html",
+                        key="html_download"
+                    )
+                    
+                    st.success("✅ HTML report generated successfully!")
+                    st.info("💡 **Tip:** You can open the HTML file in any browser and print to PDF or save as PDF for a professional document.")
+                    
+                    # Clean up temporary file
+                    try:
+                        Path(html_file).unlink()
+                        import shutil
+                        shutil.rmtree("temp_html_reports", ignore_errors=True)
+                    except:
+                        pass
+                else:
+                    st.error("❌ Failed to generate HTML report.")
+
+def generate_html_report(final_data, analysis_indicators, test_results, group_stats, boxplot_data):
+    """Generate an HTML report that mimics the app's formatting exactly"""
+    try:
+        # Create temporary HTML file
+        temp_dir = Path("temp_html_reports")
+        temp_dir.mkdir(exist_ok=True)
+        html_filename = temp_dir / f"capital_flows_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
+        
+        # Generate plots as base64 images for embedding
+        def create_plot_base64(fig):
+            buf = io.BytesIO()
+            fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+            buf.seek(0)
+            img_base64 = base64.b64encode(buf.getvalue()).decode()
+            plt.close(fig)
+            return f"data:image/png;base64,{img_base64}"
+        
+        # Create boxplots exactly like app
+        fig1, ax1 = plt.subplots(1, 1, figsize=(4, 3))
+        mean_data = boxplot_data[boxplot_data['Statistic'] == 'Mean']
+        mean_iceland = mean_data[mean_data['GROUP'] == 'Iceland']['Value']
+        mean_eurozone = mean_data[mean_data['GROUP'] == 'Eurozone']['Value']
+        
+        bp1 = ax1.boxplot([mean_eurozone, mean_iceland], labels=['Eurozone', 'Iceland'], patch_artist=True)
+        bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+        bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+        ax1.set_title('Panel A: Distribution of Means Across All Capital Flow Indicators', 
+                     fontweight='bold', fontsize=10, pad=10)
+        ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
+        ax1.tick_params(axis='both', which='major', labelsize=8)
+        ax1.text(0.02, 0.98, f'Eurozone Avg: {mean_eurozone.mean():.2f}%\nIceland Avg: {mean_iceland.mean():.2f}%', 
+                transform=ax1.transAxes, verticalalignment='top', fontsize=8,
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+        plt.tight_layout()
+        boxplot1_img = create_plot_base64(fig1)
+        
+        fig2, ax2 = plt.subplots(1, 1, figsize=(4, 3))
+        std_data = boxplot_data[boxplot_data['Statistic'] == 'Standard Deviation']
+        std_iceland = std_data[std_data['GROUP'] == 'Iceland']['Value']
+        std_eurozone = std_data[std_data['GROUP'] == 'Eurozone']['Value']
+        
+        bp2 = ax2.boxplot([std_eurozone, std_iceland], labels=['Eurozone', 'Iceland'], patch_artist=True)
+        bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+        bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+        ax2.set_title('Panel B: Distribution of Standard Deviations Across All Capital Flow Indicators', 
+                     fontweight='bold', fontsize=10, pad=10)
+        ax2.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
+        ax2.tick_params(axis='both', which='major', labelsize=8)
+        
+        volatility_ratio = std_iceland.mean() / std_eurozone.mean()
+        ax2.text(0.02, 0.98, f'Eurozone Avg: {std_eurozone.mean():.2f}%\nIceland Avg: {std_iceland.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
+                transform=ax2.transAxes, verticalalignment='top', fontsize=8,
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+        plt.tight_layout()
+        boxplot2_img = create_plot_base64(fig2)
+        
+        # Create summary statistics table exactly like app
+        sorted_indicators = sort_indicators_by_type(analysis_indicators)
+        table_rows = []
+        for indicator in sorted_indicators:
+            clean_name = indicator.replace('_PGDP', '')
+            nickname = get_nickname(clean_name)
+            indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
+            
+            iceland_stats = indicator_stats[indicator_stats['Group'] == 'Iceland'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Iceland']) > 0 else None
+            eurozone_stats = indicator_stats[indicator_stats['Group'] == 'Eurozone'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Eurozone']) > 0 else None
+            
+            if iceland_stats is not None and eurozone_stats is not None:
+                cv_ratio = iceland_stats['CV_Percent']/eurozone_stats['CV_Percent'] if eurozone_stats['CV_Percent'] != 0 else float('inf')
+                table_rows.append(f"""
+                    <tr>
+                        <td style="text-align: left; font-weight: bold;">{nickname}</td>
+                        <td>{iceland_stats['Mean']:.2f}</td>
+                        <td>{iceland_stats['Std_Dev']:.2f}</td>
+                        <td>{iceland_stats['CV_Percent']:.1f}</td>
+                        <td>{eurozone_stats['Mean']:.2f}</td>
+                        <td>{eurozone_stats['Std_Dev']:.2f}</td>
+                        <td>{eurozone_stats['CV_Percent']:.1f}</td>
+                        <td>{cv_ratio:.2f}</td>
+                    </tr>
+                """)
+        
+        # Create hypothesis test results table exactly like app
+        results_display = test_results.copy()
+        results_display['Sort_Key'] = results_display['Indicator'].apply(get_investment_type_order)
+        results_display = results_display.sort_values('Sort_Key')
+        
+        test_table_rows = []
+        for _, row in results_display.iterrows():
+            nickname = get_nickname(row['Indicator'])
+            significance = '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else ''
+            higher_vol = 'Iceland' if row['Iceland_Higher_Volatility'] else 'Eurozone'
+            
+            test_table_rows.append(f"""
+                <tr>
+                    <td style="text-align: left; font-weight: bold;">{nickname}</td>
+                    <td>{row['F_Statistic']:.2f}</td>
+                    <td>{row['P_Value']:.4f}</td>
+                    <td>{significance}</td>
+                    <td>{higher_vol}</td>
+                </tr>
+            """)
+        
+        # Create time series plots
+        final_data_copy = final_data.copy()
+        final_data_copy['Date'] = pd.to_datetime(
+            final_data_copy['YEAR'].astype(str) + '-' + 
+            ((final_data_copy['QUARTER'] - 1) * 3 + 1).astype(str) + '-01'
+        )
+        
+        time_series_plots = []
+        for i, indicator in enumerate(sorted_indicators):
+            fig_ts, ax = plt.subplots(1, 1, figsize=(6, 2.5))
+            
+            clean_name = indicator.replace('_PGDP', '')
+            nickname = get_nickname(clean_name)
+            
+            # Plot data exactly like app
+            iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland']
+            ax.plot(iceland_data['Date'], iceland_data[indicator], 
+                    color=COLORBLIND_SAFE[1], linewidth=2.5, label='Iceland', marker='o', markersize=4)
+            
+            eurozone_avg = final_data_copy[final_data_copy['GROUP'] == 'Eurozone'].groupby('Date')[indicator].mean()
+            ax.plot(eurozone_avg.index, eurozone_avg.values, 
+                    color=COLORBLIND_SAFE[0], linewidth=2.5, label='Eurozone Average', marker='s', markersize=3)
+            
+            # Formatting exactly like app
+            f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
+            panel_letter = chr(65 + i)  # A, B, C, etc.
+            ax.set_title(f'Panel {panel_letter}: {nickname} (F-statistic: {f_stat:.2f})', 
+                        fontweight='bold', fontsize=9, pad=8)
+            ax.set_ylabel('% of GDP (annualized)', fontsize=8)
+            ax.set_xlabel('Year', fontsize=8)
+            ax.tick_params(axis='both', which='major', labelsize=7)
+            ax.legend(loc='best', fontsize=8, frameon=True, fancybox=False, shadow=False)
+            ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+            
+            plt.tight_layout()
+            time_series_plots.append(create_plot_base64(fig_ts))
+        
+        # Calculate key statistics
+        total_indicators = len(test_results)
+        iceland_higher_count = test_results['Iceland_Higher_Volatility'].sum()
+        sig_5pct_count = test_results['Significant_5pct'].sum()
+        sig_1pct_count = test_results['Significant_1pct'].sum()
+        
+        # Generate HTML exactly like the app structure
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Capital Flow Volatility Analysis - Case Study 1</title>
+            <meta charset="utf-8">
+            <style>
+                body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
+                h1 {{ color: #1f77b4; text-align: center; border-bottom: 3px solid #1f77b4; padding-bottom: 10px; }}
+                h2 {{ color: #ff7f0e; border-bottom: 2px solid #ff7f0e; padding-bottom: 5px; }}
+                h3 {{ color: #2ca02c; }}
+                .info-box {{ background-color: #e1f5fe; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #0288d1; }}
+                .success-box {{ background-color: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #4caf50; }}
+                .metric {{ display: inline-block; margin: 10px 20px; padding: 10px; background-color: #f5f5f5; border-radius: 5px; }}
+                table {{ border-collapse: collapse; width: 100%; margin: 15px 0; }}
+                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: center; }}
+                th {{ background-color: #f0f0f0; font-weight: bold; }}
+                tr:nth-child(even) {{ background-color: #f9f9f9; }}
+                .plots {{ text-align: center; margin: 20px 0; }}
+                .plot-row {{ display: flex; justify-content: space-around; margin: 20px 0; }}
+                .time-series {{ margin: 15px 0; }}
+                .columns {{ display: flex; gap: 30px; }}
+                .column {{ flex: 1; }}
+            </style>
+        </head>
+        <body>
+            <h1>📊 Capital Flow Volatility Analysis</h1>
+            <h2 style="text-align: center; color: #666;">Case Study 1: Iceland vs. Eurozone Comparison</h2>
+            
+            <div class="info-box">
+                <strong>Research Question:</strong> Should Iceland adopt the Euro as its currency?<br>
+                <strong>Hypothesis:</strong> Iceland's capital flows show more volatility than the Eurozone bloc average
+            </div>
+            
+            <div style="margin: 20px 0;">
+                <div class="metric"><strong>Observations:</strong> {final_data.shape[0]:,}</div>
+                <div class="metric"><strong>Indicators:</strong> {len(analysis_indicators)}</div>
+                <div class="metric"><strong>Countries:</strong> {final_data['COUNTRY'].nunique()}</div>
+                <div class="metric"><strong>Time Period:</strong> {final_data['YEAR'].min()}-{final_data['YEAR'].max()}</div>
+            </div>
+            
+            <hr>
+            
+            <h2>1. Summary Statistics and Boxplots</h2>
+            
+            <div class="plot-row">
+                <img src="{boxplot1_img}" alt="Means Boxplot" style="max-width: 45%;">
+                <img src="{boxplot2_img}" alt="Standard Deviations Boxplot" style="max-width: 45%;">
+            </div>
+            
+            <div class="columns">
+                <div class="column">
+                    <strong>Means Across All Indicators:</strong><br>
+                    • Eurozone: {mean_eurozone.mean():.2f}% (median: {mean_eurozone.median():.2f}%)<br>
+                    • Iceland: {mean_iceland.mean():.2f}% (median: {mean_iceland.median():.2f}%)
+                </div>
+                <div class="column">
+                    <strong>Standard Deviations Across All Indicators:</strong><br>
+                    • Eurozone: {std_eurozone.mean():.2f}% (median: {std_eurozone.median():.2f}%)<br>
+                    • Iceland: {std_iceland.mean():.2f}% (median: {std_iceland.median():.2f}%)
+                </div>
+            </div>
+            
+            <div class="info-box">
+                <strong>Volatility Comparison:</strong> Iceland volatility is {volatility_ratio:.2f}x higher than Eurozone on average
+            </div>
+            
+            <hr>
+            
+            <h2>2. Comprehensive Statistical Summary Table</h2>
+            <p><strong>All Indicators - Iceland vs Eurozone Statistics</strong></p>
+            
+            <table>
+                <thead>
+                    <tr>
+                        <th>Indicator</th>
+                        <th>Iceland Mean</th>
+                        <th>Iceland Std Dev</th>
+                        <th>Iceland CV%</th>
+                        <th>Eurozone Mean</th>
+                        <th>Eurozone Std Dev</th>
+                        <th>Eurozone CV%</th>
+                        <th>CV Ratio (Ice/Euro)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(table_rows)}
+                </tbody>
+            </table>
+            
+            <div class="info-box">
+                <strong>Summary:</strong> Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.
+            </div>
+            
+            <hr>
+            
+            <h2>3. Hypothesis Testing Results</h2>
+            <p><strong>F-Tests for Equal Variances (Iceland vs. Eurozone)</strong></p>
+            
+            <ul>
+                <li><strong>H₀:</strong> Equal volatility</li>
+                <li><strong>H₁:</strong> Different volatility</li>
+                <li><strong>α = 0.05</strong></li>
+            </ul>
+            
+            <table style="width: 80%; margin: 0 auto;">
+                <thead>
+                    <tr>
+                        <th>Indicator</th>
+                        <th>F-Statistic</th>
+                        <th>P-Value</th>
+                        <th>Significance</th>
+                        <th>Higher Volatility</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {''.join(test_table_rows)}
+                </tbody>
+            </table>
+            
+            <p style="text-align: center; font-size: 0.9em;"><em>Significance levels: *** p&lt;0.001, ** p&lt;0.01, * p&lt;0.05</em></p>
+            
+            <div style="display: flex; justify-content: space-around; margin: 20px 0;">
+                <div class="metric">
+                    <strong>Iceland Higher Volatility:</strong><br>
+                    {iceland_higher_count}/{total_indicators} ({iceland_higher_count/total_indicators*100:.1f}%)
+                </div>
+                <div class="metric">
+                    <strong>Significant (5%):</strong><br>
+                    {sig_5pct_count}/{total_indicators} ({sig_5pct_count/total_indicators*100:.1f}%)
+                </div>
+                <div class="metric">
+                    <strong>Significant (1%):</strong><br>
+                    {sig_1pct_count}/{total_indicators} ({sig_1pct_count/total_indicators*100:.1f}%)
+                </div>
+            </div>
+            
+            <div class="success-box">
+                <strong>Conclusion:</strong> {'Strong evidence supports' if iceland_higher_count/total_indicators > 0.6 else 'Mixed evidence for'} the hypothesis that Iceland has higher capital flow volatility.
+            </div>
+            
+            <hr>
+            
+            <h2>4. Time Series Analysis</h2>
+            <p><strong>Showing all {len(analysis_indicators)} indicators sorted by investment type</strong></p>
+            
+            <div class="time-series">
+                {''.join([f'<img src="{plot}" alt="Time Series Plot" style="max-width: 100%; margin: 10px 0;"><br>' for plot in time_series_plots])}
+            </div>
+            
+            <hr>
+            
+            <h2>5. Key Findings Summary</h2>
+            
+            <div class="columns">
+                <div class="column">
+                    <h3>Statistical Evidence:</h3>
+                    <ul>
+                        <li><strong>{iceland_higher_count/total_indicators*100:.1f}% of capital flow indicators</strong> show higher volatility in Iceland</li>
+                        <li><strong>{sig_5pct_count/total_indicators*100:.1f}% of indicators</strong> show statistically significant differences (p&lt;0.05)</li>
+                        <li><strong>Iceland's average volatility</strong> is {volatility_ratio:.2f} times higher than Eurozone countries</li>
+                        <li><strong>Most significant differences</strong> in portfolio investment and direct investment flows</li>
+                    </ul>
+                </div>
+                <div class="column">
+                    <h3>Policy Implications:</h3>
+                    <ul>
+                        <li>Evidence supports the hypothesis that Iceland has higher capital flow volatility</li>
+                        <li>Euro adoption could potentially reduce financial volatility for Iceland</li>
+                        <li>Greater macroeconomic stability possible through currency union</li>
+                        <li>Consider implementation timeline and structural adjustments needed</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <hr>
+            <p style="text-align: center; color: #666; font-size: 0.9em;">
+                Report generated on {datetime.now().strftime('%B %d, %Y at %H:%M')} using automated analysis pipeline.
+            </p>
+        </body>
+        </html>
+        """
+        
+        # Write HTML file
+        with open(html_filename, 'w', encoding='utf-8') as f:
+            f.write(html_content)
+        
+        return str(html_filename)
+        
+    except Exception as e:
+        st.error(f"Error generating HTML report: {str(e)}")
+        return None
 
 if __name__ == "__main__":
     main()
