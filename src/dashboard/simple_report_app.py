@@ -118,12 +118,8 @@ ECON_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
 COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
 sns.set_palette(COLORBLIND_SAFE)
 
-# Page configuration
-st.set_page_config(
-    page_title="Capital Flows Report - Case Study 1",
-    page_icon="📊",
-    layout="wide"
-)
+# Page configuration - removed to avoid conflicts when imported into main_app.py
+# st.set_page_config() is now handled by main_app.py
 
 def load_default_data():
     """Load default Case Study 1 data"""
