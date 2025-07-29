@@ -554,15 +554,52 @@ def show_case_study_1_pipeline():
                 bop_processed = pivot_if_timeseries(bop_raw, name="BOP Data")
                 gdp_processed = pivot_if_timeseries(gdp_raw, name="GDP Data")
                 
-                # Show simplified cleaned data preview (first few steps only)
+                # Show simplified cleaned data preview filtered for Iceland (Case Study 1)
                 if len(bop_processed) > 0 and len(gdp_processed) > 0:
-                    st.markdown("**Cleaned BOP Data (Sample):**")
-                    st.dataframe(bop_processed.head(5), use_container_width=True)
-                    st.caption(f"BOP Shape: {bop_processed.shape[0]} rows × {bop_processed.shape[1]} columns")
+                    sample_country = "Iceland"
                     
-                    st.markdown("**Cleaned GDP Data (Sample):**")  
-                    st.dataframe(gdp_processed.head(5), use_container_width=True)
-                    st.caption(f"GDP Shape: {gdp_processed.shape[0]} rows × {gdp_processed.shape[1]} columns")
+                    # Filter BOP data for Iceland
+                    if 'COUNTRY' in bop_processed.columns:
+                        bop_sample = bop_processed[bop_processed['COUNTRY'] == sample_country].head(8)
+                        if len(bop_sample) > 0:
+                            st.markdown(f"**Cleaned BOP Data - {sample_country} Sample (Before Join):**")
+                            st.dataframe(bop_sample, use_container_width=True)
+                            st.caption(f"BOP Sample: {len(bop_sample)} rows from {bop_processed.shape[0]} total rows")
+                        else:
+                            st.warning(f"No BOP data found for {sample_country}")
+                            st.markdown("**Cleaned BOP Data (General Sample):**")
+                            st.dataframe(bop_processed.head(5), use_container_width=True)
+                    else:
+                        st.markdown("**Cleaned BOP Data (General Sample):**")
+                        st.dataframe(bop_processed.head(5), use_container_width=True)
+                    
+                    # Filter GDP data for Iceland and matching time periods
+                    if 'COUNTRY' in gdp_processed.columns:
+                        gdp_sample = gdp_processed[gdp_processed['COUNTRY'] == sample_country].head(8)
+                        if len(gdp_sample) > 0:
+                            st.markdown(f"**Cleaned GDP Data - {sample_country} Sample (Before Join):**")
+                            st.dataframe(gdp_sample, use_container_width=True)
+                            st.caption(f"GDP Sample: {len(gdp_sample)} rows from {gdp_processed.shape[0]} total rows")
+                        else:
+                            st.warning(f"No GDP data found for {sample_country}")
+                            st.markdown("**Cleaned GDP Data (General Sample):**")
+                            st.dataframe(gdp_processed.head(5), use_container_width=True)
+                    else:
+                        st.markdown("**Cleaned GDP Data (General Sample):**")
+                        st.dataframe(gdp_processed.head(5), use_container_width=True)
+                    
+                    # Show alignment info
+                    if 'COUNTRY' in bop_processed.columns and 'COUNTRY' in gdp_processed.columns:
+                        bop_countries = set(bop_processed['COUNTRY'].unique())
+                        gdp_countries = set(gdp_processed['COUNTRY'].unique())
+                        common_countries = bop_countries.intersection(gdp_countries)
+                        
+                        if sample_country in common_countries:
+                            st.success(f"✅ {sample_country} found in both BOP and GDP datasets - ready for joining")
+                        else:
+                            st.warning(f"⚠️ {sample_country} alignment issue - check country naming consistency")
+                        
+                        st.info(f"**Join Preview:** {len(common_countries)} countries will be available after joining BOP and GDP data")
                     
                     st.success("✅ Default data cleaning steps completed successfully")
                 else:
@@ -802,15 +839,56 @@ def show_case_study_2_pipeline():
                 bop_processed = pivot_if_timeseries(case2_raw, name="BOP Data")
                 gdp_processed = pivot_if_timeseries(gdp2_raw, name="GDP Data")
                 
-                # Show simplified cleaned data preview (first few steps only)
+                # Show simplified cleaned data preview filtered for Estonia (Case Study 2)
                 if len(bop_processed) > 0 and len(gdp_processed) > 0:
-                    st.markdown("**Cleaned BOP Data (Baltic Countries Sample):**")
-                    st.dataframe(bop_processed.head(5), use_container_width=True)
-                    st.caption(f"BOP Shape: {bop_processed.shape[0]} rows × {bop_processed.shape[1]} columns")
+                    sample_country = "Estonia, Republic of"
+                    sample_display = "Estonia"
                     
-                    st.markdown("**Cleaned GDP Data (Baltic Countries Sample):**")  
-                    st.dataframe(gdp_processed.head(5), use_container_width=True)
-                    st.caption(f"GDP Shape: {gdp_processed.shape[0]} rows × {gdp_processed.shape[1]} columns")
+                    # Filter BOP data for Estonia
+                    if 'COUNTRY' in bop_processed.columns:
+                        bop_sample = bop_processed[bop_processed['COUNTRY'] == sample_country].head(8)
+                        if len(bop_sample) > 0:
+                            st.markdown(f"**Cleaned BOP Data - {sample_display} Sample (Before Join):**")
+                            st.dataframe(bop_sample, use_container_width=True)
+                            st.caption(f"BOP Sample: {len(bop_sample)} rows from {bop_processed.shape[0]} total rows")
+                        else:
+                            st.warning(f"No BOP data found for {sample_display}")
+                            st.markdown("**Cleaned BOP Data (General Sample):**")
+                            st.dataframe(bop_processed.head(5), use_container_width=True)
+                    else:
+                        st.markdown("**Cleaned BOP Data (General Sample):**")
+                        st.dataframe(bop_processed.head(5), use_container_width=True)
+                    
+                    # Filter GDP data for Estonia and matching time periods
+                    if 'COUNTRY' in gdp_processed.columns:
+                        gdp_sample = gdp_processed[gdp_processed['COUNTRY'] == sample_country].head(8)
+                        if len(gdp_sample) > 0:
+                            st.markdown(f"**Cleaned GDP Data - {sample_display} Sample (Before Join):**")
+                            st.dataframe(gdp_sample, use_container_width=True)
+                            st.caption(f"GDP Sample: {len(gdp_sample)} rows from {gdp_processed.shape[0]} total rows")
+                        else:
+                            st.warning(f"No GDP data found for {sample_display}")
+                            st.markdown("**Cleaned GDP Data (General Sample):**")
+                            st.dataframe(gdp_processed.head(5), use_container_width=True)
+                    else:
+                        st.markdown("**Cleaned GDP Data (General Sample):**")
+                        st.dataframe(gdp_processed.head(5), use_container_width=True)
+                    
+                    # Show alignment info for Baltic countries
+                    if 'COUNTRY' in bop_processed.columns and 'COUNTRY' in gdp_processed.columns:
+                        bop_countries = set(bop_processed['COUNTRY'].unique())
+                        gdp_countries = set(gdp_processed['COUNTRY'].unique())
+                        common_countries = bop_countries.intersection(gdp_countries)
+                        
+                        baltic_countries = ['Estonia, Republic of', 'Latvia, Republic of', 'Lithuania, Republic of']
+                        available_baltics = [country for country in baltic_countries if country in common_countries]
+                        
+                        if sample_country in common_countries:
+                            st.success(f"✅ {sample_display} found in both BOP and GDP datasets - ready for joining")
+                        else:
+                            st.warning(f"⚠️ {sample_display} alignment issue - check country naming consistency")
+                        
+                        st.info(f"**Join Preview:** {len(available_baltics)}/3 Baltic countries available for Euro adoption analysis")
                     
                     st.success("✅ Default data cleaning steps completed successfully")
                 else:
@@ -1114,6 +1192,24 @@ def process_bop_data(bop_df):
         # Apply pivot transformation
         bop = pivot_if_timeseries(bop_df, name="BOP Data")
         
+        # UNIT SCALING CORRECTION: Apply scaling based on SCALE metadata
+        if "SCALE" in bop.columns and "OBS_VALUE" in bop.columns:
+            # Check for scaling inconsistency patterns
+            sample_values = bop['OBS_VALUE'].dropna().head(100)
+            scale_values = bop['SCALE'].dropna().unique()
+            
+            # Detect if values need scaling correction
+            if 'Millions' in scale_values:
+                max_val = abs(sample_values).max() if len(sample_values) > 0 else 0
+                
+                # Case Study 1 pattern: SCALE="Millions" but values are raw (need division)
+                # Case Study 2 pattern: SCALE="Millions" and values are already scaled
+                if max_val > 1000000:  # Values appear to be raw dollars, not millions
+                    st.info("🔧 Applying unit scaling: Converting raw dollar values to millions")
+                    bop.loc[bop['SCALE'] == 'Millions', 'OBS_VALUE'] = bop.loc[bop['SCALE'] == 'Millions', 'OBS_VALUE'] / 1_000_000
+                else:
+                    st.info("✅ BOP data already in correct scale (millions)")
+        
         # Create FULL_INDICATOR and clean columns
         if "BOP_ACCOUNTING_ENTRY" in bop.columns and "INDICATOR" in bop.columns:
             bop["ENTRY_FIRST_WORD"] = bop["BOP_ACCOUNTING_ENTRY"].str.extract(r"^([^,]+)")
@@ -1147,6 +1243,23 @@ def process_gdp_data(gdp_df):
         # Apply pivot transformation
         gdp = pivot_if_timeseries(gdp_df, name="GDP Data")
         
+        # UNIT SCALING CORRECTION: Apply scaling based on SCALE metadata
+        if "SCALE" in gdp.columns and "OBS_VALUE" in gdp.columns:
+            # Check for scaling inconsistency patterns
+            sample_values = gdp['OBS_VALUE'].dropna().head(100)
+            scale_values = gdp['SCALE'].dropna().unique()
+            
+            # Detect if values need scaling correction
+            if 'Billions' in scale_values:
+                max_val = abs(sample_values).max() if len(sample_values) > 0 else 0
+                
+                # GDP pattern: SCALE="Billions" but values are raw (need division)
+                if max_val > 1000000000:  # Values appear to be raw dollars, not billions
+                    st.info("🔧 Applying unit scaling: Converting raw dollar values to billions")
+                    gdp.loc[gdp['SCALE'] == 'Billions', 'OBS_VALUE'] = gdp.loc[gdp['SCALE'] == 'Billions', 'OBS_VALUE'] / 1_000_000_000
+                else:
+                    st.info("✅ GDP data already in correct scale (billions)")
+        
         # Reduce to essential columns
         required_cols = ["COUNTRY", "TIME_PERIOD", "INDICATOR", "OBS_VALUE"]
         missing_cols = [col for col in required_cols if col not in gdp.columns]
@@ -1164,6 +1277,10 @@ def process_gdp_data(gdp_df):
 def join_bop_gdp_data(bop_processed, gdp_processed, show_debug_preview=False, debug_key_suffix=""):
     """Join BOP and GDP data using logic from manual_data_processor.py"""
     try:
+        # Store original data for debugging preview
+        bop_pre_pivot = bop_processed.copy()
+        gdp_pre_pivot = gdp_processed.copy()
+        
         # Pivot BOP data wider
         cols_to_drop = ["SCALE", "DATASET", "SERIES_CODE", "OBS_MEASURE"]
         bop_pivoted = bop_processed.drop(columns=cols_to_drop, errors="ignore")
@@ -1188,6 +1305,10 @@ def join_bop_gdp_data(bop_processed, gdp_processed, show_debug_preview=False, de
         gdp_pivoted = gdp_pivoted.rename(columns={"TIME_PERIOD": "YEAR"})
         gdp_pivoted["YEAR"] = pd.to_numeric(gdp_pivoted["YEAR"], errors="coerce")
         
+        # 🛠️ DEBUGGING STEP: Show cleaned but unnormalized data preview BEFORE join
+        if show_debug_preview:
+            show_cleaned_data_preview(None, debug_key_suffix, bop_pre_pivot, gdp_pre_pivot)
+        
         # Join BOP and GDP
         joined = pd.merge(
             bop_pivoted,
@@ -1200,16 +1321,18 @@ def join_bop_gdp_data(bop_processed, gdp_processed, show_debug_preview=False, de
         if "UNIT" in joined.columns:
             joined["UNIT"] = joined["UNIT"].astype(str) + ", Nominal (Current Prices)"
         
-        # 🛠️ DEBUGGING STEP: Show cleaned but unnormalized data preview
+        # Show final joined data if debugging
         if show_debug_preview:
-            show_cleaned_data_preview(joined, debug_key_suffix)
+            st.markdown("### 📊 After Join - Final Merged Dataset")
+            st.dataframe(joined.head(10), use_container_width=True)
+            st.caption(f"Final joined dataset: {joined.shape[0]} rows × {joined.shape[1]} columns")
         
         return joined, None
         
     except Exception as e:
         return None, f"Error joining BOP and GDP data: {str(e)}"
 
-def show_cleaned_data_preview(cleaned_data, key_suffix=""):
+def show_cleaned_data_preview(cleaned_data, key_suffix="", bop_data=None, gdp_data=None):
     """Display debugging preview of cleaned but unnormalized data"""
     
     st.markdown("---")
@@ -1227,117 +1350,222 @@ def show_cleaned_data_preview(cleaned_data, key_suffix=""):
     **Note:** This is purely for debugging - no modifications are made to the data at this step.
     """)
     
-    # Data overview metrics
-    col1, col2, col3, col4 = st.columns(4)
-    
-    with col1:
-        st.metric("Total Rows", f"{cleaned_data.shape[0]:,}")
-    with col2:
-        st.metric("Total Columns", f"{cleaned_data.shape[1]:,}")
-    with col3:
-        countries = cleaned_data['COUNTRY'].nunique() if 'COUNTRY' in cleaned_data.columns else 0
-        st.metric("Countries", countries)
-    with col4:
-        years = cleaned_data['YEAR'].nunique() if 'YEAR' in cleaned_data.columns else 0
-        st.metric("Years", years)
-    
-    # Column structure analysis
-    with st.expander("📋 Column Structure Analysis", expanded=False):
+    # Show pre-join samples if raw data is available
+    if bop_data is not None and gdp_data is not None:
+        st.markdown("### 🔍 Pre-Join Sample View")
         
-        # Categorize columns
-        structural_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']
-        bop_cols = [col for col in cleaned_data.columns if ' - ' in col and col not in structural_cols]
-        gdp_cols = [col for col in cleaned_data.columns if col not in structural_cols + bop_cols and col not in ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']]
+        # Find a common country for sampling
+        if 'COUNTRY' in bop_data.columns and 'COUNTRY' in gdp_data.columns:
+            bop_countries = set(bop_data['COUNTRY'].unique())
+            gdp_countries = set(gdp_data['COUNTRY'].unique())
+            common_countries = list(bop_countries.intersection(gdp_countries))
+            
+            if common_countries:
+                # Default to first common country, but prefer specific ones for case studies
+                sample_country = common_countries[0]
+                if "Iceland" in common_countries:
+                    sample_country = "Iceland"
+                elif "Estonia, Republic of" in common_countries:
+                    sample_country = "Estonia, Republic of"
+                
+                # Allow user to choose country
+                selected_country = st.selectbox(
+                    "Choose country for pre-join sample:",
+                    common_countries,
+                    index=common_countries.index(sample_country),
+                    key=f"country_select_{key_suffix}"
+                )
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.markdown(f"**Sample BOP Data - {selected_country} (Before Join):**")
+                    bop_sample = bop_data[bop_data['COUNTRY'] == selected_country].head(8)
+                    if len(bop_sample) > 0:
+                        st.dataframe(bop_sample, use_container_width=True)
+                        st.caption(f"Showing {len(bop_sample)} rows")
+                    else:
+                        st.warning(f"No BOP data found for {selected_country}")
+                
+                with col2:
+                    st.markdown(f"**Sample GDP Data - {selected_country} (Before Join):**")
+                    gdp_sample = gdp_data[gdp_data['COUNTRY'] == selected_country].head(8)
+                    if len(gdp_sample) > 0:
+                        st.dataframe(gdp_sample, use_container_width=True)
+                        st.caption(f"Showing {len(gdp_sample)} rows")
+                    else:
+                        st.warning(f"No GDP data found for {selected_country}")
+                
+                # Show alignment status
+                if len(bop_sample) > 0 and len(gdp_sample) > 0:
+                    st.success(f"✅ {selected_country} data available in both datasets - ready for joining")
+                    
+                    # UNIT CONVERSION VALIDATION
+                    st.markdown("### 🔍 Unit Scaling Validation")
+                    
+                    col_val1, col_val2 = st.columns(2)
+                    
+                    with col_val1:
+                        if 'OBS_VALUE' in bop_sample.columns and 'SCALE' in bop_sample.columns:
+                            bop_values = bop_sample['OBS_VALUE'].dropna()
+                            bop_scale = bop_sample['SCALE'].iloc[0] if len(bop_sample) > 0 else "Unknown"
+                            if len(bop_values) > 0:
+                                bop_range = f"{bop_values.min():.2f} to {bop_values.max():.2f}"
+                                st.metric("BOP Value Range", bop_range, delta=f"Scale: {bop_scale}")
+                            else:
+                                st.metric("BOP Values", "No data", delta=f"Scale: {bop_scale}")
+                    
+                    with col_val2:
+                        if 'OBS_VALUE' in gdp_sample.columns and 'SCALE' in gdp_sample.columns:
+                            gdp_values = gdp_sample['OBS_VALUE'].dropna()
+                            gdp_scale = gdp_sample['SCALE'].iloc[0] if len(gdp_sample) > 0 else "Unknown"
+                            if len(gdp_values) > 0:
+                                gdp_range = f"{gdp_values.min():.2f} to {gdp_values.max():.2f}"
+                                st.metric("GDP Value Range", gdp_range, delta=f"Scale: {gdp_scale}")
+                            else:
+                                st.metric("GDP Values", "No data", delta=f"Scale: {gdp_scale}")
+                    
+                    # Scaling validation logic
+                    if len(bop_sample) > 0 and len(gdp_sample) > 0:
+                        bop_vals = bop_sample['OBS_VALUE'].dropna()
+                        gdp_vals = gdp_sample['OBS_VALUE'].dropna()
+                        
+                        if len(bop_vals) > 0 and len(gdp_vals) > 0:
+                            bop_max = abs(bop_vals).max()
+                            gdp_max = abs(gdp_vals).max()
+                            
+                            # Check if scaling appears correct
+                            if bop_max < 10000 and gdp_max < 100:  # Both in reasonable scaled ranges
+                                st.success("✅ Unit scaling appears correct - values in expected ranges")
+                            elif bop_max > 1000000 or gdp_max > 1000000000:  # Raw values detected
+                                st.warning("⚠️ Detected large values - may need scaling correction")
+                            else:
+                                st.info("📊 Values appear to be in mixed scaling - verify normalization")
+                        
+                else:
+                    st.warning(f"⚠️ {selected_country} missing in one or both datasets")
+                
+                st.info(f"**Countries available for join:** {len(common_countries)} total")
+            else:
+                st.warning("⚠️ No common countries found between BOP and GDP datasets")
         
-        col1, col2, col3 = st.columns(3)
+        st.markdown("---")
+    
+    # Data overview metrics (only show if we have joined data)
+    if cleaned_data is not None:
+        col1, col2, col3, col4 = st.columns(4)
         
         with col1:
-            st.markdown("**Structural Columns:**")
-            for col in structural_cols:
-                if col in cleaned_data.columns:
-                    st.markdown(f"✅ {col}")
-                else:
-                    st.markdown(f"❌ {col} (missing)")
-        
+            st.metric("Total Rows", f"{cleaned_data.shape[0]:,}")
         with col2:
-            st.markdown(f"**BOP Indicators ({len(bop_cols)}):**")
-            for col in bop_cols[:10]:  # Show first 10
-                st.markdown(f"• {col}")
-            if len(bop_cols) > 10:
-                st.markdown(f"... and {len(bop_cols) - 10} more")
-        
+            st.metric("Total Columns", f"{cleaned_data.shape[1]:,}")
         with col3:
-            st.markdown(f"**GDP/Economic Indicators ({len(gdp_cols)}):**")
-            for col in gdp_cols[:10]:  # Show first 10
-                st.markdown(f"• {col}")
-            if len(gdp_cols) > 10:
-                st.markdown(f"... and {len(gdp_cols) - 10} more")
+            countries = cleaned_data['COUNTRY'].nunique() if 'COUNTRY' in cleaned_data.columns else 0
+            st.metric("Countries", countries)
+        with col4:
+            years = cleaned_data['YEAR'].nunique() if 'YEAR' in cleaned_data.columns else 0
+            st.metric("Years", years)
     
-    # Data quality checks
-    with st.expander("🔍 Data Quality Checks", expanded=False):
-        
-        # Missing value analysis
-        missing_data = cleaned_data.isnull().sum()
-        missing_pct = (missing_data / len(cleaned_data)) * 100
-        
-        quality_issues = []
-        
-        # Check for completely empty columns
-        empty_cols = missing_data[missing_data == len(cleaned_data)].index.tolist()
-        if empty_cols:
-            quality_issues.append(f"⚠️ Completely empty columns: {len(empty_cols)}")
-        
-        # Check for high missing data
-        high_missing = missing_pct[missing_pct > 50].index.tolist()
-        if high_missing:
-            quality_issues.append(f"⚠️ Columns with >50% missing data: {len(high_missing)}")
-        
-        # Check for missing key columns
-        key_cols_missing = [col for col in ['COUNTRY', 'YEAR'] if col not in cleaned_data.columns]
-        if key_cols_missing:
-            quality_issues.append(f"❌ Missing key columns: {key_cols_missing}")
-        
-        if quality_issues:
-            st.warning("**Data Quality Issues Detected:**")
-            for issue in quality_issues:
-                st.markdown(issue)
-        else:
-            st.success("✅ **No major data quality issues detected**")
-        
-        # Show missing data summary
-        st.markdown("**Missing Data Summary (Top 10 columns):**")
-        missing_summary = pd.DataFrame({
-            'Column': missing_data.index,
-            'Missing_Count': missing_data.values,
-            'Missing_Percentage': missing_pct.values
-        }).sort_values('Missing_Count', ascending=False).head(10)
-        
-        st.dataframe(missing_summary, use_container_width=True, hide_index=True)
+    # Column structure analysis (only show if we have joined data)
+    if cleaned_data is not None:
+        with st.expander("📋 Column Structure Analysis", expanded=False):
+            
+            # Categorize columns
+            structural_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']
+            bop_cols = [col for col in cleaned_data.columns if ' - ' in col and col not in structural_cols]
+            gdp_cols = [col for col in cleaned_data.columns if col not in structural_cols + bop_cols and col not in ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']]
+            
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                st.markdown("**Structural Columns:**")
+                for col in structural_cols:
+                    if col in cleaned_data.columns:
+                        st.markdown(f"✅ {col}")
+                    else:
+                        st.markdown(f"❌ {col} (missing)")
+            
+            with col2:
+                st.markdown(f"**BOP Indicators ({len(bop_cols)}):**")
+                for col in bop_cols[:10]:  # Show first 10
+                    st.markdown(f"• {col}")
+                if len(bop_cols) > 10:
+                    st.markdown(f"... and {len(bop_cols) - 10} more")
+            
+            with col3:
+                st.markdown(f"**GDP/Economic Indicators ({len(gdp_cols)}):**")
+                for col in gdp_cols[:10]:  # Show first 10
+                    st.markdown(f"• {col}")
+                if len(gdp_cols) > 10:
+                    st.markdown(f"... and {len(gdp_cols) - 10} more")
     
-    # Sample data preview
-    st.markdown("**Sample Data Preview (First 20 rows):**")
+    # Data quality checks (only show if we have joined data)
+    if cleaned_data is not None:
+        with st.expander("🔍 Data Quality Checks", expanded=False):
+            
+            # Missing value analysis
+            missing_data = cleaned_data.isnull().sum()
+            missing_pct = (missing_data / len(cleaned_data)) * 100
+            
+            quality_issues = []
+            
+            # Check for completely empty columns
+            empty_cols = missing_data[missing_data == len(cleaned_data)].index.tolist()
+            if empty_cols:
+                quality_issues.append(f"⚠️ Completely empty columns: {len(empty_cols)}")
+            
+            # Check for high missing data
+            high_missing = missing_pct[missing_pct > 50].index.tolist()
+            if high_missing:
+                quality_issues.append(f"⚠️ Columns with >50% missing data: {len(high_missing)}")
+            
+            # Check for missing key columns
+            key_cols_missing = [col for col in ['COUNTRY', 'YEAR'] if col not in cleaned_data.columns]
+            if key_cols_missing:
+                quality_issues.append(f"❌ Missing key columns: {key_cols_missing}")
+            
+            if quality_issues:
+                st.warning("**Data Quality Issues Detected:**")
+                for issue in quality_issues:
+                    st.markdown(issue)
+            else:
+                st.success("✅ **No major data quality issues detected**")
+            
+            # Show missing data summary
+            st.markdown("**Missing Data Summary (Top 10 columns):**")
+            missing_summary = pd.DataFrame({
+                'Column': missing_data.index,
+                'Missing_Count': missing_data.values,
+                'Missing_Percentage': missing_pct.values
+            }).sort_values('Missing_Count', ascending=False).head(10)
+            
+            st.dataframe(missing_summary, use_container_width=True, hide_index=True)
     
-    # Show data with better formatting
-    display_data = cleaned_data.head(20)
-    
-    # Format numeric columns for better readability
-    numeric_cols = display_data.select_dtypes(include=[np.number]).columns
-    for col in numeric_cols:
-        if col in display_data.columns:
-            display_data[col] = display_data[col].round(4)
-    
-    st.dataframe(display_data, use_container_width=True)
-    
-    # Download option
-    csv_data = cleaned_data.to_csv(index=False)
-    st.download_button(
-        label="📥 Download Cleaned Data (CSV)",
-        data=csv_data,
-        file_name=f"cleaned_unnormalized_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
-        mime="text/csv",
-        key=f"download_cleaned_debug_{key_suffix}",
-        help="Download the cleaned but unnormalized dataset for external validation"
-    )
+    # Sample data preview (only show if we have joined data)
+    if cleaned_data is not None:
+        st.markdown("**Sample Data Preview (First 20 rows):**")
+        
+        # Show data with better formatting
+        display_data = cleaned_data.head(20)
+        
+        # Format numeric columns for better readability
+        numeric_cols = display_data.select_dtypes(include=[np.number]).columns
+        for col in numeric_cols:
+            if col in display_data.columns:
+                display_data[col] = display_data[col].round(4)
+        
+        st.dataframe(display_data, use_container_width=True)
+        
+        # Download option
+        csv_data = cleaned_data.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Cleaned Data (CSV)",
+            data=csv_data,
+            file_name=f"cleaned_unnormalized_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+            mime="text/csv",
+            key=f"download_cleaned_debug_{key_suffix}",
+            help="Download the cleaned but unnormalized dataset for external validation"
+        )
     
     st.markdown("---")
 

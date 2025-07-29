@@ -75,8 +75,23 @@ def process_case_study_2_data():
     # Convert values to numeric
     case_two_long['OBS_VALUE'] = pd.to_numeric(case_two_long['OBS_VALUE'], errors='coerce')
     
-    # Remove SCALE column if it exists (following Case Study 1 methodology)
+    # UNIT SCALING CORRECTION: Apply scaling based on SCALE metadata before dropping
     if 'SCALE' in case_two_long.columns:
+        print("🔧 Applying BOP unit scaling correction...")
+        
+        # Check for scaling patterns - Case Study 2 has smaller values already in millions
+        sample_values = case_two_long['OBS_VALUE'].dropna().head(1000)
+        max_val = abs(sample_values).max() if len(sample_values) > 0 else 0
+        
+        # Case Study 2 pattern: SCALE="Millions" and values are already scaled (small values)
+        if max_val > 1000000:  # Large values need scaling down
+            print("   - Converting raw dollar values to millions")
+            case_two_long.loc[case_two_long['SCALE'] == 'Millions', 'OBS_VALUE'] = \
+                case_two_long.loc[case_two_long['SCALE'] == 'Millions', 'OBS_VALUE'] / 1_000_000
+        else:
+            print("   - BOP data already in correct scale (millions)")
+        
+        # Now safe to drop SCALE column
         case_two_long = case_two_long.drop('SCALE', axis=1)
     
     # Pivot to wide format by indicator
@@ -93,12 +108,45 @@ def process_case_study_2_data():
     
     # Process GDP data
     print("🔧 Processing GDP data...")
-    gdp_clean = gdp_filtered[['COUNTRY', 'TIME_PERIOD', 'INDICATOR', 'OBS_VALUE']].copy()
+    gdp_clean = gdp_filtered[['COUNTRY', 'TIME_PERIOD', 'INDICATOR', 'OBS_VALUE', 'SCALE']].copy()
     gdp_clean['TIME_PERIOD'] = gdp_clean['TIME_PERIOD'].astype(int)  # GDP is annual
     gdp_clean['OBS_VALUE'] = pd.to_numeric(gdp_clean['OBS_VALUE'], errors='coerce')
     
-    # Pivot GDP data
+    # UNIT SCALING CORRECTION: Create scaled version for calculations but keep original for display
+    gdp_display_values = gdp_clean['OBS_VALUE'].copy()  # Keep original values for final dataset
+    
+    if 'SCALE' in gdp_clean.columns:
+        print("🔧 Applying GDP unit scaling correction...")
+        
+        # Check for scaling patterns
+        sample_values = gdp_clean['OBS_VALUE'].dropna().head(100)
+        max_val = abs(sample_values).max() if len(sample_values) > 0 else 0
+        
+        # GDP pattern: SCALE="Billions" but values are raw dollars (need division)
+        if max_val > 1000000000:  # Large values need scaling down
+            print("   - Converting raw dollar values to billions for calculations")
+            gdp_clean.loc[gdp_clean['SCALE'] == 'Billions', 'OBS_VALUE'] = \
+                gdp_clean.loc[gdp_clean['SCALE'] == 'Billions', 'OBS_VALUE'] / 1_000_000_000
+        else:
+            print("   - GDP data already in correct scale (billions)")
+        
+        # Drop SCALE column after correction
+        gdp_clean = gdp_clean.drop('SCALE', axis=1)
+    
+    # Pivot GDP data (scaled for calculations)
     gdp_pivoted = gdp_clean.pivot_table(
+        index=['COUNTRY', 'TIME_PERIOD'],
+        columns='INDICATOR',
+        values='OBS_VALUE',
+        aggfunc='first'
+    ).reset_index()
+    
+    # Create GDP dataset with original display values
+    gdp_display_clean = gdp_filtered[['COUNTRY', 'TIME_PERIOD', 'INDICATOR', 'OBS_VALUE']].copy()
+    gdp_display_clean['TIME_PERIOD'] = gdp_display_clean['TIME_PERIOD'].astype(int)
+    gdp_display_clean['OBS_VALUE'] = pd.to_numeric(gdp_display_clean['OBS_VALUE'], errors='coerce')
+    
+    gdp_display_pivoted = gdp_display_clean.pivot_table(
         index=['COUNTRY', 'TIME_PERIOD'],
         columns='INDICATOR',
         values='OBS_VALUE',
@@ -142,17 +190,36 @@ def process_case_study_2_data():
     print("📊 Normalizing BOP flows to annualized % of GDP...")
     normalized_data = merged_data[metadata_cols + [gdp_col]].copy()
     
-    # Handle scale issues - GDP is in billions, BOP likely in millions
+    # After scaling correction: GDP is in billions, BOP is in millions
     gdp_values = merged_data[gdp_col]
-    print(f"   - GDP range: ${gdp_values.min():.0f} to ${gdp_values.max():.0f}")
+    print(f"   - GDP range (billions): ${gdp_values.min():.2f} to ${gdp_values.max():.2f}")
     
     for col in indicator_cols:
         if col in merged_data.columns:
-            # Convert to % of GDP and annualize (multiply quarterly by 4)
-            normalized_data[f"{col}_PGDP"] = (merged_data[col] * 4 / merged_data[gdp_col]) * 100
+            # BOP is in millions, GDP is in billions
+            # Convert BOP millions to billions: BOP / 1000
+            # Then convert to % of GDP and annualize (multiply quarterly by 4)
+            normalized_data[f"{col}_PGDP"] = (merged_data[col] / 1000 * 4 / merged_data[gdp_col]) * 100
     
     # Update unit
     normalized_data['UNIT'] = "% of GDP (annualized)"
+    
+    # Replace scaled GDP values with original display values
+    print("🔄 Restoring original GDP values for display...")
+    gdp_display_merged = bop_pivoted[['COUNTRY', 'YEAR']].merge(
+        gdp_display_pivoted,
+        left_on=['COUNTRY', 'YEAR'],
+        right_on=['COUNTRY', 'TIME_PERIOD'],
+        how='left'
+    )
+    
+    if 'TIME_PERIOD' in gdp_display_merged.columns:
+        gdp_display_merged = gdp_display_merged.drop('TIME_PERIOD', axis=1)
+    
+    # Replace the scaled GDP column with original values
+    if gdp_col in gdp_display_merged.columns:
+        normalized_data[gdp_col] = gdp_display_merged[gdp_col]
+        print(f"   - GDP range (original): ${normalized_data[gdp_col].min():,.0f} to ${normalized_data[gdp_col].max():,.0f}")
     
     # Add Euro adoption timeline classification
     print("🗓️ Adding Euro adoption timeline classification...")
