@@ -1,230 +1,261 @@
-# Capital Flows Research Project Structure
+# Project Structure Documentation
 
-## 🎯 Project Overview
+This document provides a comprehensive breakdown of the Capital Flows Research Analysis project structure, explaining the purpose and contents of each directory and major file.
 
-This research project examines capital flow volatility across different economies, time periods, and policy regimes to understand implications for monetary policy, currency unions, and financial stability.
-
-## 📁 Recommended Project Structure
+## Directory Overview
 
 ```
 analyzing-capital-flows/
-├── README.md                           # Project overview and setup
-├── CLAUDE.md                          # Claude AI instructions (existing)
-├── PROJECT_STRUCTURE.md               # This file
-├── requirements.txt                   # Python dependencies
-├── config/
-│   ├── data_sources.yaml             # Data source configurations
-│   ├── country_groups.yaml           # Country grouping definitions
-│   └── analysis_settings.yaml        # Default analysis parameters
-├── data/
-│   ├── raw/                          # Raw downloaded data
-│   │   ├── imf_bop/                  # IMF Balance of Payments
-│   │   ├── imf_weo/                  # IMF World Economic Outlook
-│   │   ├── oecd_fdi/                 # OECD FDI data
-│   │   └── bis_banking/              # BIS Banking data
-│   ├── processed/                    # Cleaned and harmonized data
-│   │   ├── case_study_1/             # Iceland vs Eurozone
-│   │   ├── case_study_2/             # Brexit analysis
-│   │   └── case_study_3/             # Emerging markets
-│   └── external/                     # External datasets (VIX, policy vars)
-├── src/
-│   ├── core/                         # Core analysis modules (existing)
-│   │   ├── config.py
-│   │   ├── data_processor.py
-│   │   ├── statistical_tests.py
-│   │   └── visualizer.py
-│   ├── data_collection/              # Data downloading and APIs
-│   │   ├── imf_api.py               # IMF data downloader
-│   │   ├── oecd_api.py              # OECD data downloader
-│   │   └── data_validator.py        # Data quality checks
-│   ├── case_studies/                 # Individual case study modules
-│   │   ├── case_study_1/            # Iceland vs Eurozone (existing)
-│   │   ├── case_study_2/            # Brexit analysis
-│   │   └── case_study_3/            # Emerging markets
-│   ├── comparative/                  # Cross-case analysis
-│   │   ├── meta_analysis.py         # Effect size comparisons
-│   │   └── policy_synthesis.py      # Policy recommendations
-│   └── dashboard/                    # Streamlit applications
-│       ├── main_app.py              # Multi-tab main dashboard (new)
-│       ├── simple_report_app.py     # Case Study 1 (existing, preserved)
-│       ├── templates/               # Dashboard templates (existing)
-│       └── components/              # Reusable UI components
-├── analysis/                         # Analysis notebooks and scripts
-│   ├── exploratory/                 # Initial data exploration
-│   ├── case_study_1/               # Iceland analysis (existing)
-│   ├── case_study_2/               # Brexit analysis
-│   └── comparative/                # Cross-case comparisons
-├── reports/                         # Generated reports and papers
-│   ├── case_study_1/               # Iceland vs Eurozone findings
-│   ├── case_study_2/               # Brexit analysis findings
-│   ├── working_papers/             # Academic papers
-│   └── policy_briefs/              # Policy-focused summaries
-├── tests/                          # Unit and integration tests
-│   ├── test_data_processing.py
-│   ├── test_statistical_methods.py
-│   └── test_dashboard_components.py
-└── docs/                           # Documentation
-    ├── methodology.md              # Statistical methods documentation
-    ├── data_dictionary.md          # Variable definitions
-    ├── api_documentation.md        # API usage guides
-    └── user_guide.md              # Dashboard user instructions
+├── src/                           # Source code and analysis
+├── data/                         # Raw datasets and processed outputs  
+├── output/                       # Generated visualizations and reports
+├── docs/                         # Documentation files (this file)
+├── Configuration files           # Project configuration and metadata
+└── Documentation files           # README, CLAUDE.md, etc.
 ```
 
-## 🚀 Formatting and Organization Suggestions
+## Detailed Structure
 
-### 1. **Standardized Naming Conventions**
+### `/src/` - Source Code and Analysis
+
+The main source directory contains all analysis code, organized by functionality and case study.
+
+#### `/src/core/` - Core Python Modules
+
+**Purpose**: Foundational modules for data processing, statistical analysis, and visualization that are shared across multiple case studies.
+
 ```
-# Case Studies
-case_study_1_iceland_eurozone/
-case_study_2_brexit_impact/
-case_study_3_emerging_markets/
-
-# Files
-iceland_vs_eurozone_analysis.py
-brexit_volatility_analysis.py
-emerging_markets_comparison.py
-
-# Variables
-bop_flows_pgdp          # Balance of payments as % of GDP
-volatility_test_results # F-test results
-policy_timeline_events  # Brexit timeline events
+src/core/
+├── config.py                     # Central configuration management
+├── data_processor.py             # Data pipeline and BOP processing  
+├── statistical_tests.py          # Statistical analysis and hypothesis testing
+└── visualizer.py                 # Visualization and export functionality
 ```
 
-### 2. **Modular Dashboard Architecture**
-```python
-# main_app.py - Master dashboard with tabs
-# Each case study as separate module:
-from case_studies.iceland_eurozone import run_analysis as iceland_analysis
-from case_studies.brexit_impact import run_analysis as brexit_analysis
-from case_studies.emerging_markets import run_analysis as emerging_analysis
+**Key Files**:
+
+- **`config.py`**: 
+  - Project paths and directory structure
+  - Statistical test parameters (significance levels, test types)
+  - Visualization settings (colors, themes, export formats)
+  - Streamlit page configuration
+
+- **`data_processor.py`**:
+  - `DataProcessor`: Base class for data operations
+  - `BOPDataProcessor`: Specialized Balance of Payments data handling
+  - Data validation, cleaning, and transformation pipelines
+  - GDP normalization and country grouping logic
+
+- **`statistical_tests.py`**:
+  - `StatisticalAnalyzer`: Descriptive statistics and data summarization
+  - `VolatilityTester`: F-tests for variance equality, t-tests for means
+  - `EffectSizeCalculator`: Cohen's d and Hedges' g calculations
+  - Comprehensive statistical reporting with multiple significance levels
+
+- **`visualizer.py`**:
+  - `BaseVisualizer`: Common plotting functionality
+  - `StatisticalVisualizer`: Specialized plots for statistical comparisons
+  - Support for matplotlib and Plotly outputs
+  - Export capabilities in PNG, SVG, PDF formats
+
+#### `/src/case_study_one/` - Iceland vs Eurozone Analysis
+
+**Purpose**: Complete analysis comparing Iceland's capital flow volatility to Eurozone countries, examining the potential benefits of Euro adoption.
+
+```
+src/case_study_one/
+├── Cleaning Case Study 1.qmd                  # Main R/Quarto analysis document
+├── Case_Study_1_Report_Template.ipynb         # Jupyter notebook template
+├── hypothesis_test_results.csv                # Statistical test results
+└── comprehensive_summary_table.csv            # Summary statistics
 ```
 
-### 3. **Configuration Management**
-```yaml
-# config/data_sources.yaml
-imf_bop:
-  base_url: "http://dataservices.imf.org/REST/SDMX_JSON.svc/"
-  datasets: ["BOP", "BOPSFSR"]
-  frequency: "Q"  # Quarterly
+**Key Files**:
 
-# config/country_groups.yaml
-eurozone_original:
-  - Austria
-  - Belgium
-  - Finland
-  # ... etc
+- **`Cleaning Case Study 1.qmd`**: 
+  - Complete R/Quarto analysis with literate programming
+  - Data import, cleaning, and statistical analysis
+  - Automated report generation with embedded results
+  - Publication-ready tables and visualizations
 
-brexit_analysis:
-  treatment: ["United Kingdom"]
-  control: ["Germany", "France", "Netherlands"]
+- **`hypothesis_test_results.csv`**: 
+  - F-test results for variance equality across all indicators
+  - Multiple significance levels (0.1%, 1%, 5%, 10%)
+  - Effect sizes and practical significance measures
+
+- **`comprehensive_summary_table.csv`**: 
+  - Descriptive statistics by country group and indicator
+  - Means, standard deviations, coefficients of variation
+  - Sample sizes and data coverage information
+
+#### `/src/dashboard/` - Interactive Web Applications
+
+**Purpose**: Streamlit-based web applications providing interactive access to analysis results and real-time statistical computation.
+
+```
+src/dashboard/
+├── main_app.py                   # Multi-tab master dashboard
+├── simple_report_app.py          # Case Study 1 dashboard implementation
+├── case_study_2_euro_adoption.py # Baltic countries Euro adoption analysis
+└── __pycache__/                  # Python bytecode cache
 ```
 
-### 4. **Data Pipeline Automation**
-```python
-# src/data_collection/data_pipeline.py
-class DataPipeline:
-    def download_latest_data()
-    def clean_and_process()
-    def validate_quality()
-    def update_case_studies()
+**Key Files**:
+
+- **`main_app.py`**: 
+  - Master dashboard with project overview
+  - Multi-tab interface integrating all case studies
+  - Data processing pipeline documentation
+  - Navigation between different analyses
+
+- **`simple_report_app.py`**: 
+  - Complete Case Study 1 interactive implementation
+  - Real-time parameter adjustment and analysis
+  - Statistical results tables and visualizations
+  - HTML report generation and export capabilities
+
+- **`case_study_2_euro_adoption.py`**: 
+  - Baltic countries before/after Euro adoption analysis
+  - Interactive country selection and time period options
+  - Crisis period inclusion/exclusion toggle
+  - Comprehensive statistical testing and visualization
+
+#### `/src/data_processor_case_study_2.py` - Euro Adoption Processor
+
+**Purpose**: Specialized data processor for Case Study 2, handling the complex timeline requirements of Euro adoption analysis.
+
+**Key Features**:
+- Asymmetric time window analysis (maximizes available data)
+- Dual crisis exclusion (Global Financial Crisis + COVID-19)
+- Euro adoption year inclusion in post-adoption periods
+- Generates both full series and crisis-excluded datasets
+
+### `/data/` - Data Files
+
+**Purpose**: All raw datasets, processed outputs, and reference data used in the analysis.
+
+```
+data/
+├── Raw IMF Data
+│   ├── case_study_1_data_july_24_2025.csv                    # IMF BOP quarterly data
+│   ├── case_study_2_data_july_27_2025.csv                    # Baltic countries BOP data
+│   ├── dataset_2025-07-24T18_28_31.898465539Z_...csv         # IMF GDP annual data
+│   └── Table_DataDefinition_Sources_StijnAndrew_March22_2017.xlsx  # Metadata/definitions
+├── Processed Case Study 1 Data
+│   └── [Generated during analysis - various CSV outputs]
+├── Processed Case Study 2 Data
+│   ├── case_study_2_euro_adoption_data.csv                   # Full series dataset
+│   ├── case_study_2_euro_adoption_data_crisis_excluded.csv   # Crisis-excluded dataset
+│   └── case_study_2_gdp_data.csv                             # GDP reference data
 ```
 
-### 5. **Reproducible Analysis**
-```python
-# Each case study follows template:
-class CaseStudyTemplate:
-    def load_data()
-    def process_data() 
-    def run_analysis()
-    def generate_visualizations()
-    def export_results()
-    def generate_report()
+**Data Characteristics**:
+- **Coverage**: 1999-2024 for most series, quarterly frequency for BOP, annual for GDP
+- **Format**: All monetary values normalized to "% of GDP (annualized)"
+- **Quality**: Missing value handling, outlier management, validation checks
+- **Sources**: IMF Balance of Payments Statistics, IMF World Economic Outlook
+
+### `/output/` - Generated Content
+
+**Purpose**: Automatically generated visualizations, reports, and analysis outputs.
+
+```
+output/
+├── charts/                       # Generated visualizations
+├── reports/                      # HTML and PDF reports  
+├── statistical_tables/           # CSV exports of results
+└── presentations/                # Presentation-ready materials
 ```
 
-## 📊 Suggested Case Study Extensions
+**Content Types**:
+- **Charts**: Time series plots, boxplots, statistical comparisons
+- **Reports**: HTML documents with embedded analysis and results
+- **Tables**: Statistical test results, summary statistics, effect sizes
+- **Presentations**: Publication-ready figures and summary materials
 
-### Case Study 2: Brexit Impact Analysis
-- **Pre/Post Brexit volatility comparison**
-- **Event study around key Brexit dates**
-- **Sectoral analysis (banking vs portfolio flows)**
-- **Control group: Non-Brexit EU countries**
+### Configuration Files
 
-### Case Study 3: Emerging Markets Panel
-- **Cross-country volatility determinants**
-- **Institutional quality impacts**
-- **Global financial cycle effects**
-- **Policy regime comparisons**
+**Purpose**: Project configuration, dependency management, and development environment setup.
 
-### Case Study 4: COVID-19 Impact (Future)
-- **Pandemic shock transmission**
-- **Policy response effectiveness**
-- **Recovery pattern analysis**
-- **Structural break identification**
+- **`analyzing-capital-flows.Rproj`**: RStudio project configuration
+  - 2-space indentation, UTF-8 encoding
+  - Code indexing and Quarto integration
+  - R package management settings
 
-### Case Study 5: Central Bank Digital Currencies (Future)
-- **CBDC pilot program impacts**
-- **Cross-border payment flows**
-- **Financial stability implications**
+- **`requirements.txt`**: Python dependency specifications
+  - Streamlit for web applications
+  - Pandas/NumPy for data analysis
+  - SciPy for statistical testing
+  - Matplotlib/Seaborn/Plotly for visualization
 
-## 🛠️ Technical Recommendations
+- **`.gitignore`**: Version control exclusions
+  - Python cache files, R workspace data
+  - Large output files, temporary analysis results
 
-### 1. **Version Control Strategy**
-```
-main branch:     Stable, deployed dashboard
-develop branch:  Integration of new features
-feature branches: Individual case studies
-hotfix branches: Critical bug fixes
-```
+### Documentation Files
 
-### 2. **Testing Framework**
-```python
-# tests/test_case_study_1.py
-def test_data_loading()
-def test_statistical_calculations() 
-def test_visualization_generation()
-def test_report_generation()
-```
+**Purpose**: Project documentation, development guidance, and user instructions.
 
-### 3. **Documentation Standards**
-- **Methodology docs:** Statistical methods, assumptions, limitations
-- **Data dictionary:** Variable definitions, sources, transformations
-- **User guides:** Dashboard navigation, interpretation of results
-- **API docs:** For programmatic access to analysis functions
+- **`README.md`**: Primary project documentation
+  - Installation instructions, quick start guide
+  - Project overview and research findings
+  - Detailed structure and module descriptions
 
-### 4. **Deployment Options**
-- **Streamlit Cloud:** Easy deployment for public access
-- **Docker containers:** Reproducible environments
-- **GitHub Pages:** Static documentation hosting
-- **Academic servers:** Institution-specific deployment
+- **`CLAUDE.md`**: Claude Code interaction guidelines
+  - Development environment setup
+  - Code patterns and conventions
+  - Common tasks and troubleshooting
 
-## 📈 Progressive Development Plan
+- **`PROJECT_STRUCTURE.md`**: This file
+  - Comprehensive directory breakdown
+  - File purposes and relationships
+  - Development workflow guidance
 
-### Phase 1: Foundation (Current)
-- ✅ Case Study 1 complete
-- ✅ Core analysis framework
-- ✅ Dashboard infrastructure
+## Data Flow Architecture
 
-### Phase 2: Expansion (Q2 2024)
-- 🔄 Brexit impact analysis
-- 🔄 Multi-tab dashboard integration
-- 🔄 Enhanced data pipeline
+### Processing Pipeline
 
-### Phase 3: Synthesis (Q3 2024)
-- 📋 Emerging markets analysis
-- 📋 Comparative analysis framework
-- 📋 Policy recommendation engine
+1. **Raw Data** (`/data/` IMF files) 
+   ↓
+2. **Core Processing** (`/src/core/data_processor.py`)
+   ↓  
+3. **Case-Specific Processing** (`/src/data_processor_case_study_2.py`, R/Quarto)
+   ↓
+4. **Statistical Analysis** (`/src/core/statistical_tests.py`)
+   ↓
+5. **Visualization** (`/src/core/visualizer.py`, dashboard apps)
+   ↓
+6. **Output Generation** (`/output/` directory)
 
-### Phase 4: Publication (Q4 2024)
-- 📋 Academic paper preparation
-- 📋 Policy brief generation
-- 📋 Public dashboard launch
+### Analysis Workflow
 
-## 🎯 Success Metrics
+1. **Interactive Analysis**: Streamlit dashboards (`/src/dashboard/`)
+2. **Batch Processing**: R/Quarto documents (`/src/case_study_one/`)
+3. **Data Regeneration**: Python processors (`/src/data_processor_case_study_2.py`)
+4. **Result Export**: Multiple formats via core modules
 
-- **Academic Impact:** Citations, conference presentations
-- **Policy Relevance:** Central bank usage, policy citations
-- **Technical Quality:** Code reliability, reproducibility
-- **User Engagement:** Dashboard usage statistics
-- **Research Output:** Working papers, policy briefs
+## Development Workflow
 
-This structure provides a scalable, maintainable framework for expanding the capital flows research project while preserving the excellent work already completed in Case Study 1.
+### Adding New Analysis
+
+1. **Data Processing**: Extend or create new processor in `/src/core/` or case-specific
+2. **Statistical Methods**: Add new tests to `/src/core/statistical_tests.py`
+3. **Visualization**: Extend `/src/core/visualizer.py` with new chart types
+4. **Dashboard Integration**: Create new tab in `/src/dashboard/main_app.py`
+5. **Documentation**: Update relevant documentation files
+
+### File Naming Conventions
+
+- **Data Files**: `case_study_[N]_[description]_[date].csv`
+- **Processing Scripts**: `data_processor_case_study_[N].py`  
+- **Dashboard Apps**: `[case_study_name]_[functionality].py`
+- **Output Files**: `[case_study]_[analysis_type]_[timestamp].[ext]`
+
+### Version Control Strategy
+
+- **Main Branch**: Stable, working analysis code
+- **Feature Branches**: Individual analysis enhancements
+- **Data Versioning**: Date-stamped raw data files
+- **Output Exclusion**: Generated files excluded from version control
+
+This structure provides a scalable foundation for expanding the research to additional case studies while maintaining code quality and analytical rigor.

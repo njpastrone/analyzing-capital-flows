@@ -1,172 +1,220 @@
 # Capital Flows Research Dashboard
 
-An interactive Streamlit dashboard for analyzing capital flow volatility between country groups using OOP architecture.
+Interactive Streamlit web applications for analyzing capital flow volatility across different monetary regimes, with specialized implementations for multiple case studies.
 
-## Features
+## Dashboard Applications
 
-- **Template-based Analysis**: Reusable templates for different types of research
-- **Interactive Interface**: Easy-to-use web interface with file uploads and parameter selection
-- **Comprehensive Statistics**: Descriptive statistics, F-tests, volatility measures
-- **Rich Visualizations**: Both static (matplotlib) and interactive (plotly) charts
-- **Export Capabilities**: Export results in multiple formats (CSV, Excel, PDF)
-- **Modular Architecture**: Clean OOP design for extensibility
+### 1. Master Dashboard (`main_app.py`)
+**Purpose**: Multi-tab interface integrating all project components
 
-## Quick Start
+**Features**:
+- Project overview with research questions and findings
+- Data processing pipeline documentation  
+- Navigation between different case studies
+- Integrated access to all analysis tools
 
-### 1. Install Dependencies
-
+**Usage**:
 ```bash
-cd src/dashboard
-pip install -r requirements.txt
+streamlit run src/dashboard/main_app.py
 ```
 
-### 2. Run the Dashboard
+### 2. Case Study 1 Dashboard (`simple_report_app.py`)
+**Purpose**: Iceland vs Eurozone volatility comparison analysis
 
-```bash
-streamlit run app.py
-```
+**Features**:
+- Interactive parameter selection (significance levels, group definitions)
+- Real-time statistical computation and hypothesis testing
+- Multiple visualization types (boxplots, time series, statistical comparisons)
+- HTML report generation with embedded analysis
+- CSV/Excel export capabilities
 
-### 3. Access the Interface
+**Key Capabilities**:
+- F-tests for variance equality across 13 capital flow indicators
+- Descriptive statistics with multiple significance levels
+- Interactive chart exploration with Plotly integration
+- Publication-ready export formats
 
-Open your browser to `http://localhost:8501`
+### 3. Case Study 2 Dashboard (`case_study_2_euro_adoption.py`)
+**Purpose**: Baltic countries Euro adoption before/after analysis
 
-## Usage Guide
+**Features**:
+- Country selection (Estonia, Latvia, Lithuania)
+- Dual study versions:
+  - **Full Series**: All available data with asymmetric time windows
+  - **Crisis-Excluded**: Removes GFC (2008-2010) and COVID-19 (2020-2022) periods
+- Comprehensive statistical testing and visualization
+- Timeline-specific analysis with adoption year inclusion
 
-### Volatility Analysis
+**Interactive Elements**:
+- Study version toggle (Full vs Crisis-Excluded)
+- Country-specific analysis selection
+- Crisis period visualization with shaded exclusion zones
+- Downloadable results in multiple formats
 
-1. **Load Data**:
-   - Upload BOP (Balance of Payments) CSV file
-   - Upload GDP CSV file
-   - Or use default Case Study 1 files
+## Architecture and Design
 
-2. **Configure Groups**:
-   - Choose preset (Iceland vs Eurozone) or create custom groups
-   - Define countries for each group
-   - Set processing options
-
-3. **Run Analysis**:
-   - Select primary and comparison groups
-   - Choose significance level
-   - Execute volatility analysis
-
-4. **View Results**:
-   - Statistical summary with key findings
-   - Detailed test results table
-   - Multiple visualization types
-
-5. **Export**:
-   - Download results in CSV/Excel format
-   - Save visualizations as images
-
-## Dashboard Structure
-
+### Modular Structure
 ```
 dashboard/
-├── app.py                    # Main Streamlit application
-├── components/               # UI components (future expansion)
-├── templates/
-│   └── case_study_template.py   # Base template classes
-└── requirements.txt         # Python dependencies
-
-core/
-├── config.py                # Configuration settings
-├── data_processor.py        # Data loading and processing
-├── statistical_tests.py     # Statistical analysis classes
-└── visualizer.py           # Visualization classes
+├── main_app.py                   # Master multi-tab dashboard
+├── simple_report_app.py          # Case Study 1 implementation
+├── case_study_2_euro_adoption.py # Baltic Euro adoption analysis
+├── components/                   # Reusable UI components (future)
+├── templates/                    # Analysis templates
+│   └── case_study_template.py    # Base template classes
+└── __pycache__/                  # Python bytecode cache
 ```
 
-## Template System
-
-### VolatilityAnalysisTemplate
-
-Specialized template for capital flow volatility analysis:
-
-- **Data Processing**: BOP and GDP data cleaning and normalization
-- **Group Creation**: Flexible country grouping system
-- **Statistical Tests**: F-tests for variance equality
-- **Visualizations**: Boxplots, time series, interactive charts
-
-### Creating New Templates
-
-1. Inherit from `CaseStudyTemplate`
-2. Implement required abstract methods:
-   - `load_data()`
-   - `process_data()`
-   - `run_analysis()`
-   - `generate_visualizations()`
+### Shared Functionality
+All dashboards utilize the core modules:
+- `../core/config.py`: Configuration management
+- `../core/data_processor.py`: Data pipeline and processing
+- `../core/statistical_tests.py`: Statistical analysis framework
+- `../core/visualizer.py`: Visualization and export utilities
 
 ## Key Features
 
-### 1. Data Processing
-- Automatic BOP indicator name creation
-- GDP normalization (% of GDP, annualized)
-- Flexible country grouping
-- Data validation and error handling
+### 1. Statistical Rigor
+- **F-Tests**: Variance equality testing across groups/periods
+- **Multiple Significance Levels**: 0.1%, 1%, 5%, 10% with proper reporting
+- **Effect Sizes**: Cohen's d and Hedges' g for practical significance
+- **Robustness Checks**: Crisis period exclusion and sensitivity analysis
 
-### 2. Statistical Analysis
-- F-tests for equal variances
-- Comprehensive descriptive statistics
-- Effect size calculations
-- Multiple significance levels
+### 2. Interactive Analysis
+- **Real-Time Computation**: Dynamic parameter adjustment with instant results
+- **Parameter Flexibility**: User-controlled significance levels and group definitions
+- **Data Upload**: Support for custom dataset analysis
+- **Session Management**: Unique widget keys preventing UI conflicts
 
-### 3. Visualizations
-- Side-by-side boxplots for means and standard deviations
-- Time series plots with group averages
-- Interactive Plotly charts
-- Customizable styling and colors
+### 3. Professional Visualization
+- **Time Series Plots**: Capital flow trends with policy regime indicators
+- **Statistical Comparisons**: Side-by-side boxplots with reference lines
+- **Interactive Charts**: Plotly-based exploration with zoom and filtering
+- **Crisis Period Visualization**: Shaded exclusion zones for temporal analysis
 
-### 4. Export Options
-- CSV and Excel data export
-- High-resolution image export
-- Comprehensive results packaging
+### 4. Export Capabilities
+- **Multiple Formats**: PNG, SVG, PDF for visualizations
+- **Data Export**: CSV and Excel formats for statistical results
+- **HTML Reports**: Complete analysis reports with embedded results
+- **Publication Quality**: High-resolution outputs for academic use
 
-## Configuration
+## Technical Implementation
 
-Edit `core/config.py` to customize:
+### Session State Management
+- Unique widget keys prevent DuplicateWidgetID errors
+- Session-based persistence for user selections
+- Robust handling of app reruns and version switching
 
-- Default file paths
-- Plot styling and colors
-- Statistical test parameters
-- Export formats
+### Data Processing Pipeline
+1. **Import**: Raw IMF datasets with validation
+2. **Clean**: Extract indicators, handle missing values
+3. **Transform**: Wide format conversion, GDP normalization
+4. **Group**: Country groupings and time period classifications
+5. **Analyze**: Statistical testing and result generation
+6. **Visualize**: Chart generation and interactive display
 
-## Example Usage
-
+### Widget Key Strategy
 ```python
-# Initialize template
-template = VolatilityAnalysisTemplate("Iceland vs Eurozone")
-
-# Load data
-template.load_data("bop_data.csv", "gdp_data.csv")
-
-# Process with group definitions
-groups = {
-    "Iceland": ["Iceland"],
-    "Eurozone": ["Austria", "Belgium", "Finland", "France", "Germany", 
-                "Ireland", "Italy", "Netherlands", "Portugal", "Spain"]
-}
-template.process_data(group_definitions=groups)
-
-# Run analysis
-results = template.run_analysis(group1="Iceland", group2="Eurozone")
-
-# Generate visualizations
-visualizations = template.generate_visualizations()
-
-# Export results
-template.export_results("output/", formats=['csv', 'excel'])
+# Comprehensive uniqueness system
+session_id = f"{base_timestamp}_{random_suffix}_{study_version}_{country}"
+widget_key = f"download_{type}_{country}_{indicator}_{version}_{session_id}"
 ```
+
+## Running the Dashboards
+
+### Prerequisites
+```bash
+# Install dependencies (from project root)
+pip install -r requirements.txt
+```
+
+### Individual Applications
+```bash
+# Master dashboard (recommended entry point)
+streamlit run src/dashboard/main_app.py
+
+# Case Study 1 (Iceland vs Eurozone)
+streamlit run src/dashboard/simple_report_app.py
+
+# Case Study 2 (Baltic Euro adoption)
+streamlit run src/dashboard/case_study_2_euro_adoption.py
+```
+
+### Data Requirements
+- **Case Study 1**: Uses processed data from R/Quarto analysis
+- **Case Study 2**: Requires running `src/data_processor_case_study_2.py` to generate datasets
+- **Custom Analysis**: Upload BOP and GDP CSV files in IMF format
+
+## Configuration and Customization
+
+### Styling and Themes
+Edit `../core/config.py` to customize:
+- Color schemes and visualization themes
+- Export formats and resolution settings
+- Statistical test parameters
+- Default file paths
+
+### Adding New Analysis
+1. **Create New Dashboard**: Follow existing pattern in new Python file
+2. **Implement Core Functions**: Data loading, processing, analysis, visualization
+3. **Integrate**: Add new tab to `main_app.py` for navigation
+4. **Document**: Update this README with new functionality
+
+## Data Quality and Validation
+
+### Input Validation
+- **Format Checking**: Verify CSV structure and required columns
+- **Missing Value Handling**: Graceful degradation with user notifications
+- **Data Range Validation**: Logical checks for years, countries, indicators
+
+### Error Handling
+- **User-Friendly Messages**: Clear error explanations with suggested fixes
+- **Fallback Options**: Default settings when user input is invalid
+- **Debug Information**: Detailed logging for development and troubleshooting
+
+## Performance Optimization
+
+### Caching Strategy
+- **Data Loading**: Cache processed datasets to avoid recomputation
+- **Statistical Results**: Cache test results for parameter changes
+- **Visualization**: Efficient chart generation with minimal redrawing
+
+### Memory Management
+- **Large Dataset Handling**: Chunked processing for memory efficiency
+- **Session Cleanup**: Proper disposal of temporary objects
+- **Resource Monitoring**: Optional memory usage tracking
 
 ## Future Enhancements
 
-- Additional analysis templates (mean comparison, correlation analysis)
-- Real-time data fetching from APIs
-- Advanced statistical tests
-- Custom report generation
-- Multi-language support
+### Planned Features
+- **Advanced Statistical Tests**: Panel data analysis, time series tests
+- **Real-Time Data**: API integration for live IMF data feeds
+- **Multi-Language Support**: Internationalization for broader access
+- **Custom Report Templates**: User-defined report generation
 
-## Support
+### Extensibility
+- **Plugin Architecture**: Framework for third-party analysis modules
+- **API Endpoints**: RESTful API for programmatic access
+- **Batch Processing**: Command-line interface for automated analysis
 
-For questions or issues:
-1. Check the logs in the Streamlit interface
-2. Verify data file formats match expected structure
-3. Ensure all dependencies are installed correctly
+## Support and Troubleshooting
+
+### Common Issues
+1. **Widget Key Errors**: Clear browser cache and refresh application
+2. **Data Loading Failures**: Verify file formats match IMF structure
+3. **Statistical Test Errors**: Check data completeness and sample sizes
+4. **Visualization Problems**: Ensure all required dependencies are installed
+
+### Debug Mode
+Enable debug mode by setting `debug=True` in the application configuration for:
+- Detailed error messages and stack traces
+- Data processing step-by-step logging
+- Performance timing information
+- Memory usage monitoring
+
+### Performance Monitoring
+- **Response Times**: Track analysis computation duration
+- **Memory Usage**: Monitor peak memory consumption
+- **User Interactions**: Log user behavior for UX improvements
+
+This dashboard suite provides a comprehensive, user-friendly interface for sophisticated capital flows research while maintaining the statistical rigor required for academic publication.
