@@ -268,6 +268,39 @@ def create_boxplot_data(data, indicators):
     
     return pd.DataFrame(stats_data)
 
+def create_individual_country_boxplot_data(data, indicators):
+    """Create dataset for individual country boxplot visualization"""
+    stats_data_individual = []
+    
+    # Get list of Eurozone countries (exclude Iceland)
+    eurozone_countries = data[data['GROUP'] == 'Eurozone']['COUNTRY'].unique().tolist()
+    all_countries = ['Iceland'] + sorted(eurozone_countries)
+    
+    for country in all_countries:
+        country_data = data[data['COUNTRY'] == country]
+        
+        for indicator in indicators:
+            values = country_data[indicator].dropna()
+            if len(values) > 1:
+                mean_val = values.mean()
+                std_val = values.std()
+                
+                stats_data_individual.append({
+                    'COUNTRY': country,
+                    'Indicator': indicator.replace('_PGDP', ''),
+                    'Statistic': 'Mean',
+                    'Value': mean_val
+                })
+                
+                stats_data_individual.append({
+                    'COUNTRY': country,
+                    'Indicator': indicator.replace('_PGDP', ''),
+                    'Statistic': 'Standard Deviation', 
+                    'Value': std_val
+                })
+    
+    return pd.DataFrame(stats_data_individual)
+
 def perform_volatility_tests(data, indicators):
     """Perform F-tests comparing Iceland vs Eurozone volatility"""
     test_results = []
@@ -356,6 +389,7 @@ def main():
     # Calculate all statistics
     group_stats = calculate_group_statistics(final_data, 'GROUP', analysis_indicators)
     boxplot_data = create_boxplot_data(final_data, analysis_indicators)
+    individual_country_data = create_individual_country_boxplot_data(final_data, analysis_indicators)
     test_results = perform_volatility_tests(final_data, analysis_indicators)
     
     # 1. Summary Statistics and Boxplots
@@ -467,6 +501,153 @@ def main():
         """)
     
     st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than Eurozone on average")
+    
+    # 1b. Individual Country Comparisons
+    st.subheader("1b. Individual Country Comparisons: Iceland vs Each Eurozone Country")
+    
+    st.markdown("""
+    **Enhanced Analysis:** Rather than comparing Iceland to the Eurozone as an aggregate group, 
+    this section compares Iceland's values to each individual Eurozone country separately.
+    """)
+    
+    # Prepare data for individual country boxplots
+    mean_data_individual = individual_country_data[individual_country_data['Statistic'] == 'Mean']
+    std_data_individual = individual_country_data[individual_country_data['Statistic'] == 'Standard Deviation']
+    
+    # Calculate median values for ordering
+    mean_medians = mean_data_individual.groupby('COUNTRY')['Value'].median().sort_values(ascending=False)
+    std_medians = std_data_individual.groupby('COUNTRY')['Value'].median().sort_values(ascending=False)
+    
+    # Create boxplots ordered by descending median
+    fig3, ax3 = plt.subplots(1, 1, figsize=(10, 4))
+    
+    # Prepare data for means boxplot, ordered by median
+    mean_boxplot_data = []
+    mean_boxplot_labels = []
+    iceland_mean_position = None
+    
+    for i, (country, _) in enumerate(mean_medians.items()):
+        country_means = mean_data_individual[mean_data_individual['COUNTRY'] == country]['Value']
+        mean_boxplot_data.append(country_means)
+        mean_boxplot_labels.append(country)
+        if country == 'Iceland':
+            iceland_mean_position = i
+    
+    # Create means boxplot
+    bp3 = ax3.boxplot(mean_boxplot_data, labels=mean_boxplot_labels, patch_artist=True)
+    
+    # Color Iceland distinctly (red) and others (blue)
+    for i, box in enumerate(bp3['boxes']):
+        if i == iceland_mean_position:
+            box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
+            box.set_alpha(0.8)
+        else:
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Eurozone countries
+            box.set_alpha(0.6)
+    
+    ax3.set_title('Panel C: Distribution of Means - Iceland vs Individual Eurozone Countries\n(Ordered by Descending Median Value)', 
+                  fontweight='bold', fontsize=11, pad=10)
+    ax3.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
+    ax3.tick_params(axis='x', rotation=45, labelsize=8)
+    ax3.tick_params(axis='y', labelsize=8)
+    ax3.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Add reference line for Iceland's median
+    iceland_median_mean = mean_medians['Iceland']
+    ax3.axhline(y=iceland_median_mean, color=COLORBLIND_SAFE[3], linestyle='--', alpha=0.7, linewidth=1.5, 
+                label=f'Iceland Median: {iceland_median_mean:.2f}%')
+    ax3.legend(loc='upper right', fontsize=8)
+    
+    plt.tight_layout()
+    st.pyplot(fig3)
+    
+    # Download button for individual means boxplot
+    buf3 = io.BytesIO()
+    fig3.savefig(buf3, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    buf3.seek(0)
+    
+    st.download_button(
+        label="📥 Download Individual Country Means Boxplot (PNG)",
+        data=buf3.getvalue(),
+        file_name="case_study_1_individual_means_boxplot.png",
+        mime="image/png",
+        key="download_individual_means"
+    )
+    
+    # Create standard deviations boxplot, ordered by median
+    fig4, ax4 = plt.subplots(1, 1, figsize=(10, 4))
+    
+    # Prepare data for std dev boxplot, ordered by median
+    std_boxplot_data = []
+    std_boxplot_labels = []
+    iceland_std_position = None
+    
+    for i, (country, _) in enumerate(std_medians.items()):
+        country_stds = std_data_individual[std_data_individual['COUNTRY'] == country]['Value']
+        std_boxplot_data.append(country_stds)
+        std_boxplot_labels.append(country)
+        if country == 'Iceland':
+            iceland_std_position = i
+    
+    # Create std dev boxplot
+    bp4 = ax4.boxplot(std_boxplot_data, labels=std_boxplot_labels, patch_artist=True)
+    
+    # Color Iceland distinctly (red) and others (blue)
+    for i, box in enumerate(bp4['boxes']):
+        if i == iceland_std_position:
+            box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
+            box.set_alpha(0.8)
+        else:
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Eurozone countries
+            box.set_alpha(0.6)
+    
+    ax4.set_title('Panel D: Distribution of Standard Deviations - Iceland vs Individual Eurozone Countries\n(Ordered by Descending Median Value)', 
+                  fontweight='bold', fontsize=11, pad=10)
+    ax4.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
+    ax4.tick_params(axis='x', rotation=45, labelsize=8)
+    ax4.tick_params(axis='y', labelsize=8)
+    
+    # Add reference line for Iceland's median
+    iceland_median_std = std_medians['Iceland']
+    ax4.axhline(y=iceland_median_std, color=COLORBLIND_SAFE[3], linestyle='--', alpha=0.7, linewidth=1.5,
+                label=f'Iceland Median: {iceland_median_std:.2f}%')
+    ax4.legend(loc='upper right', fontsize=8)
+    
+    plt.tight_layout()
+    st.pyplot(fig4)
+    
+    # Download button for individual std dev boxplot
+    buf4 = io.BytesIO()
+    fig4.savefig(buf4, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    buf4.seek(0)
+    
+    st.download_button(
+        label="📥 Download Individual Country Std Dev Boxplot (PNG)",
+        data=buf4.getvalue(),
+        file_name="case_study_1_individual_stddev_boxplot.png",
+        mime="image/png",
+        key="download_individual_stddev"
+    )
+    
+    # Summary of individual country comparison
+    iceland_mean_rank = list(mean_medians.index).index('Iceland') + 1
+    iceland_std_rank = list(std_medians.index).index('Iceland') + 1
+    total_countries = len(mean_medians)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.metric("Iceland's Mean Rank", f"{iceland_mean_rank} of {total_countries}", 
+                 f"{'Higher' if iceland_mean_rank <= total_countries/2 else 'Lower'} than average")
+    with col2:
+        st.metric("Iceland's Volatility Rank", f"{iceland_std_rank} of {total_countries}", 
+                 f"{'More volatile' if iceland_std_rank <= total_countries/2 else 'Less volatile'} than average")
+    
+    st.markdown(f"""
+    **Individual Country Analysis Summary:**
+    - **Means:** Iceland ranks #{iceland_mean_rank} out of {total_countries} countries by median mean across all indicators
+    - **Volatility:** Iceland ranks #{iceland_std_rank} out of {total_countries} countries by median standard deviation
+    - **Key Insight:** This shows Iceland's position relative to each individual Eurozone member rather than the aggregate
+    """)
     
     st.markdown("---")
     
