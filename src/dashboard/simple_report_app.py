@@ -25,8 +25,6 @@ def create_indicator_nicknames():
     """Create readable nicknames for indicators"""
     return {
         'Overall Capital Flows (Net)': 'Overall Capital Flows (Net)',
-        'Overall Capital Flows (Net, Comprehensive)': 'Overall Capital Flows (Comprehensive)',
-        'Net - Other investment, Debt instruments (calculated)': 'Net - Other Investment (Debt)',
         'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct Investment',
         'Assets - Other investment, Debt instruments': 'Assets - Other Investment (Debt)',
         'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other Investment (Banks)',
@@ -131,20 +129,9 @@ sns.set_palette(COLORBLIND_SAFE)
 def load_default_data():
     """Load default Case Study 1 data"""
     try:
-        # Default file paths - use comprehensive BOP data if available
+        # Default file paths
         data_dir = Path(__file__).parent.parent.parent / "data"
-        
-        # Check for comprehensive BOP data first
-        comprehensive_files = list(data_dir.glob("case_study_1_comprehensive_bop_data_*.csv"))
-        if comprehensive_files:
-            # Use the most recent comprehensive dataset
-            bop_file = max(comprehensive_files, key=lambda x: x.stat().st_mtime)
-            print(f"Using comprehensive BOP dataset: {bop_file.name}")
-        else:
-            # Fallback to original data
-            bop_file = data_dir / "case_study_1_data_july_24_2025.csv"
-            print(f"Using original BOP dataset: {bop_file.name}")
-            
+        bop_file = data_dir / "case_study_1_data_july_24_2025.csv"
         gdp_file = data_dir / "dataset_2025-07-24T18_28_31.898465539Z_DEFAULT_INTEGRATION_IMF.RES_WEO_6.0.0.csv"
         
         if not bop_file.exists() or not gdp_file.exists():
@@ -198,13 +185,23 @@ def load_default_data():
         metadata_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']
         indicator_cols = [col for col in merged_data.columns if col not in metadata_cols + [gdp_col]]
         
-        # Overall Capital Flows is now included in comprehensive dataset
-        # Check if it's already present
-        overall_cf_indicators = [col for col in merged_data.columns if 'Overall Capital Flows' in col]
-        if overall_cf_indicators:
-            print(f"Found comprehensive Overall Capital Flows indicator: {overall_cf_indicators[0]}")
+        # Calculate Overall Capital Flows before normalization
+        overall_capital_flows_components = [
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities',
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities'
+        ]
+        
+        # Check which components are available and create Overall Capital Flows
+        available_components = [comp for comp in overall_capital_flows_components if comp in merged_data.columns]
+        
+        if available_components:
+            # Create Overall Capital Flows as sum of available net components
+            merged_data['Overall Capital Flows (Net)'] = merged_data[available_components].sum(axis=1, skipna=True)
+            # Add to indicator columns list
+            indicator_cols.append('Overall Capital Flows (Net)')
+            print(f"Created Overall Capital Flows from {len(available_components)} components: {available_components}")
         else:
-            print("Note: Using original dataset without comprehensive Overall Capital Flows")
+            print("Warning: No suitable components found for Overall Capital Flows")
         
         # Normalize to % of GDP
         normalized_data = merged_data[metadata_cols + [gdp_col]].copy()
@@ -386,12 +383,11 @@ def main():
         4. **Hypothesis Testing:** F-tests for equality of variances between groups
         
         ### Overall Capital Flows Indicator
-        **NEW**: A comprehensive composite indicator representing aggregate net capital flows, calculated as:
-        - **Components:** Net Direct Investment + Net Portfolio Investment + Net Other Investment + Net Financial Derivatives
-        - **Purpose:** Provides a single measure of overall capital flow volatility across all Financial Account components
+        **NEW**: A composite indicator representing aggregate net capital flows, calculated as:
+        - **Components:** Net Direct Investment + Net Portfolio Investment
+        - **Purpose:** Provides a single measure of overall capital flow volatility
         - **Interpretation:** Positive = net capital inflows, Negative = net capital outflows
-        - **Data Source:** Complete IMF BOP Financial Account series (BPM6 standard)
-        - **Note:** This derived metric appears first in all analyses and includes all major capital flow components
+        - **Note:** This derived metric appears first in all analyses for easy reference
         
         ### Countries Analyzed
         - **Iceland:** Independent monetary policy with floating exchange rate
