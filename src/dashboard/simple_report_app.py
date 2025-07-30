@@ -24,7 +24,6 @@ warnings.filterwarnings('ignore')
 def create_indicator_nicknames():
     """Create readable nicknames for indicators"""
     return {
-        'Overall Capital Flows (Net)': 'Overall Capital Flows (Net)',
         'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct Investment',
         'Assets - Other investment, Debt instruments': 'Assets - Other Investment (Debt)',
         'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other Investment (Banks)',
@@ -50,10 +49,6 @@ def get_investment_type_order(indicator_name):
     Extract sorting key for indicators: Type of Investment -> Disaggregation -> Accounting Entry
     Returns tuple for sorting: (investment_type_order, disaggregation_order, accounting_entry_order)
     """
-    # Special handling for Overall Capital Flows - put it first
-    if 'Overall Capital Flows' in indicator_name:
-        return (-1, 0, 0)  # Negative value to ensure it comes first
-    
     # Investment type mapping
     if 'Direct investment' in indicator_name:
         inv_type = 0  # Direct
@@ -184,24 +179,6 @@ def load_default_data():
         gdp_col = 'Gross domestic product (GDP), Current prices, US dollar'
         metadata_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']
         indicator_cols = [col for col in merged_data.columns if col not in metadata_cols + [gdp_col]]
-        
-        # Calculate Overall Capital Flows before normalization
-        overall_capital_flows_components = [
-            'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities',
-            'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities'
-        ]
-        
-        # Check which components are available and create Overall Capital Flows
-        available_components = [comp for comp in overall_capital_flows_components if comp in merged_data.columns]
-        
-        if available_components:
-            # Create Overall Capital Flows as sum of available net components
-            merged_data['Overall Capital Flows (Net)'] = merged_data[available_components].sum(axis=1, skipna=True)
-            # Add to indicator columns list
-            indicator_cols.append('Overall Capital Flows (Net)')
-            print(f"Created Overall Capital Flows from {len(available_components)} components: {available_components}")
-        else:
-            print("Warning: No suitable components found for Overall Capital Flows")
         
         # Normalize to % of GDP
         normalized_data = merged_data[metadata_cols + [gdp_col]].copy()
@@ -382,13 +359,6 @@ def main():
         3. **Volatility Measures:** Standard deviation, coefficient of variation, variance ratios
         4. **Hypothesis Testing:** F-tests for equality of variances between groups
         
-        ### Overall Capital Flows Indicator
-        **NEW**: A composite indicator representing aggregate net capital flows, calculated as:
-        - **Components:** Net Direct Investment + Net Portfolio Investment
-        - **Purpose:** Provides a single measure of overall capital flow volatility
-        - **Interpretation:** Positive = net capital inflows, Negative = net capital outflows
-        - **Note:** This derived metric appears first in all analyses for easy reference
-        
         ### Countries Analyzed
         - **Iceland:** Independent monetary policy with floating exchange rate
         - **Eurozone Bloc:** Austria, Belgium, Finland, France, Germany, Ireland, Italy, Netherlands, Portugal, Spain
@@ -408,7 +378,7 @@ def main():
     with col1:
         st.metric("Observations", f"{metadata['final_shape'][0]:,}")
     with col2:
-        st.metric("Indicators", f"{len(analysis_indicators)} (+ Overall CF)")
+        st.metric("Indicators", metadata['n_indicators'])
     with col3:
         st.metric("Countries", final_data['COUNTRY'].nunique())
     with col4:
@@ -727,7 +697,7 @@ def main():
     
     st.dataframe(styled_table, use_container_width=True, hide_index=True)
     
-    st.info(f"**Summary:** Statistics for all {len(analysis_indicators)} capital flow indicators, including the new Overall Capital Flows composite indicator (shown first). CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
+    st.info(f"**Summary:** Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
     
     # Create summary with CV ratios for download
     summary_pivot = group_stats.pivot_table(
@@ -858,7 +828,7 @@ def main():
     # Show ALL indicators, sorted properly
     selected_indicators = sort_indicators_by_type(analysis_indicators)
     
-    st.markdown(f"**Showing all {len(selected_indicators)} indicators sorted by investment type (Overall Capital Flows shown first)**")
+    st.markdown(f"**Showing all {len(selected_indicators)} indicators sorted by investment type**")
     
     # Create individual time series plots for better readability and downloads
     time_series_figures = []
