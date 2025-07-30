@@ -221,80 +221,150 @@ def process_case_study_2_data():
         normalized_data[gdp_col] = gdp_display_merged[gdp_col]
         print(f"   - GDP range (original): ${normalized_data[gdp_col].min():,.0f} to ${normalized_data[gdp_col].max():,.0f}")
     
-    # Add Euro adoption timeline classification
+    # Add Euro adoption timeline classification with maximized data usage
     print("🗓️ Adding Euro adoption timeline classification...")
+    
+    # Expanded timeline using all available data (including adoption years in post-Euro periods)
     timeline = {
         'Estonia, Republic of': {
             'adoption_date': '2011-01-01',
-            'pre_period': (2005, 2010),
-            'post_period': (2012, 2017),
-            'adoption_year': 2011
+            'adoption_year': 2011,
+            'pre_period_full': (1999, 2010),      # 12 years before
+            'post_period_full': (2011, 2024),     # 14 years after (include 2011 adoption year)
+            'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]  # GFC + COVID-19
         },
         'Latvia, Republic of': {
             'adoption_date': '2014-01-01', 
-            'pre_period': (2007, 2012),
-            'post_period': (2015, 2020),
-            'adoption_year': 2014
+            'adoption_year': 2014,
+            'pre_period_full': (1999, 2013),      # 15 years before  
+            'post_period_full': (2014, 2024),     # 11 years after (include 2014 adoption year)
+            'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]  # GFC + COVID-19
         },
         'Lithuania, Republic of': {
             'adoption_date': '2015-01-01',
-            'pre_period': (2008, 2013), 
-            'post_period': (2016, 2021),
-            'adoption_year': 2015
+            'adoption_year': 2015,
+            'pre_period_full': (1999, 2014),      # 16 years before
+            'post_period_full': (2015, 2024),     # 10 years after (include 2015 adoption year)
+            'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]  # GFC + COVID-19
         }
     }
     
-    normalized_data['EURO_PERIOD'] = 'Other'
+    # Initialize period classifications
+    normalized_data['EURO_PERIOD_FULL'] = 'Other'
+    normalized_data['EURO_PERIOD_CRISIS_EXCLUDED'] = 'Other'
+    normalized_data['IS_CRISIS_YEAR'] = False
     
+    # Classify periods for each country
     for country, periods in timeline.items():
         country_mask = normalized_data['COUNTRY'] == country
-        pre_start, pre_end = periods['pre_period']
-        post_start, post_end = periods['post_period']
         
-        pre_mask = (normalized_data['YEAR'] >= pre_start) & (normalized_data['YEAR'] <= pre_end)
-        post_mask = (normalized_data['YEAR'] >= post_start) & (normalized_data['YEAR'] <= post_end)
+        # Full series periods (uses all available data)
+        pre_start_full, pre_end_full = periods['pre_period_full']
+        post_start_full, post_end_full = periods['post_period_full']
         
-        normalized_data.loc[country_mask & pre_mask, 'EURO_PERIOD'] = 'Pre-Euro'
-        normalized_data.loc[country_mask & post_mask, 'EURO_PERIOD'] = 'Post-Euro'
+        pre_mask_full = (normalized_data['YEAR'] >= pre_start_full) & (normalized_data['YEAR'] <= pre_end_full)
+        post_mask_full = (normalized_data['YEAR'] >= post_start_full) & (normalized_data['YEAR'] <= post_end_full)
+        
+        # Apply full series classification
+        normalized_data.loc[country_mask & pre_mask_full, 'EURO_PERIOD_FULL'] = 'Pre-Euro'
+        normalized_data.loc[country_mask & post_mask_full, 'EURO_PERIOD_FULL'] = 'Post-Euro'
+        
+        # Mark crisis years (GFC 2008-2010 + COVID 2020-2022)
+        crisis_years = periods['crisis_years']
+        crisis_mask = normalized_data['YEAR'].isin(crisis_years)
+        normalized_data.loc[country_mask & crisis_mask, 'IS_CRISIS_YEAR'] = True
+        
+        # Crisis-excluded periods (same as full but excluding crisis years)
+        pre_mask_clean = pre_mask_full & (~crisis_mask)
+        post_mask_clean = post_mask_full & (~crisis_mask)
+        
+        normalized_data.loc[country_mask & pre_mask_clean, 'EURO_PERIOD_CRISIS_EXCLUDED'] = 'Pre-Euro'
+        normalized_data.loc[country_mask & post_mask_clean, 'EURO_PERIOD_CRISIS_EXCLUDED'] = 'Post-Euro'
     
-    # Filter to analysis periods only
+    # For backward compatibility, default to full series
+    normalized_data['EURO_PERIOD'] = normalized_data['EURO_PERIOD_FULL']
+    
+    # Filter to analysis periods only (using full series by default)
     final_data = normalized_data[
-        normalized_data['EURO_PERIOD'].isin(['Pre-Euro', 'Post-Euro'])
+        normalized_data['EURO_PERIOD_FULL'].isin(['Pre-Euro', 'Post-Euro'])
+    ].copy()
+    
+    # Create crisis-excluded dataset
+    final_data_crisis_excluded = normalized_data[
+        normalized_data['EURO_PERIOD_CRISIS_EXCLUDED'].isin(['Pre-Euro', 'Post-Euro'])
     ].copy()
     
     print(f"📊 Final dataset statistics:")
-    print(f"   - Final shape: {final_data.shape}")
-    print(f"   - Analysis periods: {final_data['EURO_PERIOD'].value_counts().to_dict()}")
+    print(f"   - Full series shape: {final_data.shape}")
+    print(f"   - Crisis-excluded shape: {final_data_crisis_excluded.shape}")
+    print(f"   - Full series periods: {final_data['EURO_PERIOD_FULL'].value_counts().to_dict()}")
+    print(f"   - Crisis-excluded periods: {final_data_crisis_excluded['EURO_PERIOD_CRISIS_EXCLUDED'].value_counts().to_dict()}")
     print(f"   - Time range: {final_data['YEAR'].min()} to {final_data['YEAR'].max()}")
     
-    # Get analysis indicators (normalized ones)
+    # Get analysis indicators
     analysis_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
     print(f"   - Analysis indicators: {len(analysis_indicators)}")
     
     # Save processed data
     output_file = data_dir / "case_study_2_euro_adoption_data.csv"
+    output_file_crisis_excluded = data_dir / "case_study_2_euro_adoption_data_crisis_excluded.csv"
     gdp_output_file = data_dir / "case_study_2_gdp_data.csv"
     
+    # Save full series (backward compatible)
     final_data.to_csv(output_file, index=False)
-    gdp_filtered.to_csv(gdp_output_file, index=False)
+    
+    # Save crisis-excluded version
+    final_data_crisis_excluded.to_csv(output_file_crisis_excluded, index=False)
+    
+    # Save GDP reference data
+    gdp_reference = final_data[['COUNTRY', 'YEAR', gdp_col]].drop_duplicates()
+    gdp_reference.to_csv(gdp_output_file, index=False)
     
     print(f"💾 Saved processed data:")
-    print(f"   - Main dataset: {output_file}")
+    print(f"   - Full series dataset: {output_file}")
+    print(f"   - Crisis-excluded dataset: {output_file_crisis_excluded}")
     print(f"   - GDP dataset: {gdp_output_file}")
     
-    # Summary statistics
-    print("\n📈 Summary by country and period:")
-    summary = final_data.groupby(['COUNTRY', 'EURO_PERIOD']).agg({
-        'YEAR': ['min', 'max', 'count']
-    }).round(2)
-    print(summary)
+    # Print detailed summary by country and period
+    print(f"\n📈 Full Series Summary by country and period:")
+    summary_full = final_data.groupby(['COUNTRY', 'EURO_PERIOD_FULL'])['YEAR'].agg(['min', 'max', 'count'])
+    print(summary_full)
     
-    print("\n✅ Case Study 2 data processing complete!")
+    print(f"\n📈 Crisis-Excluded Summary by country and period:")
+    summary_crisis = final_data_crisis_excluded.groupby(['COUNTRY', 'EURO_PERIOD_CRISIS_EXCLUDED'])['YEAR'].agg(['min', 'max', 'count'])
+    print(summary_crisis)
+    
+    # Show data improvement
+    full_obs = len(final_data)
+    crisis_obs = len(final_data_crisis_excluded)
+    print(f"\n📊 Data maximization achieved:")
+    print(f"   - Crisis years excluded: 2008-2010 (GFC), 2020-2022 (COVID-19)")
+    for country in baltic_countries:
+        country_data_full = final_data[final_data['COUNTRY'] == country]
+        country_data_crisis = final_data_crisis_excluded[final_data_crisis_excluded['COUNTRY'] == country]
+        
+        pre_full = len(country_data_full[country_data_full['EURO_PERIOD_FULL'] == 'Pre-Euro'])
+        post_full = len(country_data_full[country_data_full['EURO_PERIOD_FULL'] == 'Post-Euro'])
+        pre_crisis = len(country_data_crisis[country_data_crisis['EURO_PERIOD_CRISIS_EXCLUDED'] == 'Pre-Euro'])  
+        post_crisis = len(country_data_crisis[country_data_crisis['EURO_PERIOD_CRISIS_EXCLUDED'] == 'Post-Euro'])
+        
+        country_short = country.split(',')[0]
+        print(f"   - {country_short}: Full ({pre_full} pre + {post_full} post), Crisis-excluded ({pre_crisis} pre + {post_crisis} post)")
+    
+    print(f"\n✅ Case Study 2 data processing complete!")
+    
+    print(f"\n🎯 Ready for analysis:")
+    print(f"   - Countries: {final_data['COUNTRY'].nunique()}")
+    print(f"   - Indicators: {len(analysis_indicators)}")
+    print(f"   - Study versions: Full series + Crisis-excluded") 
+    print(f"   - Full series observations: {full_obs}")
+    print(f"   - Crisis-excluded observations: {crisis_obs}")
     
     return final_data, analysis_indicators, {
         'bop_shape': case_two_raw.shape,
         'gdp_shape': gdp_raw.shape,
         'final_shape': final_data.shape,
+        'final_shape_crisis_excluded': final_data_crisis_excluded.shape,
         'n_indicators': len(analysis_indicators),
         'countries': baltic_countries,
         'timeline': timeline
