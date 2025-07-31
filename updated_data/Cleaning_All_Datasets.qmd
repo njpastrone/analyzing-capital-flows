@@ -1,0 +1,866 @@
+---
+title: "Cleaning All Datasets"
+format: html
+editor: visual
+---
+
+# Cleaning Case Study 1 Data
+
+## Case Study 1: Iceland v. Eurozone
+
+```{r, message=F}
+library(tidyverse)
+library(readr)
+library(stringr)
+options(scipen = 999)
+```
+
+### Cleaning Raw BOP Data
+
+```{r}
+case_one_raw <- read_csv("Raw/case_study_1_data_july_24_2025.csv")
+```
+
+```{r}
+head(case_one_raw)
+```
+
+```{r}
+case_one_raw |> summary()
+```
+
+### Check if Timeseries per row data, then do extra step:
+```{r}
+library(tidyverse)
+library(rlang)
+library(glue)
+
+pivot_if_timeseries <- function(data) {
+  # Capture the name of the input dataset as a string
+  data_name <- deparse(substitute(data))
+  
+  # Detect year-pattern columns (e.g., "1999", "2000-Q1", "X1999")
+  year_pattern <- "^\\d{4}"
+  year_cols <- names(data)[str_detect(names(data), year_pattern)]
+  
+  # Check number of year columns and pivot if necessary
+  if (length(year_cols) > 3) {
+    message(glue::glue("'{data_name}' is in time-series-per-row format. Pivoting longer..."))
+    
+    data_long <- data |> 
+      pivot_longer(
+        cols = all_of(year_cols),
+        names_to = "TIME_PERIOD",
+        values_to = "OBS_VALUE"
+      )
+    
+    message(glue::glue("'Data pivoted."))
+    
+    # IMF BOP data fetched in long format must be rescaled from Millions into raw units ( * 1000000)
+    message(glue::glue("'Rescaling..."))
+    data_long <- data_long |> 
+      mutate(OBS_VALUE = OBS_VALUE*1000000)
+    
+    message(glue::glue("'Data rescaled."))  
+    
+  } else {
+    message(glue::glue("'{data_name}' is NOT in time-series-per-row format. No pivot or rescale applied."))
+    data_long <- data
+  }
+  
+  return(data_long)
+}
+
+```
+
+```{r}
+case_one_reshaped_rescaled <- pivot_if_timeseries(case_one_raw) 
+```
+
+### Basic Cleaning
+
+```{r}
+case_one_reshaped_rescaled |> 
+  mutate(
+    ENTRY_FIRST_WORD = str_extract(BOP_ACCOUNTING_ENTRY, "^[^,]+"),
+    FULL_INDICATOR = paste(ENTRY_FIRST_WORD, INDICATOR, sep = " - ")
+  ) |> 
+  select(-c(BOP_ACCOUNTING_ENTRY, INDICATOR, ENTRY_FIRST_WORD, FREQUENCY)) |> 
+  select(COUNTRY, TIME_PERIOD, FULL_INDICATOR, everything()) -> case_one_new_cols
+```
+
+```{r}
+case_one_new_cols |> 
+  head()
+```
+
+```{r}
+case_one_new_cols |> 
+  separate(TIME_PERIOD, into = c("YEAR", "QUARTER"), sep = "-") |> 
+  mutate(QUARTER = parse_number(QUARTER)) -> case_one_final_cols
+```
+
+
+```{r}
+case_one_final_cols |> 
+  head()
+```
+
+### Pivoting
+
+```{r}
+case_one_final_cols |> 
+  select(-SCALE) |> 
+  mutate(YEAR = as.double(YEAR)) |> 
+  pivot_wider(names_from = FULL_INDICATOR, values_from = OBS_VALUE) -> case_one_pivoted
+```
+
+```{r}
+case_one_pivoted |> head()
+```
+
+### Summary of Case Study 1 Data
+
+```{r}
+case_one_pivoted |> summary()
+```
+
+#### Accessing Metadata
+
+```{r}
+colnames(case_one_pivoted)
+```
+
+```{r}
+unique(case_one_pivoted$COUNTRY)
+```
+
+# Case Study 2: Recent Adopters of Euro
+
+### Cleaning Raw BOP Data
+
+```{r}
+case_two_raw <- read_csv("Raw/case_study_2_data_july_27_2025.csv")
+```
+
+```{r}
+head(case_two_raw)
+```
+
+```{r}
+case_two_raw |> summary()
+```
+
+### Check if Timeseries per row data, then do extra step:
+```{r}
+library(tidyverse)
+library(rlang)
+library(glue)
+
+pivot_if_timeseries <- function(data) {
+  # Capture the name of the input dataset as a string
+  data_name <- deparse(substitute(data))
+  
+  # Detect year-pattern columns (e.g., "1999", "2000-Q1", "X1999")
+  year_pattern <- "^\\d{4}"
+  year_cols <- names(data)[str_detect(names(data), year_pattern)]
+  
+  # Check number of year columns and pivot if necessary
+  if (length(year_cols) > 3) {
+    message(glue::glue("'{data_name}' is in time-series-per-row format. Pivoting longer..."))
+    
+    data_long <- data |> 
+      pivot_longer(
+        cols = all_of(year_cols),
+        names_to = "TIME_PERIOD",
+        values_to = "OBS_VALUE"
+      )
+    
+    message(glue::glue("'Data pivoted."))
+    
+    # IMF BOP data fetched in long format must be rescaled from Millions into raw units ( * 1000000)
+    message(glue::glue("'Rescaling..."))
+    data_long <- data_long |> 
+      mutate(OBS_VALUE = OBS_VALUE*1000000) |> 
+      select(-c(DATASET, SERIES_CODE, OBS_MEASURE))
+    
+    message(glue::glue("'Data rescaled."))  
+    
+  } else {
+    message(glue::glue("'{data_name}' is NOT in time-series-per-row format. No pivot applied."))
+    data_long <- data
+  }
+  
+  return(data_long)
+}
+
+```
+
+```{r}
+case_two_reshaped_rescaled <- pivot_if_timeseries(case_two_raw) 
+```
+
+```{r}
+case_two_reshaped_rescaled |> head()
+```
+
+### Basic Cleaning
+
+```{r}
+case_two_reshaped_rescaled |> 
+  mutate(
+    ENTRY_FIRST_WORD = str_extract(BOP_ACCOUNTING_ENTRY, "^[^,]+"),
+    FULL_INDICATOR = paste(ENTRY_FIRST_WORD, INDICATOR, sep = " - ")
+  ) |> 
+  select(-c(BOP_ACCOUNTING_ENTRY, INDICATOR, ENTRY_FIRST_WORD, FREQUENCY)) |> 
+  select(COUNTRY, TIME_PERIOD, FULL_INDICATOR, everything()) -> case_two_new_cols
+```
+
+```{r}
+case_two_new_cols |> 
+  head()
+```
+
+```{r}
+case_two_new_cols |> 
+  separate(TIME_PERIOD, into = c("YEAR", "QUARTER"), sep = "-") |> 
+  mutate(QUARTER = parse_number(QUARTER)) -> case_two_final_cols
+```
+
+
+```{r}
+case_two_final_cols |> 
+  head()
+```
+
+### Pivoting
+
+```{r}
+case_two_final_cols |> 
+  select(-SCALE) |> 
+  mutate(YEAR = as.double(YEAR)) |> 
+  pivot_wider(names_from = FULL_INDICATOR, values_from = OBS_VALUE) -> case_two_pivoted
+```
+
+```{r}
+case_two_pivoted |> head()
+```
+
+### Summary of Case Study 2 Data
+
+```{r}
+case_two_pivoted |> summary()
+```
+
+#### Accessing Metadata
+
+```{r}
+colnames(case_two_pivoted)
+```
+
+```{r}
+unique(case_two_pivoted$COUNTRY)
+```
+
+
+# Case Study 3/4: Other Comparators
+
+### Cleaning Raw BOP Data
+
+```{r}
+case_three_raw <- read_csv("Raw/case_study_4_data_july_28_2025.csv")
+```
+
+```{r}
+head(case_three_raw)
+```
+
+```{r}
+case_three_raw |> summary()
+```
+
+### Check if Timeseries per row data, then do extra step:
+```{r}
+library(tidyverse)
+library(rlang)
+library(glue)
+
+pivot_if_timeseries <- function(data) {
+  # Capture the name of the input dataset as a string
+  data_name <- deparse(substitute(data))
+  
+  # Detect year-pattern columns (e.g., "1999", "2000-Q1", "X1999")
+  year_pattern <- "^\\d{4}"
+  year_cols <- names(data)[str_detect(names(data), year_pattern)]
+  
+  # Check number of year columns and pivot if necessary
+  if (length(year_cols) > 3) {
+    message(glue::glue("'{data_name}' is in time-series-per-row format. Pivoting longer..."))
+    
+    data_long <- data |> 
+      pivot_longer(
+        cols = all_of(year_cols),
+        names_to = "TIME_PERIOD",
+        values_to = "OBS_VALUE"
+      )
+    
+    message(glue::glue("'Data pivoted."))
+    
+    # IMF BOP data fetched in long format must be rescaled from Millions into raw units ( * 1000000)
+    message(glue::glue("'Rescaling..."))
+    data_long <- data_long |> 
+      mutate(OBS_VALUE = OBS_VALUE*1000000) |> 
+      select(-c(DATASET, SERIES_CODE, OBS_MEASURE))
+    
+    message(glue::glue("'Data rescaled."))  
+    
+  } else {
+    message(glue::glue("'{data_name}' is NOT in time-series-per-row format. No pivot applied."))
+    data_long <- data
+  }
+  
+  return(data_long)
+}
+
+```
+
+```{r}
+case_three_reshaped_rescaled <- pivot_if_timeseries(case_three_raw) 
+```
+
+```{r}
+case_three_reshaped_rescaled |> head()
+```
+
+### Basic Cleaning
+
+```{r}
+case_three_reshaped_rescaled |> 
+  mutate(
+    ENTRY_FIRST_WORD = str_extract(BOP_ACCOUNTING_ENTRY, "^[^,]+"),
+    FULL_INDICATOR = paste(ENTRY_FIRST_WORD, INDICATOR, sep = " - ")
+  ) |> 
+  select(-c(BOP_ACCOUNTING_ENTRY, INDICATOR, ENTRY_FIRST_WORD, FREQUENCY)) |> 
+  select(COUNTRY, TIME_PERIOD, FULL_INDICATOR, everything()) -> case_three_new_cols
+```
+
+```{r}
+case_three_new_cols |> 
+  head()
+```
+
+```{r}
+case_three_new_cols |> 
+  separate(TIME_PERIOD, into = c("YEAR", "QUARTER"), sep = "-") |> 
+  mutate(QUARTER = parse_number(QUARTER)) -> case_three_final_cols
+```
+
+
+```{r}
+case_three_final_cols |> 
+  head()
+```
+
+### Pivoting
+
+```{r}
+case_three_final_cols |> 
+  select(-SCALE) |> 
+  mutate(YEAR = as.double(YEAR)) |> 
+  pivot_wider(names_from = FULL_INDICATOR, values_from = OBS_VALUE) -> case_three_pivoted
+```
+
+```{r}
+case_three_pivoted |> head()
+```
+
+### Summary of Case Study 3/4 Data
+
+```{r}
+case_three_pivoted |> summary()
+```
+
+#### Accessing Metadata
+
+```{r}
+colnames(case_three_pivoted)
+```
+
+```{r}
+unique(case_three_pivoted$COUNTRY)
+```
+
+# Supplementary Data: Net Flows 
+
+### Cleaning Raw BOP Data
+
+```{r}
+net_flows_raw <- read_csv("Raw/net_flows_july_30_2025.csv")
+```
+
+```{r}
+head(net_flows_raw)
+```
+
+```{r}
+net_flows_raw |> summary()
+```
+
+### Check if Timeseries per row data, then do extra step:
+```{r}
+library(tidyverse)
+library(rlang)
+library(glue)
+
+pivot_if_timeseries <- function(data) {
+  # Capture the name of the input dataset as a string
+  data_name <- deparse(substitute(data))
+  
+  # Detect year-pattern columns (e.g., "1999", "2000-Q1", "X1999")
+  year_pattern <- "^\\d{4}"
+  year_cols <- names(data)[str_detect(names(data), year_pattern)]
+  
+  # Check number of year columns and pivot if necessary
+  if (length(year_cols) > 3) {
+    message(glue::glue("'{data_name}' is in time-series-per-row format. Pivoting longer..."))
+    
+    data_long <- data |> 
+      pivot_longer(
+        cols = all_of(year_cols),
+        names_to = "TIME_PERIOD",
+        values_to = "OBS_VALUE"
+      )
+    
+    message(glue::glue("'Data pivoted."))
+    
+    # IMF BOP data fetched in long format must be rescaled from Millions into raw units ( * 1000000)
+    message(glue::glue("'Rescaling..."))
+    data_long <- data_long |> 
+      mutate(OBS_VALUE = OBS_VALUE*1000000) |> 
+      select(-c(DATASET, SERIES_CODE, OBS_MEASURE))
+    
+    message(glue::glue("'Data rescaled."))  
+    
+  } else {
+    message(glue::glue("'{data_name}' is NOT in time-series-per-row format. No pivot applied."))
+    data_long <- data
+  }
+  
+  return(data_long)
+}
+
+```
+
+```{r}
+net_flows_reshaped_rescaled <- pivot_if_timeseries(net_flows_raw) 
+```
+
+```{r}
+net_flows_reshaped_rescaled |> head()
+```
+
+### Basic Cleaning
+
+```{r}
+net_flows_reshaped_rescaled |> 
+  mutate(
+    ENTRY_FIRST_WORD = str_extract(BOP_ACCOUNTING_ENTRY, "^[^,]+"),
+    FULL_INDICATOR = paste(ENTRY_FIRST_WORD, INDICATOR, sep = " - ")
+  ) |> 
+  select(-c(BOP_ACCOUNTING_ENTRY, INDICATOR, ENTRY_FIRST_WORD, FREQUENCY)) |> 
+  select(COUNTRY, TIME_PERIOD, FULL_INDICATOR, everything()) -> net_flows_new_cols
+```
+
+```{r}
+net_flows_new_cols |> 
+  head()
+```
+
+```{r}
+net_flows_new_cols |> 
+  separate(TIME_PERIOD, into = c("YEAR", "QUARTER"), sep = "-") |> 
+  mutate(QUARTER = parse_number(QUARTER)) -> net_flows_final_cols
+```
+
+
+```{r}
+net_flows_final_cols |> 
+  head()
+```
+
+### Pivoting
+
+```{r}
+net_flows_final_cols |> 
+  select(-SCALE) |> 
+  mutate(YEAR = as.double(YEAR)) |> 
+  pivot_wider(names_from = FULL_INDICATOR, values_from = OBS_VALUE) -> net_flows_pivoted
+```
+
+```{r}
+net_flows_pivoted |> head()
+```
+
+### Summary of Net Flows Data
+
+```{r}
+net_flows_pivoted |> summary()
+```
+
+#### Accessing Metadata
+
+```{r}
+colnames(net_flows_pivoted)
+```
+
+# Supplementary Data: GDP
+
+### Cleaning Raw GDP Data
+
+```{r}
+gdp_raw <- read_csv("Raw/gdp_july_24_2025.csv")
+```
+
+```{r}
+head(gdp_raw)
+```
+
+```{r}
+gdp_raw |> summary()
+```
+
+
+```{r}
+gdp_raw |> 
+  select(COUNTRY, TIME_PERIOD, INDICATOR, OBS_VALUE) -> gdp_cleaned
+```
+
+```{r}
+gdp_cleaned |> 
+  head()
+```
+
+```{r}
+gdp_cleaned |> 
+  pivot_wider(names_from = INDICATOR, values_from = OBS_VALUE) -> gdp_pivoted
+```
+
+```{r}
+gdp_pivoted |> head()
+```
+
+# Join All Datasets
+
+### Investigate Dataset Formats
+
+```{r}
+case_one_pivoted |> 
+  colnames()
+
+case_one_pivoted |> 
+  dim()
+
+```
+
+```{r}
+case_two_pivoted |> 
+  colnames()
+
+case_two_pivoted |> 
+  dim()
+```
+
+```{r}
+case_three_pivoted |> 
+  colnames()
+
+case_three_pivoted |> 
+  dim()
+```
+
+```{r}
+net_flows_pivoted |> 
+  colnames()
+
+net_flows_pivoted |> 
+  dim()
+```
+
+```{r}
+gdp_pivoted |> 
+  colnames()
+
+gdp_pivoted |> 
+  dim()
+```
+
+## Union Case Study Datasets
+
+```{r}
+case_one_two <- union(case_one_pivoted, case_two_pivoted)
+```
+
+```{r}
+case_one_two |> 
+  dim()
+```
+
+```{r}
+case_one_two |> 
+  tail()
+```
+
+```{r}
+case_one_two_three <- union(case_one_two, case_three_pivoted)
+```
+
+```{r}
+case_one_two_three |> 
+  dim()
+```
+
+```{r}
+case_one_two_three |> 
+  tail()
+```
+
+
+```{r}
+case_one_two_three |> 
+  group_by(COUNTRY, YEAR, QUARTER, UNIT) |> 
+  filter(n() > 1) |> 
+  arrange(COUNTRY, YEAR, QUARTER, UNIT) -> duplicates
+```
+
+```{r}
+duplicates |> 
+  head(10)
+```
+
+```{r}
+case_one_two_three |> 
+  distinct(COUNTRY, YEAR, QUARTER, UNIT, .keep_all = TRUE) -> all_case_study_data_cleaned
+```
+
+```{r}
+all_case_study_data_cleaned |> 
+  group_by(COUNTRY, YEAR, QUARTER, UNIT) |> 
+  filter(n() > 1) |> 
+  arrange(COUNTRY, YEAR, QUARTER, UNIT) 
+```
+
+## Join with Supplementary Datasets
+
+```{r}
+all_case_study_data_cleaned |> 
+  colnames()
+
+all_case_study_data_cleaned |> 
+  dim()
+```
+
+```{r}
+net_flows_pivoted |> 
+  colnames()
+
+net_flows_pivoted |> 
+  dim()
+```
+
+#### Remove Redundant Columns from Net Flows
+
+```{r}
+net_flows_pivoted |> 
+  select(-c(`Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities`, `Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities`)) -> net_flows_pivoted_cleaned
+```
+
+### Join with Net Flows
+
+```{r}
+all_case_study_data_cleaned |> 
+  left_join(net_flows_pivoted_cleaned, by = join_by(COUNTRY, YEAR, QUARTER, UNIT)) -> all_case_study_data_and_net_flows
+```
+
+```{r}
+all_case_study_data_and_net_flows |> 
+  colnames()
+```
+
+### Join with GDP
+
+```{r}
+all_case_study_data_and_net_flows |> 
+  left_join(gdp_pivoted, by = join_by(COUNTRY, YEAR == TIME_PERIOD)) |> 
+  mutate(UNIT = paste0(UNIT, ", Nominal (Current Prices)")) |> 
+  select(1:4, `Gross domestic product (GDP), Current prices, US dollar`, everything()) -> comprehensive_df_USD
+```
+
+```{r}
+comprehensive_df_USD |>
+  summary() |> 
+  head(2)
+```
+
+```{r}
+comprehensive_df_USD |>
+  dim()
+```
+
+```{r}
+comprehensive_df_USD |>
+  colnames()
+```
+
+
+
+## GDP Normalization
+
+```{r}
+comprehensive_df_USD |> 
+  mutate(across(
+    .cols = 6:21,
+    .fns = ~ (.x*4 / `Gross domestic product (GDP), Current prices, US dollar`) * 100, # Annualized BOP
+    .names = "{.col}_PGDP"
+  ))  |> 
+  select(1:5, ends_with("_PGDP")) |> 
+  mutate(UNIT = paste0(UNIT, ", % of GDP")) -> comprehensive_df_PGDP
+```
+
+```{r}
+comprehensive_df_PGDP |> 
+  head()
+```
+
+# Label Comprehensive Dataset for Case Studies
+
+```{r}
+case_one_pivoted |> 
+  filter(!COUNTRY %in% c("Iceland", "Luxembourg")) |> 
+  distinct(COUNTRY) |> 
+  as.list() -> eurozone_countries_cs1
+```
+
+```{r}
+eurozone_countries_cs1
+```
+```{r}
+case_two_pivoted |> 
+  filter(COUNTRY %in% c("Latvia, Republic of", "Estonia, Republic of", "Lithuania, Republic of")) |> 
+  distinct(COUNTRY) |> 
+  as.list() -> euro_adoption_countries_cs2
+  
+```
+
+
+```{r}
+euro_adoption_countries_cs2
+```
+
+```{r}
+case_three_pivoted |> 
+  filter(COUNTRY %in% c(
+    "Brunei Darussalam","Bahamas, The",				
+    "Bermuda",				
+    "Seychelles",				
+    "Aruba, Kingdom of the Netherlands",			
+    "Mauritius",			
+    "Malta")) |> 
+  distinct(COUNTRY) |> 
+  as.list() -> iceland_comparators_cs3
+```
+
+
+```{r}
+iceland_comparators_cs3
+```
+
+```{r}
+comprehensive_df_PGDP |> 
+  mutate(
+    CS1_GROUP = case_when(
+      COUNTRY == "Iceland" ~ "Iceland",
+      COUNTRY %in% eurozone_countries_cs1$COUNTRY ~ "Eurozone",
+      TRUE ~ NA_character_
+    ),
+    CS2_GROUP = case_when(
+      COUNTRY %in% euro_adoption_countries_cs2$COUNTRY ~ "Included",
+      TRUE ~ NA_character_
+    ),
+    CS3_GROUP = case_when(
+      COUNTRY == "Iceland" ~ "Iceland",
+      COUNTRY %in% iceland_comparators_cs3$COUNTRY ~ "Comparator",
+      TRUE ~ NA_character_
+    )
+  ) -> comprehensive_df_PGDP_labeled
+```
+
+### Show Labeled Data
+
+```{r}
+comprehensive_df_PGDP_labeled |> 
+  select(COUNTRY, CS1_GROUP, CS2_GROUP, CS3_GROUP) |> 
+  distinct()
+```
+
+# Save Clean Datasets
+
+```{r}
+case_one_pivoted |> 
+  write_csv(file = "Clean/case_one_data_USD.csv")
+```
+
+
+```{r}
+case_two_pivoted |> 
+  write_csv(file = "Clean/case_two_data_USD.csv")
+```
+
+```{r}
+case_three_pivoted |> 
+  write_csv(file = "Clean/case_three_four_data_USD.csv")
+```
+
+```{r}
+net_flows_pivoted |> 
+  write_csv(file = "Clean/net_flows_data_USD.csv")
+```
+
+```{r}
+gdp_pivoted |> 
+  write_csv(file = "Clean/gdp_data_USD.csv")
+```
+
+```{r}
+comprehensive_df_USD |> 
+  write_csv(file = "Clean/comprehensive_df_USD.csv ")
+```
+
+```{r}
+comprehensive_df_PGDP |> 
+  write_csv(file = "Clean/comprehensive_df_PGDP.csv ")
+```
+
+```{r}
+comprehensive_df_PGDP_labeled |> 
+  write_csv(file = "Clean/comprehensive_df_PGDP_labeled.csv ")
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

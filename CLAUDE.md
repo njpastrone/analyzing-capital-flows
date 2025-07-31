@@ -50,6 +50,8 @@ This is a **hybrid R/Python project**:
   - Quarto document integration
 
 - **Python Environment**: Streamlit-based dashboards with core analysis modules
+  - **Analysis Only**: Python code focuses on analysis, visualization, and dashboards
+  - **Pre-cleaned Data**: Uses cleaned datasets from `updated_data/Clean/` folder
 
 ## Key Dependencies
 
@@ -72,39 +74,46 @@ This is a **hybrid R/Python project**:
 
 ## Data Processing Pipeline
 
-The main analysis workflow follows this pattern:
+**📋 New Structure (2025):** All data cleaning is performed in R. Python handles analysis only.
+
+### R Data Cleaning (`updated_data/Cleaning_All_Datasets.qmd`):
 
 1. **Data Import**: 
    - Raw IMF Balance of Payments (BOP) data from quarterly reports
    - IMF World Economic Outlook (GDP) data for normalization
-   - Metadata files with indicator definitions and data sources
+   - Multiple case study datasets
 
-2. **Data Cleaning**:
-   - Extract BOP indicator names from accounting entries (first word + indicator type)
-   - Separate time periods into year/quarter components
-   - Convert data from long to wide format for analysis
+2. **Format Detection & Reshaping**:
+   - Detect timeseries-per-row format (years as columns)
+   - Pivot to long format if needed
+   - Apply scale corrections (multiply by 1,000,000 for millions USD)
+
+3. **Data Cleaning**:
+   - Extract clean indicator names from BOP accounting entries
+   - Parse time periods (YEAR/QUARTER separation)
    - Handle missing values and data quality issues
 
-3. **Data Integration**:
-   - Join BOP and GDP datasets by country and year
-   - Validate data consistency and coverage
-   - Create analytical country groupings
+4. **Normalization & Output**:
+   - Convert to % of GDP: `(BOP_quarterly × 4) / GDP_annual × 100`
+   - Create case study group labels (CS1_GROUP, CS2_GROUP, CS3_GROUP)
+   - Output multiple formats: USD, % GDP, and labeled versions
 
-4. **Normalization**:
-   - Convert BOP flows to "% of GDP" for cross-country comparison
-   - Annualize quarterly data by multiplying by 4
-   - Apply unit scaling corrections for different data formats
+### Python Analysis Pipeline:
 
-5. **Grouping and Analysis**:
-   - Create country groups (Iceland vs. Eurozone, Baltic countries)
-   - Generate time period classifications (Pre-Euro vs Post-Euro)
-   - Exclude outliers (Luxembourg) and handle crisis periods
+1. **Load Pre-cleaned Data**:
+   - Use `src/core/data_loader.py` utility
+   - Access `updated_data/Clean/comprehensive_df_PGDP_labeled.csv`
+   - Filter by case study groups as needed
 
-6. **Statistical Analysis**:
-   - Calculate descriptive statistics (means, standard deviations, coefficients of variation)
+2. **Statistical Analysis**:
+   - Calculate descriptive statistics and volatility measures
    - Perform F-tests for variance equality across groups
    - Generate comprehensive hypothesis test results
-   - Create statistical visualizations and summary tables
+
+3. **Visualization & Dashboards**:
+   - Create interactive Streamlit dashboards
+   - Generate statistical visualizations and summary tables
+   - Export results and downloadable assets
 
 ## Case Study Frameworks
 

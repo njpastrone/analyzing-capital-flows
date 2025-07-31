@@ -139,302 +139,262 @@ def show_project_overview():
         """)
 
 def show_data_processing_pipeline():
-    """Display the data processing pipeline from raw data to analysis-ready datasets"""
+    """Display data processing information and provide access to cleaned datasets"""
     
     st.header("⚙️ Data Processing Pipeline")
-    st.markdown("### From Raw IMF Data to Analysis-Ready Capital Flow Indicators")
+    st.markdown("### Pre-Cleaned Analysis-Ready Capital Flow Datasets")
     
-    # Pipeline Overview
+    st.info("ℹ️ **Note:** All data cleaning has been completed using R scripts. This section explains the cleaning process and provides access to the final cleaned datasets.")
+    
+    # Cleaned Data Overview
     st.markdown("---")
-    st.subheader("🔄 Processing Pipeline Overview")
+    st.subheader("📊 Available Cleaned Datasets")
     
-    # Create pipeline flow diagram
-    col1, col2, col3, col4, col5 = st.columns(5)
+    col1, col2, col3 = st.columns(3)
     
     with col1:
         st.markdown("""
-        **1. Raw Data**
+        **📈 USD Format Data**
+        - `comprehensive_df_USD.csv`
+        - Raw values in USD millions
+        - All countries and indicators
+        - Ready for normalization
+        """)
+        
+    with col2:
+        st.markdown("""
+        **📊 % of GDP Format Data**
+        - `comprehensive_df_PGDP.csv`
+        - Values normalized as % of GDP
+        - Annualized quarterly data
+        - Ready for analysis
+        """)
+        
+    with col3:
+        st.markdown("""
+        **🏷️ Labeled Data**
+        - `comprehensive_df_PGDP_labeled.csv`
+        - Includes case study groupings
+        - CS1_GROUP, CS2_GROUP, CS3_GROUP
+        - Recommended for new analysis
+        """)
+    
+    # Data Processing Summary
+    st.markdown("---")
+    st.subheader("🔄 Data Cleaning Process Summary")
+    st.markdown("*Based on R code in `updated_data/Cleaning_All_Datasets.qmd`*")
+    
+    # Create processing flow
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.markdown("""
+        **1. Raw Data Input**
         📊 IMF BOP Statistics
-        📈 IMF WEO Database
-        🏦 Central Bank Data
+        📈 IMF WEO GDP Data
+        🔄 Multiple case studies
         """)
         
     with col2:
         st.markdown("**→**")
         st.markdown("""
-        **2. Data Cleaning**
-        🧹 Remove duplicates
-        🔍 Handle missing values
-        📅 Standardize dates
+        **2. Format Detection**
+        🔍 Detect timeseries-per-row
+        📈 Pivot longer if needed
+        💱 Scale adjustment (×1M)
         """)
         
     with col3:
         st.markdown("**→**")
         st.markdown("""
-        **3. Transformation**
-        💱 Currency conversion
-        📊 GDP normalization
-        📈 Annualization
+        **3. Standardization**
+        🧹 Clean indicator names
+        📅 Parse time periods
+        🔄 Pivot to wide format
         """)
         
     with col4:
         st.markdown("**→**")
         st.markdown("""
-        **4. Validation**
-        ✅ Quality checks
-        🔍 Outlier detection
-        📋 Completeness audit
-        """)
-        
-    with col5:
-        st.markdown("**→**")
-        st.markdown("""
-        **5. Analysis Ready**
-        📊 Case study datasets
-        🎯 Grouped indicators
-        📈 Time series ready
+        **4. Final Output**
+        💾 USD & % GDP versions
+        🏷️ Case study labels
+        ✅ Analysis ready
         """)
     
+    # Key Processing Steps Detail
     st.markdown("---")
+    st.subheader("🔧 Key Data Cleaning Steps")
     
-    # Data Sources Section
-    st.subheader("📡 Raw Data Sources")
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("""
-        **IMF Balance of Payments Statistics**
-        - **Coverage:** 1999-2024, Quarterly
-        - **Variables:** All BOP components (100+ indicators)
-        - **Format:** Wide format with country-year-quarter structure
-        - **Quality:** High - Official government statistics
-        
-        **IMF World Economic Outlook Database**
-        - **Coverage:** 1980-2024, Annual
-        - **Variables:** GDP, population, fiscal indicators
-        - **Format:** Country-year panel
-        - **Quality:** High - Standardized methodology across countries
-        """)
-    
-    with col2:
-        # Sample raw data structure
-        st.markdown("**Sample Raw BOP Data Structure:**")
-        sample_raw = pd.DataFrame({
-            'Country': ['Iceland', 'Iceland', 'Germany'],
-            'Indicator': ['Assets - Direct investment, Total', 'Assets - Portfolio investment, Debt', 'Assets - Direct investment, Total'],
-            '2023Q1': [1250.5, -890.2, 15678.9],
-            '2023Q2': [1890.1, -1200.8, 16234.1],
-            '2023Q3': [2100.3, -950.4, 15989.7]
-        })
-        st.dataframe(sample_raw, use_container_width=True)
-        
-        st.markdown("**Issues with Raw Data:**")
-        st.markdown("""
-        - Mixed currencies (millions USD)
-        - Quarterly vs annual frequency mismatch
-        - Inconsistent missing value coding
-        - Complex indicator naming conventions
-        """)
-    
-    st.markdown("---")
-    
-    # Processing Steps Detail
-    st.subheader("🔧 Detailed Processing Steps")
-    
-    # Step 1: Data Cleaning
-    with st.expander("Step 1: Data Cleaning & Harmonization", expanded=False):
+    with st.expander("📋 Detailed Cleaning Process", expanded=False):
         col1, col2 = st.columns(2)
         
         with col1:
             st.markdown("""
-            **Indicator Name Standardization:**
-            - Extract clean indicator names from accounting codes
-            - Remove country-specific prefixes/suffixes
-            - Standardize investment type categories
-            - Create consistent naming convention
+            **1. Data Format Handling:**
+            ```r
+            # Detect and pivot timeseries-per-row format
+            pivot_if_timeseries <- function(data) {
+              year_cols <- str_detect(names(data), "^\\\\d{4}")
+              if (length(year_cols) > 3) {
+                # Pivot longer and rescale
+                data %>% pivot_longer(...) %>% 
+                mutate(OBS_VALUE = OBS_VALUE * 1000000)
+              }
+            }
+            ```
             
-            **Date Harmonization:**
-            - Convert quarters to consistent date format
-            - Handle different fiscal year conventions
-            - Align BOP quarterly with WEO annual data
-            
-            **Missing Value Treatment:**
-            - Distinguish zeros from missing observations
-            - Apply forward/backward fill where appropriate
-            - Document missing data patterns by country
+            **2. Indicator Name Cleaning:**
+            ```r
+            # Extract first word from BOP accounting entry
+            mutate(
+              ENTRY_FIRST_WORD = str_extract(BOP_ACCOUNTING_ENTRY, "^[^,]+"),
+              FULL_INDICATOR = paste(ENTRY_FIRST_WORD, INDICATOR, sep = " - ")
+            )
+            ```
             """)
         
         with col2:
-            st.markdown("**Before/After Example:**")
-            before_after = pd.DataFrame({
-                'Raw Indicator': ['IS_BPM6_A_2_BANK_C_D_N', 'IS_BPM6_A_3_EQUITY_C_D_N'],
-                'Clean Indicator': ['Assets - Other investment, Debt instruments, Deposit taking corporations', 'Assets - Portfolio investment, Equity and investment fund shares'],
-                'Raw Date': ['2023Q1', '2023Q2'],
-                'Clean Date': ['2023-01-01', '2023-04-01']
-            })
-            st.dataframe(before_after, use_container_width=True)
-    
-    # Step 2: GDP Normalization
-    with st.expander("Step 2: GDP Normalization & Annualization", expanded=False):
-        col1, col2 = st.columns(2)
-        
-        with col1:
             st.markdown("""
-            **GDP Normalization Process:**
-            1. Match BOP quarterly data with annual GDP
-            2. Convert quarterly BOP flows to annual equivalent (×4)
-            3. Calculate percentage of GDP for each indicator
-            4. Handle negative flows appropriately
+            **3. Time Period Processing:**
+            ```r
+            # Parse YEAR and QUARTER from TIME_PERIOD
+            separate(TIME_PERIOD, into = c("YEAR", "QUARTER"), sep = "-") %>%
+            mutate(QUARTER = parse_number(QUARTER))
+            ```
             
-            **Formula:** `BOP_indicator_PGDP = (BOP_quarterly × 4) / GDP_annual × 100`
-            
-            **Benefits:**
-            - Cross-country comparability
-            - Controls for economy size
-            - Standard academic practice
-            - Intuitive interpretation
+            **4. GDP Normalization:**
+            ```r
+            # Convert to % of GDP (annualized)
+            comprehensive_df_PGDP <- comprehensive_df_USD %>%
+              mutate(across(ends_with("_USD"), 
+                ~ (.x * 4 / GDP_USD) * 100, 
+                .names = "{.col}_PGDP"))
+            ```
             """)
-        
-        with col2:
-            st.markdown("**Normalization Example:**")
-            norm_example = pd.DataFrame({
-                'Country': ['Iceland', 'Germany'],
-                'BOP Raw (M USD)': [1250.5, 15678.9],
-                'BOP Annualized': [5002.0, 62715.6],
-                'GDP (M USD)': [28000, 4200000],
-                'BOP % of GDP': [17.86, 1.49]
-            })
-            st.dataframe(norm_example, use_container_width=True)
-            
-            st.info("📊 **Key Insight:** Normalization reveals Iceland's capital flows are ~12x more significant relative to economy size than Germany's")
     
-    # Step 3: Grouping & Classification
-    with st.expander("Step 3: Country Grouping & Investment Classification", expanded=False):
-        col1, col2 = st.columns(2)
+    # Case Study Groupings
+    with st.expander("🏷️ Case Study Group Labels", expanded=False):
+        st.markdown("""
+        **CS1_GROUP (Iceland vs Eurozone):**
+        - `Iceland`: Iceland only
+        - `Eurozone`: Initial Euro adopters (excluding Luxembourg)
         
-        with col1:
-            st.markdown("""
-            **Country Group Creation:**
-            
-            **Case Study 1 Groups:**
-            - **Iceland:** Single small open economy
-            - **Eurozone:** 19 countries (excludes Luxembourg due to outlier status)
-            
-            **Case Study 2 Groups:**
-            - **Estonia:** Pre-Euro (2005-2010) vs Post-Euro (2012-2017)
-            - **Latvia:** Pre-Euro (2007-2012) vs Post-Euro (2015-2020)
-            - **Lithuania:** Pre-Euro (2008-2013) vs Post-Euro (2016-2021)
-            
-            **Investment Type Classification:**
-            - Direct Investment (FDI)
-            - Portfolio Investment (Equity & Debt)
-            - Other Investment (Bank flows, loans)
-            - Assets vs Liabilities vs Net flows
-            """)
+        **CS2_GROUP (Euro Adoption):**
+        - `Included`: Baltic countries (Estonia, Latvia, Lithuania)
         
-        with col2:
-            st.markdown("**Final Indicator Categories:**")
-            categories = pd.DataFrame({
-                'Investment Type': ['Direct Investment', 'Portfolio - Equity', 'Portfolio - Debt', 'Other Investment', 'Net Flows'],
-                'Count': [2, 2, 2, 4, 2],
-                'Example': ['FDI Assets/Liabilities', 'Equity Assets/Liabilities', 'Debt Securities', 'Bank deposits, loans', 'Net Direct Investment']
-            })
-            st.dataframe(categories, use_container_width=True)
+        **CS3_GROUP (Iceland Comparators):**
+        - `Iceland`: Iceland
+        - `Comparator`: Small open economies similar to Iceland
+        """)
     
+    # Load and Preview Cleaned Data
     st.markdown("---")
+    st.subheader("📋 Cleaned Data Preview")
     
-    # Data Quality Metrics
-    st.subheader("📊 Data Quality Assessment")
-    
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        st.metric("Total Observations", "75,846", "After cleaning")
-        st.metric("Countries", "28", "Analysis sample")
-        st.metric("Time Period", "1999-2024", "25 years")
-    
-    with col2:
-        st.metric("Indicators", "14", "Final analysis set")
-        st.metric("Completeness", "94.2%", "Non-missing rate")
-        st.metric("Quality Score", "9.1/10", "Overall assessment")
-    
-    with col3:
-        st.metric("Outliers Detected", "312", "Flagged for review")
-        st.metric("Data Validation", "✅ Passed", "All checks")
-        st.metric("Processing Time", "45 min", "Full pipeline")
-    
-    # Processing Output Preview
-    st.markdown("---")
-    st.subheader("📋 Final Analysis-Ready Data Preview")
-    
-    # Load and show sample of processed data
     try:
-        # Try to load case study 1 data
-        data_dir = Path(__file__).parent.parent.parent / "data"
-        case1_file = data_dir / "case_one_grouped.csv"
+        # Load the labeled dataset
+        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        labeled_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
         
-        if case1_file.exists():
-            sample_data = pd.read_csv(case1_file).head(10)
+        if labeled_file.exists():
+            # Load a small sample
+            sample_data = pd.read_csv(labeled_file, nrows=1000)
             
-            # Show only key columns for display
-            display_cols = ['COUNTRY', 'GROUP', 'YEAR', 'QUARTER']
+            st.success(f"✅ Loaded sample from comprehensive_df_PGDP_labeled.csv: {sample_data.shape}")
+            
+            # Show basic info
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Countries", sample_data['COUNTRY'].nunique())
+            with col2:
+                st.metric("Time Range", f"{sample_data['YEAR'].min():.0f}-{sample_data['YEAR'].max():.0f}")
+            with col3:
+                st.metric("Indicators", len([col for col in sample_data.columns if col.endswith('_PGDP')]))
+            with col4:
+                st.metric("Case Studies", len([col for col in sample_data.columns if col.startswith('CS')]))
+            
+            # Show case study group distribution
+            st.markdown("**Case Study Group Distribution:**")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                cs1_counts = sample_data['CS1_GROUP'].value_counts()
+                st.markdown("**Case Study 1:**")
+                for group, count in cs1_counts.items():
+                    if pd.notna(group):
+                        st.write(f"• {group}: {count} obs")
+            
+            with col2:
+                cs2_counts = sample_data['CS2_GROUP'].value_counts()
+                st.markdown("**Case Study 2:**")
+                for group, count in cs2_counts.items():
+                    if pd.notna(group):
+                        st.write(f"• {group}: {count} obs")
+            
+            with col3:
+                cs3_counts = sample_data['CS3_GROUP'].value_counts()
+                st.markdown("**Case Study 3:**")
+                for group, count in cs3_counts.items():
+                    if pd.notna(group):
+                        st.write(f"• {group}: {count} obs")
+            
+            # Show sample data
+            st.markdown("**Sample Data Structure:**")
+            display_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'CS1_GROUP', 'CS2_GROUP', 'CS3_GROUP']
             # Add first few indicator columns
             indicator_cols = [col for col in sample_data.columns if col.endswith('_PGDP')][:3]
             display_cols.extend(indicator_cols)
             
             if all(col in sample_data.columns for col in display_cols):
-                st.markdown("**Sample of Case Study 1 Processed Data:**")
-                st.dataframe(sample_data[display_cols], use_container_width=True)
+                st.dataframe(sample_data[display_cols].head(10), use_container_width=True)
             else:
-                st.info("Processed data structure differs from expected format")
+                st.dataframe(sample_data.head(10), use_container_width=True)
+                
         else:
-            st.info("Case Study 1 processed data not found for preview")
+            st.warning("Could not find comprehensive_df_PGDP_labeled.csv for preview")
             
     except Exception as e:
-        st.warning(f"Could not load data preview: {str(e)}")
+        st.error(f"Error loading data preview: {str(e)}")
     
-    # Processing Code Access
+    # Data Access Section
     st.markdown("---")
-    st.subheader("💻 Code & Reproducibility")
+    st.subheader("📁 Data File Access")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("""
-        **Processing Scripts:**
-        - `cleaning_case_one.py` - Case Study 1 data processor
-        - `data_processor_case_study_2.py` - Case Study 2 Euro adoption data
-        - `core/data_processor.py` - Shared processing functions
-        - `Cleaning Case Study 1.qmd` - Original R implementation
+        **Available Cleaned Files:**
+        ```
+        updated_data/Clean/
+        ├── comprehensive_df_USD.csv           # All data in USD
+        ├── comprehensive_df_PGDP.csv          # All data as % GDP  
+        ├── comprehensive_df_PGDP_labeled.csv  # With case study labels
+        ├── case_one_data_USD.csv              # Case Study 1 only
+        ├── case_two_data_USD.csv              # Case Study 2 only
+        ├── case_three_four_data_USD.csv       # Case Studies 3&4
+        ├── net_flows_data_USD.csv             # Net flows data
+        └── gdp_data_USD.csv                   # GDP data
+        ```
         """)
     
     with col2:
         st.markdown("""
-        **Quality Assurance:**
-        - Automated data validation checks
-        - Cross-reference with original R outputs
-        - Statistical consistency verification
-        - Documentation of all transformations
+        **Usage Recommendations:**
+        
+        **For New Analysis:**
+        - Use `comprehensive_df_PGDP_labeled.csv`
+        - Filter by CS1_GROUP, CS2_GROUP, or CS3_GROUP
+        - All indicators already normalized as % of GDP
+        
+        **For Custom Analysis:**
+        - Use `comprehensive_df_USD.csv` for raw values
+        - Use `comprehensive_df_PGDP.csv` for normalized values
+        - Join with GDP data if needed
         """)
     
-    st.info("🔄 **Processing Status:** All datasets current as of July 2025. Pipeline runs automatically when new IMF data is released.")
-    
-    # Main sections of the Data Processing tab
-    st.markdown("---")
-    
-    # Create main sections
-    section_choice = st.radio(
-        "Choose Processing Mode:",
-        ["🔬 Case Study Pipelines", "🔧 Interactive General Data Processor"],
-        horizontal=True,
-        help="Case Study Pipelines: Reproduce specific case studies with new data. Interactive Processor: Clean arbitrary IMF data."
-    )
-    
-    if section_choice == "🔬 Case Study Pipelines":
-        show_case_study_pipelines()
-    else:
-        show_interactive_general_processor()
+    st.success("✅ **All datasets are cleaned and analysis-ready. No further data processing required.**")
 
 def show_case_study_pipelines():
     """Display case study reproducible pipelines"""
