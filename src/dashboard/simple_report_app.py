@@ -122,84 +122,37 @@ sns.set_palette(COLORBLIND_SAFE)
 # st.set_page_config() is now handled by main_app.py
 
 def load_default_data():
-    """Load default Case Study 1 data"""
+    """Load default Case Study 1 data from cleaned datasets"""
     try:
-        # Default file paths
-        data_dir = Path(__file__).parent.parent.parent / "data"
-        bop_file = data_dir / "case_study_1_data_july_24_2025.csv"
-        gdp_file = data_dir / "dataset_2025-07-24T18_28_31.898465539Z_DEFAULT_INTEGRATION_IMF.RES_WEO_6.0.0.csv"
+        # Use new cleaned data path
+        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
         
-        if not bop_file.exists() or not gdp_file.exists():
-            st.error("Default data files not found. Please check file paths.")
+        if not comprehensive_file.exists():
+            st.error("Cleaned data file not found. Please check file paths.")
             return None, None, None
         
-        # Load and process data (simplified version of the notebook processing)
-        case_one_raw = pd.read_csv(bop_file)
-        gdp_raw = pd.read_csv(gdp_file)
+        # Load comprehensive labeled data
+        comprehensive_df = pd.read_csv(comprehensive_file)
         
-        # Process BOP data
-        case_one_clean = case_one_raw.copy()
-        case_one_clean['ENTRY_FIRST_WORD'] = case_one_clean['BOP_ACCOUNTING_ENTRY'].str.extract(r'^([^,]+)')
-        case_one_clean['FULL_INDICATOR'] = case_one_clean['ENTRY_FIRST_WORD'] + ' - ' + case_one_clean['INDICATOR']
+        # Filter for Case Study 1 data (CS1_GROUP not null)
+        case_one_data = comprehensive_df[comprehensive_df['CS1_GROUP'].notna()].copy()
         
-        # Drop columns and process time
-        columns_to_drop = ['BOP_ACCOUNTING_ENTRY', 'INDICATOR', 'ENTRY_FIRST_WORD', 'FREQUENCY', 'SCALE']
-        case_one_clean = case_one_clean.drop(columns=columns_to_drop)
-        case_one_clean[['YEAR', 'QUARTER']] = case_one_clean['TIME_PERIOD'].str.split('-', expand=True)
-        case_one_clean['YEAR'] = case_one_clean['YEAR'].astype(int)
-        case_one_clean['QUARTER'] = case_one_clean['QUARTER'].str.extract(r'(\d+)').astype(int)
-        case_one_clean = case_one_clean.drop('TIME_PERIOD', axis=1)
+        # Remove Luxembourg as per original analysis
+        final_data = case_one_data[case_one_data['COUNTRY'] != 'Luxembourg'].copy()
         
-        # Pivot BOP data
-        bop_pivoted = case_one_clean.pivot_table(
-            index=['COUNTRY', 'YEAR', 'QUARTER', 'UNIT'],
-            columns='FULL_INDICATOR',
-            values='OBS_VALUE',
-            aggfunc='first'
-        ).reset_index()
-        
-        # Process GDP data
-        gdp_clean = gdp_raw[['COUNTRY', 'TIME_PERIOD', 'INDICATOR', 'OBS_VALUE']].copy()
-        gdp_pivoted = gdp_clean.pivot_table(
-            index=['COUNTRY', 'TIME_PERIOD'],
-            columns='INDICATOR',
-            values='OBS_VALUE',
-            aggfunc='first'
-        ).reset_index()
-        
-        # Join datasets
-        merged_data = bop_pivoted.merge(
-            gdp_pivoted,
-            left_on=['COUNTRY', 'YEAR'],
-            right_on=['COUNTRY', 'TIME_PERIOD'],
-            how='left'
-        ).drop('TIME_PERIOD', axis=1, errors='ignore')
-        
-        # Identify columns
-        gdp_col = 'Gross domestic product (GDP), Current prices, US dollar'
-        metadata_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'UNIT']
-        indicator_cols = [col for col in merged_data.columns if col not in metadata_cols + [gdp_col]]
-        
-        # Normalize to % of GDP
-        normalized_data = merged_data[metadata_cols + [gdp_col]].copy()
-        for col in indicator_cols:
-            normalized_data[f"{col}_PGDP"] = (merged_data[col] * 4 / merged_data[gdp_col]) * 100
-        
-        normalized_data['UNIT'] = "% of GDP (annualized)"
-        
-        # Create groups and remove Luxembourg
-        normalized_data['GROUP'] = normalized_data['COUNTRY'].apply(
+        # Create GROUP column using CS1_GROUP mapping
+        final_data['GROUP'] = final_data['COUNTRY'].apply(
             lambda x: 'Iceland' if x == 'Iceland' else 'Eurozone'
         )
-        final_data = normalized_data[normalized_data['COUNTRY'] != 'Luxembourg'].copy()
         
-        # Get analysis indicators and sort them properly
+        # Get analysis indicators (columns ending with _PGDP)
         analysis_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
         analysis_indicators = sort_indicators_by_type(analysis_indicators)
         
         return final_data, analysis_indicators, {
-            'bop_shape': case_one_raw.shape,
-            'gdp_shape': gdp_raw.shape,
+            'original_shape': comprehensive_df.shape,
+            'filtered_shape': case_one_data.shape,
             'final_shape': final_data.shape,
             'n_indicators': len(analysis_indicators)
         }
