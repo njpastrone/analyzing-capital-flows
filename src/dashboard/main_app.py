@@ -1644,17 +1644,17 @@ for col in indicator_cols:
     
     with col1:
         st.markdown("**📊 Case Study 1: Iceland vs Eurozone**")
-        st.metric("Country Coverage", "10/11 (90.9%)")
-        st.metric("Missing", "Netherlands")
+        st.metric("Country Coverage", "11/11 (100%)")
+        st.metric("Available", "All countries included")
         st.metric("Iceland Observations", "105")
-        st.metric("Total Observations", "988")
+        st.metric("Total Observations", "1,093")
         
     with col2:
         st.markdown("**📊 Case Study 2: Euro Adoption**")
-        st.metric("Country Coverage", "2/7 (28.6%)")
-        st.metric("Available", "Cyprus, Malta")
-        st.metric("Missing", "Baltic countries")
-        st.metric("Total Observations", "202")
+        st.metric("Country Coverage", "5/7 (71.4%)")
+        st.metric("Available", "Cyprus, Estonia, Latvia, Lithuania, Malta")
+        st.metric("Missing", "Slovakia, Slovenia")
+        st.metric("Total Observations", "517")
     
     # Comparison with existing data
     st.markdown("---")
@@ -1697,8 +1697,8 @@ for col in indicator_cols:
 🔗 Joining BOP and GDP data...
 ✅ Final dataset: (13521, 10)
 ✅ Countries: 158
-📊 Case Study 1 coverage: 10/11 countries
-📊 Case Study 2 coverage: 2/7 countries
+📊 Case Study 1 coverage: 11/11 countries
+📊 Case Study 2 coverage: 5/7 countries
 🔧 Applying normalization: (BOP * 4 / GDP) * 100
 ✅ Normalization complete: (13521, 10)
 📈 Normalized indicators: 5
