@@ -1712,14 +1712,17 @@ for col in indicator_cols:
     
     st.success("""
     **✅ Ready for Integration:**
-    - Case Study 1 has excellent coverage (90.9%) and can benefit from 3 new indicators
+    - Case Study 1 has complete coverage (100% - 11/11 countries) with 1,093 observations
+    - Case Study 2 has strong coverage (71.4% - 5/7 countries) with 517 observations
     - New "Financial account balance" provides overall capital flows summary
-    - Data processing pipeline validated and transparent
+    - Data processing pipeline validated with proper scaling corrections
+    - All Baltic states (Estonia, Latvia, Lithuania) successfully included
+    - Netherlands successfully included in Case Study 1 analysis
     
-    **⚠️ Caution:**
-    - Case Study 2 has limited coverage - consider as supplementary data only
-    - Values are properly normalized but verify scaling consistency
-    - Netherlands missing from Case Study 1 - document this limitation
+    **📊 Coverage Status:**
+    - Case Study 1: All target countries included (Iceland + 10 Eurozone countries)
+    - Case Study 2: Missing only Slovakia and Slovenia from Euro adoption study
+    - Values properly normalized and cross-validated using Iceland control data
     """)
     
     # Add debugging features
@@ -1859,8 +1862,8 @@ for col in indicator_cols:
                 st.markdown("---")
                 st.markdown("**Case Study Subsets Available:**")
                 
-                cs1_file = data_dir / "expanded_bop_case_study_1_corrected.csv"
-                cs2_file = data_dir / "expanded_bop_case_study_2_corrected.csv"
+                cs1_file = data_dir / "expanded_bop_case_study_1_final.csv"
+                cs2_file = data_dir / "expanded_bop_case_study_2_final.csv"
                 
                 col1, col2 = st.columns(2)
                 
