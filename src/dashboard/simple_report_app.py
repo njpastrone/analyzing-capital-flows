@@ -15,6 +15,7 @@ import sys
 import io
 from datetime import datetime
 import base64
+import zipfile
 
 # Add core modules to path
 sys.path.append(str(Path(__file__).parent.parent))
@@ -122,8 +123,8 @@ sns.set_palette(COLORBLIND_SAFE)
 # Page configuration - removed to avoid conflicts when imported into main_app.py
 # st.set_page_config() is now handled by main_app.py
 
-def load_default_data():
-    """Load default Case Study 1 data from cleaned datasets"""
+def load_default_data(include_crisis_years=True):
+    """Load default Case Study 1 data from cleaned datasets with optional crisis filtering"""
     try:
         # Use new cleaned data path
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
@@ -141,6 +142,20 @@ def load_default_data():
         
         # Remove Luxembourg as per original analysis
         final_data = case_one_data[case_one_data['COUNTRY'] != 'Luxembourg'].copy()
+        
+        # Apply crisis filtering if requested
+        if not include_crisis_years:
+            # Define crisis years: GFC (2008-2010) + COVID (2020-2022)
+            crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
+            
+            # Filter out crisis years
+            original_count = len(final_data)
+            final_data = final_data[~final_data['YEAR'].isin(crisis_years)].copy()
+            excluded_count = original_count - len(final_data)
+            
+            if len(final_data) == 0:
+                st.error("No data remaining after crisis period exclusion.")
+                return None, None, None
         
         # Create GROUP column using CS1_GROUP mapping
         final_data['GROUP'] = final_data['COUNTRY'].apply(
@@ -171,12 +186,22 @@ def load_default_data():
         analysis_indicators = [indicator_renames.get(ind, ind) for ind in analysis_indicators]
         analysis_indicators = sort_indicators_by_type(analysis_indicators)
         
-        return final_data, analysis_indicators, {
+        # Create metadata
+        study_version = "Full Time Period" if include_crisis_years else "Crisis-Excluded"
+        metadata = {
             'original_shape': comprehensive_df.shape,
             'filtered_shape': case_one_data.shape,
             'final_shape': final_data.shape,
-            'n_indicators': len(analysis_indicators)
+            'n_indicators': len(analysis_indicators),
+            'study_version': study_version,
+            'include_crisis_years': include_crisis_years
         }
+        
+        if not include_crisis_years:
+            metadata['excluded_observations'] = excluded_count
+            metadata['crisis_years'] = [2008, 2009, 2010, 2020, 2021, 2022]
+        
+        return final_data, analysis_indicators, metadata
         
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
@@ -304,8 +329,8 @@ def perform_volatility_tests(data, indicators):
     
     return pd.DataFrame(test_results)
 
-def load_overall_capital_flows_data():
-    """Load data specifically for Overall Capital Flows Analysis"""
+def load_overall_capital_flows_data(include_crisis_years=True):
+    """Load data specifically for Overall Capital Flows Analysis with optional crisis filtering"""
     try:
         # Use comprehensive dataset
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
@@ -322,6 +347,18 @@ def load_overall_capital_flows_data():
         
         # Remove Luxembourg as per original analysis
         final_data = case_one_data[case_one_data['COUNTRY'] != 'Luxembourg'].copy()
+        
+        # Apply crisis filtering if requested
+        if not include_crisis_years:
+            # Define crisis years: GFC (2008-2010) + COVID (2020-2022)
+            crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
+            
+            # Filter out crisis years
+            final_data = final_data[~final_data['YEAR'].isin(crisis_years)].copy()
+            
+            if len(final_data) == 0:
+                st.error("No data remaining after crisis period exclusion.")
+                return None, None
         
         # Create GROUP column
         final_data['GROUP'] = final_data['COUNTRY'].apply(
@@ -435,7 +472,7 @@ def show_overall_capital_flows_analysis():
             ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
             ax.tick_params(labelsize=8)
     
-    plt.tight_layout()
+    fig.tight_layout()
     st.pyplot(fig)
     
     # Time series plots
@@ -452,10 +489,18 @@ def show_overall_capital_flows_analysis():
         if col_name in overall_data.columns and i < 4:
             ax = axes2[i]
             
-            for group in ['Iceland', 'Eurozone']:
-                group_data = overall_data_ts[overall_data_ts['GROUP'] == group].sort_values('DATE')
-                ax.plot(group_data['DATE'], group_data[col_name], 
-                       color=colors[group], label=group, linewidth=2, alpha=0.8)
+            # Plot Iceland data
+            iceland_data = overall_data_ts[overall_data_ts['GROUP'] == 'Iceland'].sort_values('DATE')
+            if len(iceland_data) > 0:
+                ax.plot(iceland_data['DATE'], iceland_data[col_name], 
+                       color=colors['Iceland'], label='Iceland', linewidth=2, alpha=0.8)
+            
+            # Plot Eurozone average (aggregate by date)
+            eurozone_data = overall_data_ts[overall_data_ts['GROUP'] == 'Eurozone']
+            if len(eurozone_data) > 0:
+                eurozone_avg = eurozone_data.groupby('DATE')[col_name].mean().reset_index()
+                ax.plot(eurozone_avg['DATE'], eurozone_avg[col_name], 
+                       color=colors['Eurozone'], label='Eurozone Average', linewidth=2, alpha=0.8)
             
             ax.set_title(clean_name, fontweight='bold', fontsize=10)
             ax.set_ylabel('% of GDP (annualized)', fontsize=9)
@@ -464,7 +509,7 @@ def show_overall_capital_flows_analysis():
             ax.tick_params(labelsize=8)
             ax.grid(True, alpha=0.3)
     
-    plt.tight_layout()
+    fig2.tight_layout()
     st.pyplot(fig2)
     
     # Key insights
@@ -602,12 +647,12 @@ def main():
              transform=ax1.transAxes, verticalalignment='top', fontsize=8,
              bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
-    plt.tight_layout()
+    fig1.tight_layout()
     st.pyplot(fig1)
     
     # Download button for means boxplot
     buf1 = io.BytesIO()
-    fig1.savefig(buf1, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    fig1.savefig(buf1, format='png', dpi=300, facecolor='white')
     buf1.seek(0)
     
     st.download_button(
@@ -642,13 +687,13 @@ def main():
     
     ax2.set_title('Distribution of Standard Deviations: Iceland vs Eurozone Capital Flow Volatility', 
                  fontweight='bold', fontsize=10, pad=10)
-    plt.tight_layout()
+    fig2.tight_layout()
     
     st.pyplot(fig2)
     
     # Download button for std dev boxplot
     buf2 = io.BytesIO()
-    fig2.savefig(buf2, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    fig2.savefig(buf2, format='png', dpi=300, facecolor='white')
     buf2.seek(0)
     
     st.download_button(
@@ -741,12 +786,12 @@ def main():
                 label=f'Iceland Median: {iceland_median_mean:.2f}%')
     ax3.legend(loc='upper right', fontsize=8)
     
-    plt.tight_layout()
+    fig3.tight_layout()
     st.pyplot(fig3)
     
     # Download button for individual means boxplot
     buf3 = io.BytesIO()
-    fig3.savefig(buf3, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    fig3.savefig(buf3, format='png', dpi=300, facecolor='white')
     buf3.seek(0)
     
     st.download_button(
@@ -796,12 +841,12 @@ def main():
                 label=f'Iceland Median: {iceland_median_std:.2f}%')
     ax4.legend(loc='upper right', fontsize=8)
     
-    plt.tight_layout()
+    fig4.tight_layout()
     st.pyplot(fig4)
     
     # Download button for individual std dev boxplot
     buf4 = io.BytesIO()
-    fig4.savefig(buf4, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+    fig4.savefig(buf4, format='png', dpi=300, facecolor='white')
     buf4.seek(0)
     
     st.download_button(
@@ -1044,12 +1089,12 @@ def main():
         ax.legend(loc='best', fontsize=8, frameon=True, fancybox=False, shadow=False)
         ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
         
-        plt.tight_layout()
+        fig_ts.tight_layout()
         st.pyplot(fig_ts)
         
         # Individual download button for each time series
         buf_ts = io.BytesIO()
-        fig_ts.savefig(buf_ts, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+        fig_ts.savefig(buf_ts, format='png', dpi=300, facecolor='white')
         buf_ts.seek(0)
         
         clean_filename = nickname.replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
@@ -1161,8 +1206,14 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
         # Load Overall Capital Flows Analysis data
         overall_data, indicators_mapping = load_overall_capital_flows_data()
         
+        # Load Crisis-Excluded Overall Capital Flows Analysis data
+        overall_data_crisis_excluded, indicators_mapping_crisis_excluded = load_overall_capital_flows_data(include_crisis_years=False)
+        
         # Generate Overall Capital Flows Analysis HTML content
         overall_html_content = generate_overall_html_content(overall_data, indicators_mapping)
+        
+        # Generate Crisis-Excluded Overall Capital Flows Analysis HTML content
+        overall_html_content_crisis_excluded = generate_overall_html_content_crisis_excluded(overall_data_crisis_excluded, indicators_mapping_crisis_excluded)
         # Create temporary HTML file
         temp_dir = Path("temp_html_reports")
         temp_dir.mkdir(exist_ok=True)
@@ -1171,7 +1222,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
         # Generate plots as base64 images for embedding
         def create_plot_base64(fig):
             buf = io.BytesIO()
-            fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+            fig.savefig(buf, format='png', dpi=150, facecolor='white')
             buf.seek(0)
             img_base64 = base64.b64encode(buf.getvalue()).decode()
             plt.close(fig)
@@ -1193,7 +1244,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
         ax1.text(0.02, 0.98, f'Eurozone Avg: {mean_eurozone.mean():.2f}%\nIceland Avg: {mean_iceland.mean():.2f}%', 
                 transform=ax1.transAxes, verticalalignment='top', fontsize=8,
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
-        plt.tight_layout()
+        fig1.tight_layout()
         boxplot1_img = create_plot_base64(fig1)
         
         fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4))
@@ -1213,7 +1264,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
         ax2.text(0.02, 0.98, f'Eurozone Avg: {std_eurozone.mean():.2f}%\nIceland Avg: {std_iceland.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
                 transform=ax2.transAxes, verticalalignment='top', fontsize=8,
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
-        plt.tight_layout()
+        fig2.tight_layout()
         boxplot2_img = create_plot_base64(fig2)
         
         # Create summary statistics table exactly like app
@@ -1297,7 +1348,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             ax.legend(loc='best', fontsize=8, frameon=True, fancybox=False, shadow=False)
             ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
             
-            plt.tight_layout()
+            fig_ts.tight_layout()
             time_series_plots.append(create_plot_base64(fig_ts))
         
         # Calculate key statistics
@@ -1351,6 +1402,8 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             <hr>
             
             {overall_html_content}
+            
+            {overall_html_content_crisis_excluded}
             
             <h2>Indicator-Level Analysis</h2>
             <p><em>Detailed analysis by individual capital flow indicators</em></p>
@@ -1605,6 +1658,110 @@ def generate_overall_html_content(overall_data, indicators_mapping):
     
     return overall_html
 
+def generate_overall_html_content_crisis_excluded(overall_data, indicators_mapping):
+    """Generate HTML content for Crisis-Excluded Overall Capital Flows Analysis section"""
+    if overall_data is None or indicators_mapping is None:
+        return "<div class='warning-box'><strong>⚠️ Data Loading Error:</strong> Unable to load crisis-excluded overall capital flows data.</div>"
+    
+    # Create time series charts for all 4 overall indicators (crisis-excluded)
+    all_flows_charts = create_all_flows_time_series_charts(overall_data, indicators_mapping)
+    
+    # Calculate summary statistics for overall indicators (crisis-excluded)
+    summary_stats = []
+    for clean_name, col_name in indicators_mapping.items():
+        if col_name in overall_data.columns:
+            for group in ['Iceland', 'Eurozone']:
+                group_data = overall_data[overall_data['GROUP'] == group][col_name].dropna()
+                if len(group_data) > 0:
+                    summary_stats.append({
+                        'Indicator': clean_name,
+                        'Group': group,
+                        'Mean': group_data.mean(),
+                        'Std Dev': group_data.std(),
+                        'Median': group_data.median(),
+                        'Count': len(group_data)
+                    })
+    
+    if not summary_stats:
+        return "<div class='warning-box'><strong>⚠️ No Data:</strong> No crisis-excluded overall capital flows statistics available.</div>"
+    
+    # Create summary table
+    summary_rows = []
+    iceland_stats = {s['Indicator']: s for s in summary_stats if s['Group'] == 'Iceland'}
+    eurozone_stats = {s['Indicator']: s for s in summary_stats if s['Group'] == 'Eurozone'}
+    
+    for indicator in iceland_stats.keys():
+        if indicator in eurozone_stats:
+            ice = iceland_stats[indicator]
+            eur = eurozone_stats[indicator]
+            volatility_ratio = ice['Std Dev'] / eur['Std Dev'] if eur['Std Dev'] > 0 else 0
+            
+            summary_rows.append(f"""
+                <tr>
+                    <td style="text-align: left; font-weight: bold;">{indicator}</td>
+                    <td>{ice['Mean']:.2f}</td>
+                    <td>{ice['Std Dev']:.2f}</td>
+                    <td>{ice['Median']:.2f}</td>
+                    <td>{eur['Mean']:.2f}</td>
+                    <td>{eur['Std Dev']:.2f}</td>
+                    <td>{eur['Median']:.2f}</td>
+                    <td><strong>{volatility_ratio:.2f}x</strong></td>
+                </tr>
+            """)
+    
+    overall_html_crisis_excluded = f"""
+    <h2>📉 Excluding Financial Crises Analysis</h2>
+    <p><em>Analysis of capital flow volatility excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods</em></p>
+    <p><strong>Time Period:</strong> 1999-2024 (Excluding crisis years: 2008, 2009, 2010, 2020, 2021, 2022)</p>
+    
+    <h3>📈 Overall Capital Flows Analysis (Crisis-Excluded)</h3>
+    <p><em>High-level summary of aggregate net capital flows with crisis periods removed</em></p>
+    
+    <h4>📊 Summary Statistics by Group</h4>
+    <p><em>Analysis of 4 aggregate capital flow indicators: 3 base net flows plus 1 computed total</em></p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Overall Indicator</th>
+                <th colspan="3">Iceland</th>
+                <th colspan="3">Eurozone</th>
+                <th>Volatility Ratio</th>
+            </tr>
+            <tr>
+                <th></th>
+                <th>Mean</th>
+                <th>Std Dev</th>
+                <th>Median</th>
+                <th>Mean</th>
+                <th>Std Dev</th>
+                <th>Median</th>
+                <th>(Ice/Euro)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {''.join(summary_rows)}
+        </tbody>
+    </table>
+    
+    <div class="info-box">
+        <strong>Crisis-Excluded Analysis Summary:</strong> This section examines capital flow patterns with major 
+        financial crisis periods removed to isolate normal-period volatility differences. The analysis excludes 
+        Global Financial Crisis (2008-2010) and COVID-19 pandemic (2020-2022) periods.
+    </div>
+    
+    <h4>📈 Overall Capital Flows Time Series (Crisis-Excluded)</h4>
+    <p><em>Temporal comparison of all 4 aggregate capital flow indicators between Iceland and Eurozone (excluding crisis periods)</em></p>
+    
+    <div class="time-series" style="text-align: center; margin: 20px 0;">
+        {all_flows_charts}
+    </div>
+    
+    <hr>
+    """
+    
+    return overall_html_crisis_excluded
+
 def create_all_flows_time_series_charts(overall_data, indicators_mapping):
     """Create time series charts for all 4 overall capital flow indicators"""
     import matplotlib.pyplot as plt
@@ -1614,10 +1771,6 @@ def create_all_flows_time_series_charts(overall_data, indicators_mapping):
     import io
     
     try:
-        # Clear any existing matplotlib state
-        plt.clf()
-        plt.cla()
-        
         # Create date column
         chart_data = overall_data.copy()
         chart_data['Date'] = pd.to_datetime(
@@ -1711,23 +1864,678 @@ def create_all_flows_time_series_charts(overall_data, indicators_mapping):
         
         # Convert to base64 for embedding
         buf = io.BytesIO()
-        fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', 
+        fig.savefig(buf, format='png', dpi=150, 
                    facecolor='white', edgecolor='none', pad_inches=0.2)
         buf.seek(0)
         img_base64 = base64.b64encode(buf.getvalue()).decode()
         
         # Properly close the figure
         plt.close(fig)
-        plt.clf()
-        plt.cla()
         
         return f'<img src="data:image/png;base64,{img_base64}" alt="Overall Capital Flows Time Series Charts" style="max-width: 100%; height: auto; margin: 15px 0;">'
         
     except Exception as e:
         # Clean up matplotlib state on error
-        plt.clf()
-        plt.cla()
         return f"<div class='warning-box'><strong>⚠️ Chart Generation Error:</strong> {str(e)}</div>"
+
+# Crisis-Excluded Analysis Functions
+def case_study_1_main_crisis_excluded():
+    """Main Case Study 1 application with crisis periods excluded"""
+    final_data, analysis_indicators, metadata = load_default_data(include_crisis_years=False)
+    
+    if final_data is None:
+        st.error("❌ Failed to load crisis-excluded data.")
+        return
+    
+    # Data overview
+    st.success(f"✅ Crisis-excluded data loaded successfully! ({metadata['study_version']})")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Observations", f"{metadata['final_shape'][0]:,}")
+    with col2:
+        st.metric("Indicators", metadata['n_indicators'])
+    with col3:
+        st.metric("Countries", final_data['COUNTRY'].nunique())
+    with col4:
+        st.metric("Excluded Years", "2008-2010, 2020-2022")
+    
+    if 'excluded_observations' in metadata:
+        st.info(f"📊 **Crisis Filtering:** Excluded {metadata['excluded_observations']} observations from crisis periods")
+    
+    st.markdown("---")
+    
+    # Calculate all statistics
+    group_stats = calculate_group_statistics(final_data, 'GROUP', analysis_indicators)
+    boxplot_data = create_boxplot_data(final_data, analysis_indicators)
+    individual_country_data = create_individual_country_boxplot_data(final_data, analysis_indicators)
+    test_results = perform_volatility_tests(final_data, analysis_indicators)
+    
+    # 1. Summary Statistics and Boxplots
+    st.header("1. Summary Statistics and Boxplots")
+    
+    # Create individual boxplots with proper sizing
+    # First boxplot - Means (readable size)
+    fig1, ax1 = plt.subplots(1, 1, figsize=(6, 4))
+    
+    # Boxplot for Means
+    mean_data = boxplot_data[boxplot_data['Statistic'] == 'Mean']
+    mean_iceland = mean_data[mean_data['GROUP'] == 'Iceland']['Value']
+    mean_eurozone = mean_data[mean_data['GROUP'] == 'Eurozone']['Value']
+    
+    bp1 = ax1.boxplot([mean_eurozone, mean_iceland], labels=['Eurozone', 'Iceland'], patch_artist=True)
+    bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+    bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+    
+    ax1.set_title('Panel A: Distribution of Means Across All Capital Flow Indicators (Crisis-Excluded)', 
+                  fontweight='bold', fontsize=10, pad=10)
+    ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
+    ax1.tick_params(axis='both', which='major', labelsize=8)
+    ax1.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Add summary stats to plot
+    ax1.text(0.02, 0.98, f'Eurozone Avg: {mean_eurozone.mean():.2f}%\nIceland Avg: {mean_iceland.mean():.2f}%', 
+             transform=ax1.transAxes, verticalalignment='top', fontsize=8,
+             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+    
+    fig1.tight_layout()
+    st.pyplot(fig1)
+    
+    # Download button for means boxplot
+    buf1 = io.BytesIO()
+    fig1.savefig(buf1, format='png', dpi=300, facecolor='white')
+    buf1.seek(0)
+    
+    st.download_button(
+        label="📥 Download Means Boxplot (PNG)",
+        data=buf1.getvalue(),
+        file_name="case_study_1_means_boxplot_crisis_excluded.png",
+        mime="image/png",
+        key="download_means_crisis_excluded"
+    )
+    
+    # Second boxplot - Standard Deviations (readable size)
+    fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4))
+    
+    std_data = boxplot_data[boxplot_data['Statistic'] == 'Standard Deviation']
+    std_iceland = std_data[std_data['GROUP'] == 'Iceland']['Value']
+    std_eurozone = std_data[std_data['GROUP'] == 'Eurozone']['Value']
+    
+    bp2 = ax2.boxplot([std_eurozone, std_iceland], labels=['Eurozone', 'Iceland'], patch_artist=True)
+    bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+    bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+    
+    ax2.tick_params(axis='both', which='major', labelsize=8)
+    ax2.set_ylabel('Standard Deviation (% of GDP, annualized)', fontsize=9)
+    ax2.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Calculate volatility ratio
+    volatility_ratio = std_iceland.mean() / std_eurozone.mean() if std_eurozone.mean() != 0 else float('inf')
+    
+    # Add summary stats to plot
+    ax2.text(0.02, 0.98, f'Eurozone Avg: {std_eurozone.mean():.2f}%\nIceland Avg: {std_iceland.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
+             transform=ax2.transAxes, verticalalignment='top', fontsize=8,
+             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+    
+    ax2.set_title('Distribution of Standard Deviations: Iceland vs Eurozone Capital Flow Volatility (Crisis-Excluded)', 
+                 fontweight='bold', fontsize=10, pad=10)
+    fig2.tight_layout()
+    
+    st.pyplot(fig2)
+    
+    # Download button for std dev boxplot
+    buf2 = io.BytesIO()
+    fig2.savefig(buf2, format='png', dpi=300, facecolor='white')
+    buf2.seek(0)
+    
+    st.download_button(
+        label="📥 Download Std Dev Boxplot (PNG)",
+        data=buf2.getvalue(),
+        file_name="case_study_1_stddev_boxplot_crisis_excluded.png",
+        mime="image/png",
+        key="download_stddev_crisis_excluded"
+    )
+    
+    # 2. Comprehensive Statistical Summary Table
+    st.header("2. Comprehensive Statistical Summary Table (Crisis-Excluded)")
+    
+    st.markdown("**All Indicators - Iceland vs Eurozone Statistics (Crisis-Excluded)**")
+    
+    # Create a clean table with one row per indicator (both groups side-by-side)
+    # Sort indicators properly first
+    sorted_indicators = sort_indicators_by_type(analysis_indicators)
+    table_data = []
+    for indicator in sorted_indicators:
+        clean_name = indicator.replace('_PGDP', '')
+        nickname = get_nickname(clean_name)
+        indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
+        
+        # Get stats for both groups
+        iceland_stats = indicator_stats[indicator_stats['Group'] == 'Iceland'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Iceland']) > 0 else None
+        eurozone_stats = indicator_stats[indicator_stats['Group'] == 'Eurozone'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Eurozone']) > 0 else None
+        
+        if iceland_stats is not None and eurozone_stats is not None:
+            table_data.append({
+                'Indicator': nickname,
+                'Iceland Mean': f"{iceland_stats['Mean']:.2f}",
+                'Iceland Std Dev': f"{iceland_stats['Std_Dev']:.2f}",
+                'Iceland CV%': f"{iceland_stats['CV_Percent']:.1f}",
+                'Eurozone Mean': f"{eurozone_stats['Mean']:.2f}",
+                'Eurozone Std Dev': f"{eurozone_stats['Std_Dev']:.2f}",
+                'Eurozone CV%': f"{eurozone_stats['CV_Percent']:.1f}",
+                'CV Ratio (Ice/Euro)': f"{iceland_stats['CV_Percent']/eurozone_stats['CV_Percent']:.2f}" if eurozone_stats['CV_Percent'] != 0 else "∞"
+            })
+    
+    # Create DataFrame and display as table
+    summary_df = pd.DataFrame(table_data)
+    
+    # Style the table for better readability
+    styled_table = summary_df.style.set_properties(**{
+        'text-align': 'center',
+        'font-size': '10px',
+        'border': '1px solid #ddd'
+    }).set_table_styles([
+        {'selector': 'th', 'props': [('background-color', '#f0f0f0'), ('font-weight', 'bold'), ('font-size', '11px')]},
+        {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f9f9f9')]},
+        {'selector': 'td:first-child', 'props': [('text-align', 'left'), ('font-weight', 'bold')]}  # Left-align indicator names
+    ])
+    
+    st.dataframe(styled_table, use_container_width=True, hide_index=True)
+    
+    st.info(f"**Summary (Crisis-Excluded):** Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
+    
+    # Create summary with CV ratios for download
+    summary_pivot = group_stats.pivot_table(
+        index='Indicator',
+        columns='Group',
+        values=['Mean', 'Std_Dev', 'Skewness', 'CV_Percent'],
+        aggfunc='first'
+    )
+    
+    comprehensive_table = pd.DataFrame({
+        'Mean_Eurozone': summary_pivot[('Mean', 'Eurozone')],
+        'Mean_Iceland': summary_pivot[('Mean', 'Iceland')],
+        'StdDev_Eurozone': summary_pivot[('Std_Dev', 'Eurozone')],
+        'StdDev_Iceland': summary_pivot[('Std_Dev', 'Iceland')],
+        'Skew_Eurozone': summary_pivot[('Skewness', 'Eurozone')],
+        'Skew_Iceland': summary_pivot[('Skewness', 'Iceland')],
+        'CV_Eurozone': summary_pivot[('CV_Percent', 'Eurozone')],
+        'CV_Iceland': summary_pivot[('CV_Percent', 'Iceland')]
+    })
+    
+    comprehensive_table['CV_Ratio_Iceland_Eurozone'] = (
+        comprehensive_table['CV_Iceland'] / comprehensive_table['CV_Eurozone']
+    )
+    
+    # 3. Hypothesis Testing Results
+    st.header("3. Hypothesis Testing Results (Crisis-Excluded)")
+    
+    st.markdown("""
+    **F-Tests for Equal Variances (Iceland vs. Eurozone - Crisis-Excluded)**
+    
+    - **H₀:** Equal volatility  
+    - **H₁:** Different volatility  
+    - **α = 0.05**
+    - **Crisis Exclusions:** GFC (2008-2010) + COVID (2020-2022)
+    """)
+    
+    # Create a clean static table for hypothesis tests
+    results_display = test_results.copy()
+    
+    # Sort by investment type rather than F-statistic
+    results_display['Sort_Key'] = results_display['Indicator'].apply(get_investment_type_order)
+    results_display = results_display.sort_values('Sort_Key')
+    
+    # Add nicknames and format for display
+    results_display['Indicator_Nick'] = results_display['Indicator'].apply(get_nickname)
+    results_display['Significant'] = results_display.apply(
+        lambda row: '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else '', 
+        axis=1
+    )
+    results_display['Higher Volatility'] = results_display['Iceland_Higher_Volatility'].map({True: 'Iceland', False: 'Eurozone'})
+    
+    # Create formatted table
+    test_table_data = []
+    for _, row in results_display.iterrows():
+        test_table_data.append({
+            'Indicator': row['Indicator_Nick'],
+            'F-Statistic': f"{row['F_Statistic']:.2f}",
+            'P-Value': f"{row['P_Value']:.4f}",
+            'Significance': row['Significant'],
+            'Higher Volatility': row['Higher Volatility']
+        })
+    
+    test_df = pd.DataFrame(test_table_data)
+    
+    # Display as static table with better formatting
+    col1, col2 = st.columns([3, 1])
+    
+    with col1:
+        # Style the test results table
+        styled_test_table = test_df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '11px',
+            'border': '1px solid #ddd'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('text-align', 'center')]},
+            {'selector': 'tr:nth-child(even)', 'props': [('background-color', '#f9f9f9')]},
+            {'selector': 'td:first-child', 'props': [('text-align', 'left'), ('font-weight', 'bold')]}
+        ])
+        
+        st.dataframe(styled_test_table, use_container_width=True, hide_index=True)
+    
+    with col2:
+        # Summary statistics
+        total_indicators = len(test_results)
+        sig_1pct_count = (test_results['P_Value'] < 0.01).sum()
+        sig_5pct_count = (test_results['P_Value'] < 0.05).sum()
+        iceland_higher_count = (test_results['Iceland_Higher_Volatility'] == True).sum()
+        
+        st.markdown(f"""
+        **Summary (Crisis-Excluded):**
+        - **Total indicators:** {total_indicators}
+        - **Significant at 1%:** {sig_1pct_count}
+        - **Significant at 5%:** {sig_5pct_count}
+        - **Iceland higher volatility:** {iceland_higher_count}
+        """)
+    
+    st.markdown("**Significance levels:** *** p<0.001, ** p<0.01, * p<0.05")
+    
+    # 4. Time Series Analysis
+    st.header("4. Time Series Analysis (Crisis-Excluded)")
+    
+    # Create date column
+    final_data_copy = final_data.copy()
+    final_data_copy['Date'] = pd.to_datetime(
+        final_data_copy['YEAR'].astype(str) + '-' + 
+        ((final_data_copy['QUARTER'] - 1) * 3 + 1).astype(str) + '-01'
+    )
+    
+    # Get selected indicators (sorted by investment type)
+    selected_indicators = sorted_indicators
+    
+    st.markdown(f"**Showing all {len(selected_indicators)} indicators sorted by investment type (Crisis-Excluded)**")
+    
+    # Create individual time series plots for better readability and downloads
+    time_series_figures = []
+    
+    for i, indicator in enumerate(selected_indicators):
+        # Create individual plot for each indicator (very compact size)
+        fig_ts, ax = plt.subplots(1, 1, figsize=(6, 2.5))
+        
+        clean_name = indicator.replace('_PGDP', '')
+        nickname = get_nickname(clean_name)
+        
+        # Add shaded regions for excluded crisis periods
+        # 2008-2010 (Global Financial Crisis)
+        ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
+                  alpha=0.15, color='red', label='GFC (2008-2010)')
+        # 2020-2022 (COVID-19)
+        ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
+                  alpha=0.15, color='orange', label='COVID-19 (2020-2022)')
+        
+        # Plot Iceland data with line breaks at data gaps
+        iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland'].sort_values('Date')
+        if len(iceland_data) > 0:
+            # Detect gaps in the time series and split into segments
+            iceland_segments = []
+            current_segment = []
+            
+            dates = iceland_data['Date'].tolist()
+            for j, (_, row) in enumerate(iceland_data.iterrows()):
+                current_segment.append(row)
+                
+                # Check if there's a gap to the next date (more than 1 year)
+                if j < len(dates) - 1:
+                    current_date = dates[j]
+                    next_date = dates[j + 1]
+                    time_gap = (next_date - current_date).days
+                    
+                    # If gap is more than 400 days (indicating missing years), end current segment
+                    if time_gap > 400:
+                        iceland_segments.append(pd.DataFrame(current_segment))
+                        current_segment = []
+            
+            # Add the final segment
+            if current_segment:
+                iceland_segments.append(pd.DataFrame(current_segment))
+            
+            # Plot each segment separately to create line breaks
+            for k, segment in enumerate(iceland_segments):
+                if len(segment) > 0:
+                    label = 'Iceland' if k == 0 else None  # Only label first segment
+                    ax.plot(segment['Date'], segment[indicator], 
+                           color=COLORBLIND_SAFE[1], linewidth=1.5, label=label)
+        
+        # Plot Eurozone average with line breaks at data gaps
+        eurozone_data = final_data_copy[final_data_copy['GROUP'] == 'Eurozone']
+        if len(eurozone_data) > 0:
+            eurozone_avg = eurozone_data.groupby('Date')[indicator].mean().reset_index()
+            
+            # Detect gaps in the time series and split into segments
+            eurozone_segments = []
+            current_segment = []
+            
+            dates = eurozone_avg['Date'].tolist()
+            for j, (_, row) in enumerate(eurozone_avg.iterrows()):
+                current_segment.append(row)
+                
+                # Check if there's a gap to the next date (more than 1 year)
+                if j < len(dates) - 1:
+                    current_date = dates[j]
+                    next_date = dates[j + 1]
+                    time_gap = (next_date - current_date).days
+                    
+                    # If gap is more than 400 days (indicating missing years), end current segment
+                    if time_gap > 400:
+                        eurozone_segments.append(pd.DataFrame(current_segment))
+                        current_segment = []
+            
+            # Add the final segment
+            if current_segment:
+                eurozone_segments.append(pd.DataFrame(current_segment))
+            
+            # Plot each segment separately to create line breaks
+            for k, segment in enumerate(eurozone_segments):
+                if len(segment) > 0:
+                    label = 'Eurozone Average' if k == 0 else None  # Only label first segment
+                    ax.plot(segment['Date'], segment[indicator], 
+                           color=COLORBLIND_SAFE[0], linewidth=1.5, label=label)
+        
+        # Formatting
+        f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
+        panel_letter = chr(65 + i)  # A, B, C, etc.
+        ax.set_title(f'Panel {panel_letter}: {nickname} (F-statistic: {f_stat:.2f}) - Crisis-Excluded', 
+                    fontweight='bold', fontsize=9, pad=8)
+        ax.set_ylabel('% of GDP (annualized)', fontsize=8)
+        ax.set_xlabel('Year', fontsize=8)
+        ax.tick_params(axis='both', which='major', labelsize=7)
+        ax.legend(loc='best', fontsize=8, frameon=True, fancybox=False, shadow=False)
+        ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+        
+        fig_ts.tight_layout()
+        st.pyplot(fig_ts)
+        
+        # Individual download button for each time series
+        buf_ts = io.BytesIO()
+        fig_ts.savefig(buf_ts, format='png', dpi=300, facecolor='white')
+        buf_ts.seek(0)
+        
+        clean_filename = nickname.replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        st.download_button(
+            label=f"📥 Download {nickname} Time Series (PNG)",
+            data=buf_ts.getvalue(),
+            file_name=f"case_study_1_{clean_filename}_timeseries_crisis_excluded.png",
+            mime="image/png",
+            key=f"download_ts_crisis_excluded_{i}"
+        )
+        
+        time_series_figures.append(fig_ts)
+    
+    st.markdown("---")
+    
+    # 5. Key Findings Summary
+    st.header("5. Key Findings Summary (Crisis-Excluded)")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown(f"""
+        ### Statistical Evidence (Crisis-Excluded):
+        - **{iceland_higher_count/total_indicators*100:.1f}% of capital flow indicators** show higher volatility in Iceland
+        - **{sig_5pct_count/total_indicators*100:.1f}% of indicators** show statistically significant differences (p<0.05)
+        - **Iceland's average volatility** is {volatility_ratio:.2f} times higher than Eurozone countries
+        - **Crisis periods excluded** to focus on structural differences
+        """)
+    
+    with col2:
+        st.markdown("""
+        ### Policy Implications (Crisis-Excluded):
+        - Evidence supports hypothesis even without crisis periods
+        - Structural volatility differences persist beyond crisis events
+        - Euro adoption could provide systematic volatility reduction
+        - Benefits appear consistent across different market conditions
+        """)
+    
+    # Download section
+    st.markdown("---")
+    st.header("6. Download Results (Crisis-Excluded)")
+    
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        # Download comprehensive table
+        csv = comprehensive_table.to_csv(index=True)
+        st.download_button(
+            label="📥 Download Summary Table (CSV)",
+            data=csv,
+            file_name="case_study_1_summary_statistics_crisis_excluded.csv",
+            mime="text/csv"
+        )
+    
+    with col2:
+        # Download test results
+        csv_tests = test_results.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Test Results (CSV)",
+            data=csv_tests,
+            file_name="case_study_1_hypothesis_tests_crisis_excluded.csv",
+            mime="text/csv"
+        )
+    
+    with col3:
+        # Download individual country data
+        csv_individual = individual_country_data.to_csv(index=False)
+        st.download_button(
+            label="📥 Download Individual Data (CSV)",
+            data=csv_individual,
+            file_name="case_study_1_individual_country_data_crisis_excluded.csv",
+            mime="text/csv"
+        )
+    
+    with col4:
+        # Overall Data Download
+        if st.button("📥 Download All Data (ZIP)", key="download_all_crisis_excluded"):
+            # Create ZIP file with all CSV data
+            zip_buffer = io.BytesIO()
+            with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                zip_file.writestr("summary_statistics_crisis_excluded.csv", comprehensive_table.to_csv(index=True))
+                zip_file.writestr("hypothesis_tests_crisis_excluded.csv", test_results.to_csv(index=False))
+                zip_file.writestr("individual_country_data_crisis_excluded.csv", individual_country_data.to_csv(index=False))
+                zip_file.writestr("boxplot_data_crisis_excluded.csv", boxplot_data.to_csv(index=False))
+            
+            zip_buffer.seek(0)
+            
+            st.download_button(
+                label="📥 Download ZIP File",
+                data=zip_buffer.getvalue(),
+                file_name="case_study_1_all_data_crisis_excluded.zip",
+                mime="application/zip",
+                key="download_zip_crisis_excluded"
+            )
+
+def show_overall_capital_flows_analysis_crisis_excluded():
+    """Display Overall Capital Flows Analysis section for crisis-excluded data"""
+    st.header("📈 Overall Capital Flows Analysis (Crisis-Excluded)")
+    st.markdown("*High-level summary of aggregate net capital flows excluding crisis periods (GFC 2008-2010 + COVID 2020-2022)*")
+    
+    # Load crisis-excluded data
+    overall_data, indicators_mapping = load_overall_capital_flows_data(include_crisis_years=False)
+    
+    if overall_data is None or indicators_mapping is None:
+        st.error("Failed to load crisis-excluded overall capital flows data.")
+        return
+    
+    # Use consistent COLORBLIND_SAFE palette
+    colors = {'Iceland': COLORBLIND_SAFE[1], 'Eurozone': COLORBLIND_SAFE[0]}
+    
+    # Create summary statistics by group
+    st.markdown("**📊 Summary Statistics by Group (Crisis-Excluded)**")
+    
+    summary_stats = []
+    for clean_name, col_name in indicators_mapping.items():
+        if col_name in overall_data.columns:
+            for group in ['Iceland', 'Eurozone']:
+                group_data = overall_data[overall_data['GROUP'] == group][col_name].dropna()
+                if len(group_data) > 0:
+                    summary_stats.append({
+                        'Indicator': clean_name,
+                        'Group': group,
+                        'Mean': group_data.mean(),
+                        'Std Dev': group_data.std(),
+                        'Median': group_data.median(),
+                        'Min': group_data.min(),
+                        'Max': group_data.max(),
+                        'N': len(group_data)
+                    })
+    
+    if summary_stats:
+        stats_df = pd.DataFrame(summary_stats)
+        
+        # Display summary table in pivot format to match Full Time Period
+        pivot_summary = stats_df.pivot_table(
+            index='Indicator', 
+            columns='Group', 
+            values=['Mean', 'Std Dev', 'Median'],
+            aggfunc='first'
+        ).round(2)
+        
+        st.dataframe(pivot_summary, use_container_width=True)
+        
+        # Side-by-side boxplots by individual indicator (2x2 format to match Full Time Period)
+        st.markdown("**📦 Distribution Comparison by Group (Crisis-Excluded)**")
+        
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        axes = axes.flatten()
+        
+        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+            if col_name in overall_data.columns and i < 4:
+                ax = axes[i]
+                
+                # Prepare data for boxplot
+                iceland_data = overall_data[overall_data['GROUP'] == 'Iceland'][col_name].dropna()
+                eurozone_data = overall_data[overall_data['GROUP'] == 'Eurozone'][col_name].dropna()
+                
+                # Create boxplot
+                bp = ax.boxplot([iceland_data, eurozone_data], 
+                               labels=['Iceland', 'Eurozone'], 
+                               patch_artist=True)
+                
+                # Color the boxes
+                bp['boxes'][0].set_facecolor(colors['Iceland'])
+                bp['boxes'][1].set_facecolor(colors['Eurozone'])
+                for box in bp['boxes']:
+                    box.set_alpha(0.7)
+                
+                ax.set_title(f"{clean_name} (Crisis-Excluded)", fontweight='bold', fontsize=10)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                ax.tick_params(labelsize=8)
+        
+        fig.tight_layout()
+        st.pyplot(fig)
+            
+        # Time series charts in 2x2 format (Crisis-Excluded)
+        st.markdown("**📈 Time Series by Group (Crisis-Excluded)**")
+        
+        # Create date column
+        overall_data_ts = overall_data.copy()
+        overall_data_ts['DATE'] = pd.to_datetime(overall_data_ts['YEAR'].astype(str) + '-Q' + overall_data_ts['QUARTER'].astype(str))
+        
+        fig2, axes2 = plt.subplots(2, 2, figsize=(15, 10))
+        axes2 = axes2.flatten()
+        
+        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+            if col_name in overall_data.columns and i < 4:
+                ax = axes2[i]
+                
+                # Add shaded regions for excluded crisis periods
+                # 2008-2010 (Global Financial Crisis)
+                ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
+                          alpha=0.15, color='red', label='GFC (2008-2010)')
+                # 2020-2022 (COVID-19)
+                ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
+                          alpha=0.15, color='orange', label='COVID-19 (2020-2022)')
+                
+                # Plot Iceland data with line breaks at data gaps
+                iceland_data = overall_data_ts[overall_data_ts['GROUP'] == 'Iceland'].sort_values('DATE')
+                if len(iceland_data) > 0:
+                    # Detect gaps in the time series and split into segments
+                    iceland_segments = []
+                    current_segment = []
+                    
+                    dates = iceland_data['DATE'].tolist()
+                    for i, (_, row) in enumerate(iceland_data.iterrows()):
+                        current_segment.append(row)
+                        
+                        # Check if there's a gap to the next date (more than 1 year)
+                        if i < len(dates) - 1:
+                            current_date = dates[i]
+                            next_date = dates[i + 1]
+                            time_gap = (next_date - current_date).days
+                            
+                            # If gap is more than 400 days (indicating missing years), end current segment
+                            if time_gap > 400:
+                                iceland_segments.append(pd.DataFrame(current_segment))
+                                current_segment = []
+                    
+                    # Add the final segment
+                    if current_segment:
+                        iceland_segments.append(pd.DataFrame(current_segment))
+                    
+                    # Plot each segment separately to create line breaks
+                    for j, segment in enumerate(iceland_segments):
+                        if len(segment) > 0:
+                            label = 'Iceland' if j == 0 else None  # Only label first segment
+                            ax.plot(segment['DATE'], segment[col_name], 
+                                   color=colors['Iceland'], label=label, linewidth=2, alpha=0.8)
+                
+                # Plot Eurozone average with line breaks at data gaps
+                eurozone_data = overall_data_ts[overall_data_ts['GROUP'] == 'Eurozone']
+                if len(eurozone_data) > 0:
+                    eurozone_avg = eurozone_data.groupby('DATE')[col_name].mean().reset_index()
+                    
+                    # Detect gaps in the time series and split into segments
+                    eurozone_segments = []
+                    current_segment = []
+                    
+                    dates = eurozone_avg['DATE'].tolist()
+                    for i, (_, row) in enumerate(eurozone_avg.iterrows()):
+                        current_segment.append(row)
+                        
+                        # Check if there's a gap to the next date (more than 1 year)
+                        if i < len(dates) - 1:
+                            current_date = dates[i]
+                            next_date = dates[i + 1]
+                            time_gap = (next_date - current_date).days
+                            
+                            # If gap is more than 400 days (indicating missing years), end current segment
+                            if time_gap > 400:
+                                eurozone_segments.append(pd.DataFrame(current_segment))
+                                current_segment = []
+                    
+                    # Add the final segment
+                    if current_segment:
+                        eurozone_segments.append(pd.DataFrame(current_segment))
+                    
+                    # Plot each segment separately to create line breaks
+                    for j, segment in enumerate(eurozone_segments):
+                        if len(segment) > 0:
+                            label = 'Eurozone Average' if j == 0 else None  # Only label first segment
+                            ax.plot(segment['DATE'], segment[col_name], 
+                                   color=colors['Eurozone'], label=label, linewidth=2, alpha=0.8)
+                
+                ax.set_title(f"{clean_name} (Crisis-Excluded)", fontweight='bold', fontsize=10)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                ax.legend(loc='upper right', fontsize=8)
+                ax.tick_params(labelsize=8)
+                ax.grid(True, alpha=0.3)
+        
+        fig2.tight_layout()
+        st.pyplot(fig2)
+    else:
+        st.warning("No summary statistics available")
 
 if __name__ == "__main__":
     main()

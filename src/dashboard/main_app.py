@@ -2359,10 +2359,14 @@ def show_case_study_1_restructured():
     st.markdown("**Time Period:** 1999-2024 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)")
     
     st.markdown("#### Overall Capital Flows Analysis")
-    st.info("🚧 Crisis-excluded analysis implementation in progress. This will filter out Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods for more stable volatility comparison.")
+    # Import the crisis-excluded function
+    from simple_report_app import show_overall_capital_flows_analysis_crisis_excluded
+    show_overall_capital_flows_analysis_crisis_excluded()
     
     st.markdown("#### Indicator-Level Analysis")
-    st.info("🚧 Crisis-excluded indicator analysis implementation in progress.")
+    # Import the crisis-excluded main function
+    from simple_report_app import case_study_1_main_crisis_excluded
+    case_study_1_main_crisis_excluded()
     
     # Download Reports Section
     st.markdown("---")
