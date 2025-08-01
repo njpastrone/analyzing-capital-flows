@@ -291,12 +291,29 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         if not include_crisis_years:
             case_two_data = case_two_data[case_two_data['EURO_PERIOD'] != 'Excluded'].copy()
         
-        # Define the 4 overall capital flows indicators
-        overall_indicators_mapping = {
+        # Define the 4 overall capital flows indicators (3 base + 1 computed)
+        base_indicators_mapping = {
             'Net Portfolio Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP',
             'Net Direct Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP',
-            'Net Other Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP',
-            'Net Financial Account Balance': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial account balance, excluding reserves and related items_PGDP'
+            'Net Other Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP'
+        }
+        
+        # Compute the new Net Capital Flows indicator
+        net_direct_col = base_indicators_mapping['Net Direct Investment']
+        net_portfolio_col = base_indicators_mapping['Net Portfolio Investment'] 
+        net_other_col = base_indicators_mapping['Net Other Investment']
+        
+        # Create the computed column
+        case_two_data['Net Capital Flows (Direct + Portfolio + Other Investment)_PGDP'] = (
+            case_two_data[net_direct_col].fillna(0) + 
+            case_two_data[net_portfolio_col].fillna(0) + 
+            case_two_data[net_other_col].fillna(0)
+        )
+        
+        # Complete indicators mapping including computed indicator
+        overall_indicators_mapping = {
+            **base_indicators_mapping,
+            'Net Capital Flows (Direct + Portfolio + Other Investment)': 'Net Capital Flows (Direct + Portfolio + Other Investment)_PGDP'
         }
         
         # Create metadata

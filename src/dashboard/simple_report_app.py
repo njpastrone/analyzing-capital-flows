@@ -150,7 +150,7 @@ def load_default_data():
         # Get analysis indicators (columns ending with _PGDP)
         all_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
         
-        # Remove the last two indicators (Financial derivatives and Financial account balance)
+        # Remove the last two indicators (Financial derivatives and Financial account balance - now discontinued)
         indicators_to_exclude = [
             'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial derivatives (other than reserves) and employee stock options_PGDP',
             'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial account balance, excluding reserves and related items_PGDP'
@@ -328,12 +328,29 @@ def load_overall_capital_flows_data():
             lambda x: 'Iceland' if x == 'Iceland' else 'Eurozone'
         )
         
-        # Define the 4 overall capital flows indicators
-        overall_indicators_mapping = {
+        # Define the 4 overall capital flows indicators (3 base + 1 computed)
+        base_indicators_mapping = {
             'Net Portfolio Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP',
             'Net Direct Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP',
-            'Net Other Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP',
-            'Net Financial Account Balance': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial account balance, excluding reserves and related items_PGDP'
+            'Net Other Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP'
+        }
+        
+        # Compute the new Net Capital Flows indicator
+        net_direct_col = base_indicators_mapping['Net Direct Investment']
+        net_portfolio_col = base_indicators_mapping['Net Portfolio Investment'] 
+        net_other_col = base_indicators_mapping['Net Other Investment']
+        
+        # Create the computed column
+        final_data['Net Capital Flows (Direct + Portfolio + Other Investment)_PGDP'] = (
+            final_data[net_direct_col].fillna(0) + 
+            final_data[net_portfolio_col].fillna(0) + 
+            final_data[net_other_col].fillna(0)
+        )
+        
+        # Complete indicators mapping including computed indicator
+        overall_indicators_mapping = {
+            **base_indicators_mapping,
+            'Net Capital Flows (Direct + Portfolio + Other Investment)': 'Net Capital Flows (Direct + Portfolio + Other Investment)_PGDP'
         }
         
         return final_data, overall_indicators_mapping

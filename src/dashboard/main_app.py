@@ -1532,8 +1532,8 @@ def show_expanded_bop_pipeline():
     **Dataset:** `net_flows_july_30_2025.csv` - Comprehensive IMF Balance of Payments data with additional capital flow indicators.
     
     **New Indicators Added:**
-    - 🆕 **Financial account balance, excluding reserves and related items** - Overall capital flows summary
-    - 🆕 **Financial derivatives and employee stock options** - Advanced financial instruments
+    - 🆕 **Net Capital Flows (Direct + Portfolio + Other Investment)** - Computed overall capital flows summary
+    - 🆕 **Financial derivatives and employee stock options** - Advanced financial instruments  
     - ✅ **Other investment, Total** - Complete other investment coverage
     - ✅ **Direct investment, Total** - Confirmed overlap with existing data
     - ✅ **Portfolio investment, Total** - Confirmed overlap with existing data
@@ -1572,7 +1572,7 @@ print(f"Loaded: {bop_df.shape} - {bop_df['COUNTRY'].nunique()} countries")
                 st.markdown("**New Indicators Found:**")
                 indicators = [
                     "Direct investment, Total financial assets/liabilities",
-                    "Financial account balance, excluding reserves and related items", 
+                    "Net Capital Flows (Direct + Portfolio + Other Investment)", 
                     "Financial derivatives (other than reserves) and employee stock options",
                     "Other investment, Total financial assets/liabilities",
                     "Portfolio investment, Total financial assets/liabilities"
@@ -1624,7 +1624,7 @@ for col in indicator_cols:
         "Indicator": [
             "Direct investment, Total financial assets/liabilities",
             "Portfolio investment, Total financial assets/liabilities", 
-            "Financial account balance, excluding reserves",
+            "Net Capital Flows (Direct + Portfolio + Other Investment)",
             "Financial derivatives and employee stock options",
             "Other investment, Total financial assets/liabilities"
         ],
@@ -1674,7 +1674,7 @@ for col in indicator_cols:
     **✅ Ready for Integration:**
     - Case Study 1 has complete coverage (100% - 11/11 countries) with 1,093 observations
     - Case Study 2 has strong coverage (71.4% - 5/7 countries) with 517 observations
-    - New "Financial account balance" provides overall capital flows summary
+    - New "Net Capital Flows" provides computed overall capital flows summary
     - Data processing pipeline validated with proper scaling corrections
     - All Baltic states (Estonia, Latvia, Lithuania) successfully included
     - Netherlands successfully included in Case Study 1 analysis
