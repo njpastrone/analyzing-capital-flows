@@ -525,6 +525,10 @@ def main():
     
     base_session_id = st.session_state.cs2_base_session_id
     
+    # Get tab-specific identifier if available (for unique widget keys across tabs)
+    tab_id = st.session_state.get('current_cs2_tab_id', 'default')
+    unique_key_prefix = f"{base_session_id}_{tab_id}"
+    
     # Title and header
     st.title("🇪🇺 Euro Adoption Impact Analysis")
     st.subheader("Case Study 2: Baltic Countries Capital Flow Volatility")
@@ -545,7 +549,8 @@ def main():
         "Select study version:",
         ["Full Series", "Crisis-Excluded"],
         index=0,
-        help="Full Series uses all available data. Crisis-Excluded removes major crisis periods (GFC 2008-2010 + COVID 2020-2022)."
+        help="Full Series uses all available data. Crisis-Excluded removes major crisis periods (GFC 2008-2010 + COVID 2020-2022).",
+        key=f"cs2_study_version_{unique_key_prefix}"
     )
     
     include_crisis_years = (study_version == "Full Series")
@@ -641,7 +646,8 @@ def main():
     selected_display_country = st.selectbox(
         "Choose a Baltic country to analyze:",
         ['Estonia', 'Latvia', 'Lithuania'],
-        index=0
+        index=0,
+        key=f"cs2_country_select_{unique_key_prefix}"
     )
     
     selected_country = country_mapping[selected_display_country]

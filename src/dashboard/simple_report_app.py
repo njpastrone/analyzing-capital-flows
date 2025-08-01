@@ -578,9 +578,9 @@ def main():
     # 1. Summary Statistics and Boxplots
     st.header("1. Summary Statistics and Boxplots")
     
-    # Create individual boxplots with standard sizing
-    # First boxplot - Means (very compact size)
-    fig1, ax1 = plt.subplots(1, 1, figsize=(4, 3))
+    # Create individual boxplots with proper sizing
+    # First boxplot - Means (readable size)
+    fig1, ax1 = plt.subplots(1, 1, figsize=(6, 4))
     
     # Boxplot for Means
     mean_data = boxplot_data[boxplot_data['Statistic'] == 'Mean']
@@ -618,8 +618,8 @@ def main():
         key="download_means"
     )
     
-    # Second boxplot - Standard Deviations (very compact size)
-    fig2, ax2 = plt.subplots(1, 1, figsize=(4, 3))
+    # Second boxplot - Standard Deviations (readable size)
+    fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4))
     
     std_data = boxplot_data[boxplot_data['Statistic'] == 'Standard Deviation']
     std_iceland = std_data[std_data['GROUP'] == 'Iceland']['Value']
@@ -1156,8 +1156,13 @@ def main():
                     st.error("❌ Failed to generate HTML report.")
 
 def generate_html_report(final_data, analysis_indicators, test_results, group_stats, boxplot_data):
-    """Generate an HTML report that mimics the app's formatting exactly"""
+    """Generate an HTML report that exactly matches the app interface structure"""
     try:
+        # Load Overall Capital Flows Analysis data
+        overall_data, indicators_mapping = load_overall_capital_flows_data()
+        
+        # Generate Overall Capital Flows Analysis HTML content
+        overall_html_content = generate_overall_html_content(overall_data, indicators_mapping)
         # Create temporary HTML file
         temp_dir = Path("temp_html_reports")
         temp_dir.mkdir(exist_ok=True)
@@ -1173,7 +1178,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             return f"data:image/png;base64,{img_base64}"
         
         # Create boxplots exactly like app
-        fig1, ax1 = plt.subplots(1, 1, figsize=(4, 3))
+        fig1, ax1 = plt.subplots(1, 1, figsize=(6, 4))
         mean_data = boxplot_data[boxplot_data['Statistic'] == 'Mean']
         mean_iceland = mean_data[mean_data['GROUP'] == 'Iceland']['Value']
         mean_eurozone = mean_data[mean_data['GROUP'] == 'Eurozone']['Value']
@@ -1191,7 +1196,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
         plt.tight_layout()
         boxplot1_img = create_plot_base64(fig1)
         
-        fig2, ax2 = plt.subplots(1, 1, figsize=(4, 3))
+        fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4))
         std_data = boxplot_data[boxplot_data['Statistic'] == 'Standard Deviation']
         std_iceland = std_data[std_data['GROUP'] == 'Iceland']['Value']
         std_eurozone = std_data[std_data['GROUP'] == 'Eurozone']['Value']
@@ -1345,7 +1350,12 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             
             <hr>
             
-            <h2>1. Summary Statistics and Boxplots</h2>
+            {overall_html_content}
+            
+            <h2>Indicator-Level Analysis</h2>
+            <p><em>Detailed analysis by individual capital flow indicators</em></p>
+            
+            <h3>1. Summary Statistics and Boxplots</h3>
             
             <div class="plot-row">
                 <img src="{boxplot1_img}" alt="Means Boxplot" style="max-width: 45%;">
@@ -1371,7 +1381,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             
             <hr>
             
-            <h2>2. Comprehensive Statistical Summary Table</h2>
+            <h3>2. Comprehensive Statistical Summary Table</h3>
             <p><strong>All Indicators - Iceland vs Eurozone Statistics</strong></p>
             
             <table>
@@ -1398,7 +1408,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             
             <hr>
             
-            <h2>3. Hypothesis Testing Results</h2>
+            <h3>3. Hypothesis Testing Results</h3>
             <p><strong>F-Tests for Equal Variances (Iceland vs. Eurozone)</strong></p>
             
             <ul>
@@ -1445,7 +1455,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             
             <hr>
             
-            <h2>4. Time Series Analysis</h2>
+            <h3>4. Time Series Analysis</h3>
             <p><strong>Showing all {len(analysis_indicators)} indicators sorted by investment type</strong></p>
             
             <div class="time-series">
@@ -1454,7 +1464,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             
             <hr>
             
-            <h2>5. Key Findings Summary</h2>
+            <h3>5. Key Findings Summary</h3>
             
             <div class="columns">
                 <div class="column">
@@ -1494,6 +1504,230 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
     except Exception as e:
         st.error(f"Error generating HTML report: {str(e)}")
         return None
+
+def generate_overall_html_content(overall_data, indicators_mapping):
+    """Generate HTML content for Overall Capital Flows Analysis section"""
+    if overall_data is None or indicators_mapping is None:
+        return "<div class='warning-box'><strong>⚠️ Data Loading Error:</strong> Unable to load overall capital flows data.</div>"
+    
+    # Create time series charts for all 4 overall indicators
+    all_flows_charts = create_all_flows_time_series_charts(overall_data, indicators_mapping)
+    
+    # Calculate summary statistics for overall indicators
+    summary_stats = []
+    for clean_name, col_name in indicators_mapping.items():
+        if col_name in overall_data.columns:
+            for group in ['Iceland', 'Eurozone']:
+                group_data = overall_data[overall_data['GROUP'] == group][col_name].dropna()
+                if len(group_data) > 0:
+                    summary_stats.append({
+                        'Indicator': clean_name,
+                        'Group': group,
+                        'Mean': group_data.mean(),
+                        'Std Dev': group_data.std(),
+                        'Median': group_data.median(),
+                        'Count': len(group_data)
+                    })
+    
+    if not summary_stats:
+        return "<div class='warning-box'><strong>⚠️ No Data:</strong> No overall capital flows statistics available.</div>"
+    
+    # Create summary table
+    summary_rows = []
+    iceland_stats = {s['Indicator']: s for s in summary_stats if s['Group'] == 'Iceland'}
+    eurozone_stats = {s['Indicator']: s for s in summary_stats if s['Group'] == 'Eurozone'}
+    
+    for indicator in iceland_stats.keys():
+        if indicator in eurozone_stats:
+            ice = iceland_stats[indicator]
+            eur = eurozone_stats[indicator]
+            volatility_ratio = ice['Std Dev'] / eur['Std Dev'] if eur['Std Dev'] > 0 else 0
+            
+            summary_rows.append(f"""
+                <tr>
+                    <td style="text-align: left; font-weight: bold;">{indicator}</td>
+                    <td>{ice['Mean']:.2f}</td>
+                    <td>{ice['Std Dev']:.2f}</td>
+                    <td>{ice['Median']:.2f}</td>
+                    <td>{eur['Mean']:.2f}</td>
+                    <td>{eur['Std Dev']:.2f}</td>
+                    <td>{eur['Median']:.2f}</td>
+                    <td><strong>{volatility_ratio:.2f}x</strong></td>
+                </tr>
+            """)
+    
+    overall_html = f"""
+    <h2>📈 Overall Capital Flows Analysis</h2>
+    <p><em>High-level summary of aggregate net capital flows before detailed disaggregated analysis</em></p>
+    
+    <h3>📊 Summary Statistics by Group</h3>
+    <p><em>Analysis of 4 aggregate capital flow indicators: 3 base net flows plus 1 computed total</em></p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>Overall Indicator</th>
+                <th colspan="3">Iceland</th>
+                <th colspan="3">Eurozone</th>
+                <th>Volatility Ratio</th>
+            </tr>
+            <tr>
+                <th></th>
+                <th>Mean</th>
+                <th>Std Dev</th>
+                <th>Median</th>
+                <th>Mean</th>
+                <th>Std Dev</th>
+                <th>Median</th>
+                <th>(Ice/Euro)</th>
+            </tr>
+        </thead>
+        <tbody>
+            {''.join(summary_rows)}
+        </tbody>
+    </table>
+    
+    <div class="info-box">
+        <strong>Overall Analysis Summary:</strong> This section examines high-level aggregate capital flow patterns 
+        before diving into detailed disaggregated analysis. The 4 overall indicators provide a macro-level view 
+        of net capital flows by major investment category.
+    </div>
+    
+    <h3>📈 Overall Capital Flows Time Series</h3>
+    <p><em>Temporal comparison of all 4 aggregate capital flow indicators between Iceland and Eurozone</em></p>
+    
+    <div class="time-series" style="text-align: center; margin: 20px 0;">
+        {all_flows_charts}
+    </div>
+    
+    <hr>
+    """
+    
+    return overall_html
+
+def create_all_flows_time_series_charts(overall_data, indicators_mapping):
+    """Create time series charts for all 4 overall capital flow indicators"""
+    import matplotlib.pyplot as plt
+    import matplotlib.dates as mdates
+    import pandas as pd
+    import base64
+    import io
+    
+    try:
+        # Clear any existing matplotlib state
+        plt.clf()
+        plt.cla()
+        
+        # Create date column
+        chart_data = overall_data.copy()
+        chart_data['Date'] = pd.to_datetime(
+            chart_data['YEAR'].astype(str) + '-' + 
+            ((chart_data['QUARTER'] - 1) * 3 + 1).astype(str) + '-01'
+        )
+        
+        # Define chart titles and identify indicators
+        chart_config = [
+            {'title': 'Panel A: Net Direct Investment', 'keywords': ['Direct Investment', 'Direct']},
+            {'title': 'Panel B: Net Portfolio Investment', 'keywords': ['Portfolio Investment', 'Portfolio']},
+            {'title': 'Panel C: Net Other Investment', 'keywords': ['Other Investment', 'Other']},
+            {'title': 'Panel D: Net Capital Flows (Total)', 'keywords': ['Net Capital Flows', 'Direct + Portfolio + Other']}
+        ]
+        
+        # Create fresh figure with explicit parameters
+        plt.ioff()  # Turn off interactive mode
+        fig = plt.figure(figsize=(16, 12), facecolor='white')
+        fig.clear()  # Clear the figure
+        
+        # Create 2x2 subplot layout
+        axes = []
+        for i in range(4):
+            ax = fig.add_subplot(2, 2, i+1)
+            ax.clear()  # Clear each subplot
+            axes.append(ax)
+        
+        for i, config in enumerate(chart_config):
+            # Find the matching indicator
+            indicator_col = None
+            
+            for clean_name, col_name in indicators_mapping.items():
+                if any(keyword in clean_name for keyword in config['keywords']):
+                    indicator_col = col_name
+                    break
+            
+            if indicator_col is None or indicator_col not in chart_data.columns:
+                # Show placeholder for missing data
+                axes[i].text(0.5, 0.5, f"Data not available\\nfor {config['title']}", 
+                           ha='center', va='center', transform=axes[i].transAxes,
+                           fontsize=11, bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.5))
+                axes[i].set_title(config['title'], fontweight='bold', fontsize=12, pad=15)
+                axes[i].set_xlim(0, 1)
+                axes[i].set_ylim(0, 1)
+                continue
+            
+            # Plot Iceland data
+            iceland_data = chart_data[chart_data['GROUP'] == 'Iceland'].sort_values('Date')
+            if len(iceland_data) > 0:
+                axes[i].plot(iceland_data['Date'], iceland_data[indicator_col], 
+                           color=COLORBLIND_SAFE[1], linewidth=2.5, label='Iceland', 
+                           marker='o', markersize=3, alpha=0.9)
+            
+            # Plot Eurozone average
+            eurozone_data = chart_data[chart_data['GROUP'] == 'Eurozone']
+            if len(eurozone_data) > 0:
+                eurozone_avg = eurozone_data.groupby('Date')[indicator_col].mean().reset_index()
+                axes[i].plot(eurozone_avg['Date'], eurozone_avg[indicator_col], 
+                           color=COLORBLIND_SAFE[0], linewidth=2.5, label='Eurozone Average', 
+                           marker='s', markersize=3, alpha=0.9)
+            
+            # Clear and set title explicitly
+            axes[i].set_title(config['title'], fontweight='bold', fontsize=12, pad=15)
+            axes[i].set_ylabel('% of GDP (annualized)', fontsize=10)
+            axes[i].grid(True, alpha=0.3, linewidth=0.5)
+            
+            # Format x-axis
+            axes[i].xaxis.set_major_locator(mdates.YearLocator(4))
+            axes[i].xaxis.set_major_formatter(mdates.DateFormatter('%Y'))
+            axes[i].tick_params(axis='x', labelsize=9, rotation=0)
+            axes[i].tick_params(axis='y', labelsize=9)
+            
+            # Add zero line
+            axes[i].axhline(y=0, color='black', linestyle='-', alpha=0.4, linewidth=1)
+            
+            # Add legend only to Panel A
+            if i == 0:
+                axes[i].legend(loc='upper right', fontsize=10, framealpha=0.9)
+            
+            # Set x-label for bottom panels
+            if i >= 2:
+                axes[i].set_xlabel('Year', fontsize=10)
+        
+        # Add overall title with explicit positioning
+        fig.suptitle('Overall Capital Flows Analysis: Iceland vs Eurozone (1999-2024)', 
+                    fontsize=16, fontweight='bold', y=0.96)
+        
+        # Adjust layout with specific parameters
+        plt.subplots_adjust(top=0.88, bottom=0.08, left=0.08, right=0.95, 
+                           hspace=0.35, wspace=0.25)
+        
+        # Convert to base64 for embedding
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png', dpi=150, bbox_inches='tight', 
+                   facecolor='white', edgecolor='none', pad_inches=0.2)
+        buf.seek(0)
+        img_base64 = base64.b64encode(buf.getvalue()).decode()
+        
+        # Properly close the figure
+        plt.close(fig)
+        plt.clf()
+        plt.cla()
+        
+        return f'<img src="data:image/png;base64,{img_base64}" alt="Overall Capital Flows Time Series Charts" style="max-width: 100%; height: auto; margin: 15px 0;">'
+        
+    except Exception as e:
+        # Clean up matplotlib state on error
+        plt.clf()
+        plt.cla()
+        return f"<div class='warning-box'><strong>⚠️ Chart Generation Error:</strong> {str(e)}</div>"
 
 if __name__ == "__main__":
     main()
