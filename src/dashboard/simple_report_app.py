@@ -35,8 +35,9 @@ def create_indicator_nicknames():
         'Liabilities - Portfolio investment, Debt securities': 'Liabilities - Portfolio (Debt)',
         'Liabilities - Portfolio investment, Equity and investment fund shares': 'Liabilities - Portfolio (Equity)',
         'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio (Total)',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment'
+        'Net - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
+        'Net - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
+        'Net - Other investment, Total financial assets/liabilities': 'Net - Other Investment'
     }
 
 def get_nickname(indicator_name):
@@ -147,7 +148,27 @@ def load_default_data():
         )
         
         # Get analysis indicators (columns ending with _PGDP)
-        analysis_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
+        all_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
+        
+        # Remove the last two indicators (Financial derivatives and Financial account balance)
+        indicators_to_exclude = [
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial derivatives (other than reserves) and employee stock options_PGDP',
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial account balance, excluding reserves and related items_PGDP'
+        ]
+        analysis_indicators = [ind for ind in all_indicators if ind not in indicators_to_exclude]
+        
+        # Rename indicators to consistent format
+        indicator_renames = {
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP': 'Net - Direct investment, Total financial assets/liabilities_PGDP',
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP': 'Net - Portfolio investment, Total financial assets/liabilities_PGDP',
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP': 'Net - Other investment, Total financial assets/liabilities_PGDP'
+        }
+        
+        # Apply renames to dataframe
+        final_data = final_data.rename(columns=indicator_renames)
+        
+        # Update indicator list with new names
+        analysis_indicators = [indicator_renames.get(ind, ind) for ind in analysis_indicators]
         analysis_indicators = sort_indicators_by_type(analysis_indicators)
         
         return final_data, analysis_indicators, {
