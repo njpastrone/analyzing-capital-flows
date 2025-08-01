@@ -2,3 +2,13 @@
 .Rhistory
 .RData
 .Ruserdata
+
+# Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# macOS
+.DS_Store
