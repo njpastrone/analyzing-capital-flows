@@ -345,8 +345,8 @@ def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
         st.error("Failed to load overall capital flows data.")
         return
     
-    # Color scheme
-    colors = {'Pre-Euro': '#FF6B6B', 'Post-Euro': '#4ECDC4'}
+    # Use consistent COLORBLIND_SAFE palette
+    colors = {'Pre-Euro': COLORBLIND_SAFE[0], 'Post-Euro': COLORBLIND_SAFE[1]}
     
     # Analysis by country
     countries = metadata['countries']
@@ -365,59 +365,71 @@ def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
             adoption_year = timeline[country]['adoption_year']
             st.markdown(f"*Euro adoption: {adoption_year}*")
         
-        # Summary statistics by period
+        # Summary statistics by period (formatted like Case Study 1)
+        st.markdown("**📊 Summary Statistics by Period**")
+        
+        summary_stats = []
+        for clean_name, col_name in indicators_mapping.items():
+            if col_name in country_data.columns:
+                for period in ['Pre-Euro', 'Post-Euro']:
+                    period_data = country_data[country_data['EURO_PERIOD'] == period][col_name].dropna()
+                    if len(period_data) > 0:
+                        summary_stats.append({
+                            'Indicator': clean_name,
+                            'Period': period,
+                            'Mean': period_data.mean(),
+                            'Std Dev': period_data.std(),
+                            'Median': period_data.median(),
+                            'Min': period_data.min(),
+                            'Max': period_data.max(),
+                            'Count': len(period_data)
+                        })
+        
+        if summary_stats:
+            summary_df = pd.DataFrame(summary_stats)
+            
+            # Create clean pivot table like Case Study 1
+            pivot_summary = summary_df.pivot_table(
+                index='Indicator', 
+                columns='Period', 
+                values=['Mean', 'Std Dev', 'Median'],
+                aggfunc='first'
+            ).round(2)
+            
+            st.dataframe(pivot_summary, use_container_width=True)
+        
+        st.markdown("**🔍 Volatility Changes**")
+        
+        # Calculate volatility changes
         col1, col2 = st.columns(2)
-        
-        with col1:
-            st.markdown("**📊 Summary Statistics by Period**")
-            
-            summary_stats = []
-            for clean_name, col_name in indicators_mapping.items():
-                if col_name in country_data.columns:
-                    for period in ['Pre-Euro', 'Post-Euro']:
-                        period_data = country_data[country_data['EURO_PERIOD'] == period][col_name].dropna()
-                        if len(period_data) > 0:
-                            summary_stats.append({
-                                'Indicator': clean_name,
-                                'Period': period,
-                                'Mean': period_data.mean(),
-                                'Std Dev': period_data.std(),
-                                'Count': len(period_data)
-                            })
-            
-            if summary_stats:
-                summary_df = pd.DataFrame(summary_stats)
-                pivot_summary = summary_df.pivot_table(
-                    index='Indicator', 
-                    columns='Period', 
-                    values=['Mean', 'Std Dev'],
-                    aggfunc='first'
-                ).round(2)
-                st.dataframe(pivot_summary, use_container_width=True)
-        
-        with col2:
-            st.markdown("**🔍 Volatility Changes**")
-            
-            # Calculate volatility changes
-            volatility_changes = []
-            for clean_name, col_name in indicators_mapping.items():
-                if col_name in country_data.columns:
-                    pre_data = country_data[country_data['EURO_PERIOD'] == 'Pre-Euro'][col_name].dropna()
-                    post_data = country_data[country_data['EURO_PERIOD'] == 'Post-Euro'][col_name].dropna()
+        volatility_changes = []
+        for clean_name, col_name in indicators_mapping.items():
+            if col_name in country_data.columns:
+                pre_data = country_data[country_data['EURO_PERIOD'] == 'Pre-Euro'][col_name].dropna()
+                post_data = country_data[country_data['EURO_PERIOD'] == 'Post-Euro'][col_name].dropna()
+                
+                if len(pre_data) > 0 and len(post_data) > 0:
+                    pre_std = pre_data.std()
+                    post_std = post_data.std()
+                    change_ratio = post_std / pre_std if pre_std != 0 else float('inf')
                     
-                    if len(pre_data) > 0 and len(post_data) > 0:
-                        pre_std = pre_data.std()
-                        post_std = post_data.std()
-                        change_ratio = post_std / pre_std if pre_std != 0 else float('inf')
-                        
-                        if change_ratio < 0.8:
-                            change_desc = f"📉 Decreased ({change_ratio:.1f}x)"
-                        elif change_ratio > 1.2:
-                            change_desc = f"📈 Increased ({change_ratio:.1f}x)"
-                        else:
-                            change_desc = "➡️ Similar levels"
-                        
-                        st.write(f"**{clean_name}**: {change_desc}")
+                    if change_ratio < 0.8:
+                        change_desc = f"📉 Decreased ({change_ratio:.1f}x)"
+                    elif change_ratio > 1.2:
+                        change_desc = f"📈 Increased ({change_ratio:.1f}x)"
+                    else:
+                        change_desc = "➡️ Similar levels"
+                    
+                    volatility_changes.append(f"**{clean_name}**: {change_desc}")
+        
+        # Display volatility changes in columns
+        mid_point = len(volatility_changes) // 2
+        with col1:
+            for change in volatility_changes[:mid_point]:
+                st.write(change)
+        with col2:
+            for change in volatility_changes[mid_point:]:
+                st.write(change)
         
         # Side-by-side boxplots for this country
         st.markdown("**📦 Distribution Comparison**")
@@ -481,9 +493,8 @@ def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
                 if country in timeline:
                     adoption_year = timeline[country]['adoption_year']
                     adoption_date = pd.to_datetime(f'{adoption_year}-01-01')
-                    ax.axvline(x=adoption_date, color='black', linestyle='--', alpha=0.5, linewidth=1)
-                    ax.text(adoption_date, ax.get_ylim()[1]*0.9, 'Euro Adoption', 
-                           rotation=90, fontsize=7, ha='right')
+                    ax.axvline(x=adoption_date, color='black', linestyle='--', alpha=0.7, linewidth=1.5, 
+                              label=f'Euro Adoption ({adoption_year})')
                 
                 ax.set_title(clean_name, fontweight='bold', fontsize=9)
                 ax.set_ylabel('% of GDP (annualized)', fontsize=8)

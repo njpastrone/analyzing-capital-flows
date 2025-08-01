@@ -371,8 +371,8 @@ def show_overall_capital_flows_analysis():
         st.error("Failed to load overall capital flows data.")
         return
     
-    # Color scheme
-    colors = {'Iceland': '#FF6B6B', 'Eurozone': '#4ECDC4'}
+    # Use consistent COLORBLIND_SAFE palette
+    colors = {'Iceland': COLORBLIND_SAFE[1], 'Eurozone': COLORBLIND_SAFE[0]}
     
     # Summary statistics
     st.subheader("📊 Summary Statistics by Group")
