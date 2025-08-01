@@ -304,6 +304,195 @@ def perform_volatility_tests(data, indicators):
     
     return pd.DataFrame(test_results)
 
+def load_overall_capital_flows_data():
+    """Load data specifically for Overall Capital Flows Analysis"""
+    try:
+        # Use comprehensive dataset
+        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
+        
+        if not comprehensive_file.exists():
+            return None, None
+        
+        # Load comprehensive labeled data
+        comprehensive_df = pd.read_csv(comprehensive_file)
+        
+        # Filter for Case Study 1 data (CS1_GROUP not null)
+        case_one_data = comprehensive_df[comprehensive_df['CS1_GROUP'].notna()].copy()
+        
+        # Remove Luxembourg as per original analysis
+        final_data = case_one_data[case_one_data['COUNTRY'] != 'Luxembourg'].copy()
+        
+        # Create GROUP column
+        final_data['GROUP'] = final_data['COUNTRY'].apply(
+            lambda x: 'Iceland' if x == 'Iceland' else 'Eurozone'
+        )
+        
+        # Define the 4 overall capital flows indicators
+        overall_indicators_mapping = {
+            'Net Portfolio Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP',
+            'Net Direct Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP',
+            'Net Other Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP',
+            'Net Financial Account Balance': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial account balance, excluding reserves and related items_PGDP'
+        }
+        
+        return final_data, overall_indicators_mapping
+        
+    except Exception as e:
+        st.error(f"Error loading overall capital flows data: {str(e)}")
+        return None, None
+
+def show_overall_capital_flows_analysis():
+    """Display Overall Capital Flows Analysis section"""
+    st.header("📈 Overall Capital Flows Analysis")
+    st.markdown("*High-level summary of aggregate net capital flows before detailed disaggregated analysis*")
+    
+    # Load data
+    overall_data, indicators_mapping = load_overall_capital_flows_data()
+    
+    if overall_data is None or indicators_mapping is None:
+        st.error("Failed to load overall capital flows data.")
+        return
+    
+    # Color scheme
+    colors = {'Iceland': '#FF6B6B', 'Eurozone': '#4ECDC4'}
+    
+    # Summary statistics
+    st.subheader("📊 Summary Statistics by Group")
+    
+    summary_stats = []
+    for clean_name, col_name in indicators_mapping.items():
+        if col_name in overall_data.columns:
+            for group in ['Iceland', 'Eurozone']:
+                group_data = overall_data[overall_data['GROUP'] == group][col_name].dropna()
+                summary_stats.append({
+                    'Indicator': clean_name,
+                    'Group': group,
+                    'Mean': group_data.mean(),
+                    'Std Dev': group_data.std(),
+                    'Median': group_data.median(),
+                    'Min': group_data.min(),
+                    'Max': group_data.max(),
+                    'Count': len(group_data)
+                })
+    
+    summary_df = pd.DataFrame(summary_stats)
+    
+    # Display summary table
+    pivot_summary = summary_df.pivot_table(
+        index='Indicator', 
+        columns='Group', 
+        values=['Mean', 'Std Dev', 'Median'],
+        aggfunc='first'
+    ).round(2)
+    
+    st.dataframe(pivot_summary, use_container_width=True)
+    
+    # Side-by-side boxplots
+    st.subheader("📦 Distribution Comparison by Group")
+    
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+    axes = axes.flatten()
+    
+    for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+        if col_name in overall_data.columns and i < 4:
+            ax = axes[i]
+            
+            # Prepare data for boxplot
+            iceland_data = overall_data[overall_data['GROUP'] == 'Iceland'][col_name].dropna()
+            eurozone_data = overall_data[overall_data['GROUP'] == 'Eurozone'][col_name].dropna()
+            
+            # Create boxplot
+            bp = ax.boxplot([iceland_data, eurozone_data], 
+                           labels=['Iceland', 'Eurozone'], 
+                           patch_artist=True)
+            
+            # Color the boxes
+            bp['boxes'][0].set_facecolor(colors['Iceland'])
+            bp['boxes'][1].set_facecolor(colors['Eurozone'])
+            for box in bp['boxes']:
+                box.set_alpha(0.7)
+            
+            ax.set_title(clean_name, fontweight='bold', fontsize=10)
+            ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+            ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+            ax.tick_params(labelsize=8)
+    
+    plt.tight_layout()
+    st.pyplot(fig)
+    
+    # Time series plots
+    st.subheader("📈 Time Series by Group")
+    
+    # Create date column
+    overall_data_ts = overall_data.copy()
+    overall_data_ts['DATE'] = pd.to_datetime(overall_data_ts['YEAR'].astype(str) + '-Q' + overall_data_ts['QUARTER'].astype(str))
+    
+    fig2, axes2 = plt.subplots(2, 2, figsize=(15, 10))
+    axes2 = axes2.flatten()
+    
+    for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+        if col_name in overall_data.columns and i < 4:
+            ax = axes2[i]
+            
+            for group in ['Iceland', 'Eurozone']:
+                group_data = overall_data_ts[overall_data_ts['GROUP'] == group].sort_values('DATE')
+                ax.plot(group_data['DATE'], group_data[col_name], 
+                       color=colors[group], label=group, linewidth=2, alpha=0.8)
+            
+            ax.set_title(clean_name, fontweight='bold', fontsize=10)
+            ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+            ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+            ax.legend(loc='upper right', fontsize=8)
+            ax.tick_params(labelsize=8)
+            ax.grid(True, alpha=0.3)
+    
+    plt.tight_layout()
+    st.pyplot(fig2)
+    
+    # Key insights
+    st.subheader("🔍 Key Insights")
+    
+    # Calculate volatility comparison
+    volatility_comparison = []
+    for clean_name, col_name in indicators_mapping.items():
+        if col_name in overall_data.columns:
+            iceland_std = overall_data[overall_data['GROUP'] == 'Iceland'][col_name].std()
+            eurozone_std = overall_data[overall_data['GROUP'] == 'Eurozone'][col_name].std()
+            volatility_comparison.append({
+                'Indicator': clean_name,
+                'Iceland Volatility': iceland_std,
+                'Eurozone Volatility': eurozone_std,
+                'Volatility Ratio': iceland_std / eurozone_std if eurozone_std != 0 else float('inf')
+            })
+    
+    vol_df = pd.DataFrame(volatility_comparison)
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Volatility Comparison (Standard Deviation)**")
+        for _, row in vol_df.iterrows():
+            ratio = row['Volatility Ratio']
+            if ratio > 1:
+                st.write(f"• **{row['Indicator']}**: Iceland {ratio:.1f}x more volatile")
+            else:
+                st.write(f"• **{row['Indicator']}**: Similar volatility levels")
+    
+    with col2:
+        st.markdown("**Overall Pattern**")
+        high_vol_count = sum(1 for _, row in vol_df.iterrows() if row['Volatility Ratio'] > 1.5)
+        total_indicators = len(vol_df)
+        
+        if high_vol_count >= total_indicators * 0.75:
+            st.write("🔴 **Iceland shows consistently higher volatility** across most capital flow categories")
+        elif high_vol_count >= total_indicators * 0.5:
+            st.write("🟡 **Mixed volatility patterns** between Iceland and Eurozone")
+        else:
+            st.write("🟢 **Similar volatility levels** between Iceland and Eurozone")
+    
+    st.markdown("---")
+
 def main():
     """Main report application"""
     
@@ -359,6 +548,9 @@ def main():
         st.metric("Time Period", f"{final_data['YEAR'].min()}-{final_data['YEAR'].max()}")
     
     st.markdown("---")
+    
+    # Overall Capital Flows Analysis (NEW SECTION)
+    show_overall_capital_flows_analysis()
     
     # Calculate all statistics
     group_stats = calculate_group_statistics(final_data, 'GROUP', analysis_indicators)

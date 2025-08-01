@@ -237,6 +237,250 @@ def perform_temporal_volatility_tests(data, country, indicators, period_column='
     
     return pd.DataFrame(test_results)
 
+def load_overall_capital_flows_data_cs2(include_crisis_years=True):
+    """Load data specifically for Case Study 2 Overall Capital Flows Analysis"""
+    try:
+        # Use comprehensive dataset
+        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
+        
+        if not comprehensive_file.exists():
+            return None, None, None
+        
+        # Load comprehensive labeled data
+        comprehensive_df = pd.read_csv(comprehensive_file)
+        
+        # Filter for Case Study 2 data (CS2_GROUP not null)
+        case_two_data = comprehensive_df[comprehensive_df['CS2_GROUP'].notna()].copy()
+        
+        # Create Euro adoption timeline
+        timeline = create_euro_adoption_timeline()
+        
+        # Add period classification
+        def classify_period(row, timeline, include_crisis_years):
+            country = row['COUNTRY']
+            year = row['YEAR']
+            
+            if country in timeline:
+                adoption_year = timeline[country]['adoption_year']
+                
+                if include_crisis_years:
+                    # Full series analysis
+                    if year < adoption_year:
+                        return 'Pre-Euro'
+                    elif year >= adoption_year:
+                        return 'Post-Euro'
+                else:
+                    # Crisis-excluded analysis
+                    pre_start, pre_end = timeline[country]['pre_period']
+                    post_start, post_end = timeline[country]['post_period']
+                    
+                    if pre_start <= year <= pre_end:
+                        return 'Pre-Euro'
+                    elif post_start <= year <= post_end:
+                        return 'Post-Euro'
+                    else:
+                        return 'Excluded'
+            return 'Unknown'
+        
+        case_two_data['EURO_PERIOD'] = case_two_data.apply(
+            lambda row: classify_period(row, timeline, include_crisis_years), axis=1
+        )
+        
+        # Filter out excluded periods if crisis-excluded version
+        if not include_crisis_years:
+            case_two_data = case_two_data[case_two_data['EURO_PERIOD'] != 'Excluded'].copy()
+        
+        # Define the 4 overall capital flows indicators
+        overall_indicators_mapping = {
+            'Net Portfolio Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP',
+            'Net Direct Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP',
+            'Net Other Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP',
+            'Net Financial Account Balance': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial account balance, excluding reserves and related items_PGDP'
+        }
+        
+        # Create metadata
+        study_version = "Full Series" if include_crisis_years else "Crisis-Excluded"
+        metadata = {
+            'final_shape': case_two_data.shape,
+            'countries': sorted(case_two_data['COUNTRY'].unique()),
+            'timeline': timeline,
+            'study_version': study_version,
+            'include_crisis_years': include_crisis_years
+        }
+        
+        return case_two_data, overall_indicators_mapping, metadata
+        
+    except Exception as e:
+        st.error(f"Error loading Case Study 2 overall capital flows data: {str(e)}")
+        return None, None, None
+
+def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
+    """Display Overall Capital Flows Analysis section for Case Study 2"""
+    st.header("📈 Overall Capital Flows Analysis")
+    study_version = "Full Series" if include_crisis_years else "Crisis-Excluded"
+    st.markdown(f"*High-level summary of aggregate net capital flows - {study_version} Analysis*")
+    
+    # Load data
+    overall_data, indicators_mapping, metadata = load_overall_capital_flows_data_cs2(include_crisis_years)
+    
+    if overall_data is None or indicators_mapping is None:
+        st.error("Failed to load overall capital flows data.")
+        return
+    
+    # Color scheme
+    colors = {'Pre-Euro': '#FF6B6B', 'Post-Euro': '#4ECDC4'}
+    
+    # Analysis by country
+    countries = metadata['countries']
+    timeline = metadata['timeline']
+    
+    for country in countries:
+        country_data = overall_data[overall_data['COUNTRY'] == country].copy()
+        
+        if len(country_data) == 0:
+            continue
+            
+        st.subheader(f"🏛️ {country.replace(', Republic of', '')}")
+        
+        # Display adoption info
+        if country in timeline:
+            adoption_year = timeline[country]['adoption_year']
+            st.markdown(f"*Euro adoption: {adoption_year}*")
+        
+        # Summary statistics by period
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**📊 Summary Statistics by Period**")
+            
+            summary_stats = []
+            for clean_name, col_name in indicators_mapping.items():
+                if col_name in country_data.columns:
+                    for period in ['Pre-Euro', 'Post-Euro']:
+                        period_data = country_data[country_data['EURO_PERIOD'] == period][col_name].dropna()
+                        if len(period_data) > 0:
+                            summary_stats.append({
+                                'Indicator': clean_name,
+                                'Period': period,
+                                'Mean': period_data.mean(),
+                                'Std Dev': period_data.std(),
+                                'Count': len(period_data)
+                            })
+            
+            if summary_stats:
+                summary_df = pd.DataFrame(summary_stats)
+                pivot_summary = summary_df.pivot_table(
+                    index='Indicator', 
+                    columns='Period', 
+                    values=['Mean', 'Std Dev'],
+                    aggfunc='first'
+                ).round(2)
+                st.dataframe(pivot_summary, use_container_width=True)
+        
+        with col2:
+            st.markdown("**🔍 Volatility Changes**")
+            
+            # Calculate volatility changes
+            volatility_changes = []
+            for clean_name, col_name in indicators_mapping.items():
+                if col_name in country_data.columns:
+                    pre_data = country_data[country_data['EURO_PERIOD'] == 'Pre-Euro'][col_name].dropna()
+                    post_data = country_data[country_data['EURO_PERIOD'] == 'Post-Euro'][col_name].dropna()
+                    
+                    if len(pre_data) > 0 and len(post_data) > 0:
+                        pre_std = pre_data.std()
+                        post_std = post_data.std()
+                        change_ratio = post_std / pre_std if pre_std != 0 else float('inf')
+                        
+                        if change_ratio < 0.8:
+                            change_desc = f"📉 Decreased ({change_ratio:.1f}x)"
+                        elif change_ratio > 1.2:
+                            change_desc = f"📈 Increased ({change_ratio:.1f}x)"
+                        else:
+                            change_desc = "➡️ Similar levels"
+                        
+                        st.write(f"**{clean_name}**: {change_desc}")
+        
+        # Side-by-side boxplots for this country
+        st.markdown("**📦 Distribution Comparison**")
+        
+        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
+        axes = axes.flatten()
+        
+        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+            if col_name in country_data.columns and i < 4:
+                ax = axes[i]
+                
+                # Prepare data for boxplot
+                pre_data = country_data[country_data['EURO_PERIOD'] == 'Pre-Euro'][col_name].dropna()
+                post_data = country_data[country_data['EURO_PERIOD'] == 'Post-Euro'][col_name].dropna()
+                
+                if len(pre_data) > 0 and len(post_data) > 0:
+                    # Create boxplot
+                    bp = ax.boxplot([pre_data, post_data], 
+                                   labels=['Pre-Euro', 'Post-Euro'], 
+                                   patch_artist=True)
+                    
+                    # Color the boxes
+                    bp['boxes'][0].set_facecolor(colors['Pre-Euro'])
+                    bp['boxes'][1].set_facecolor(colors['Post-Euro'])
+                    for box in bp['boxes']:
+                        box.set_alpha(0.7)
+                    
+                    ax.set_title(clean_name, fontweight='bold', fontsize=9)
+                    ax.set_ylabel('% of GDP (annualized)', fontsize=8)
+                    ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                    ax.tick_params(labelsize=7)
+        
+        plt.suptitle(f'{country.replace(", Republic of", "")} - Overall Capital Flows', fontsize=12, fontweight='bold')
+        plt.tight_layout()
+        st.pyplot(fig)
+        
+        # Time series for this country
+        st.markdown("**📈 Time Series Over Time**")
+        
+        # Create date column
+        country_data_ts = country_data.copy()
+        country_data_ts['DATE'] = pd.to_datetime(country_data_ts['YEAR'].astype(str) + '-Q' + country_data_ts['QUARTER'].astype(str))
+        
+        fig2, axes2 = plt.subplots(2, 2, figsize=(12, 8))
+        axes2 = axes2.flatten()
+        
+        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+            if col_name in country_data.columns and i < 4:
+                ax = axes2[i]
+                
+                # Plot time series with period coloring
+                sorted_data = country_data_ts.sort_values('DATE')
+                
+                for period in ['Pre-Euro', 'Post-Euro']:
+                    period_data = sorted_data[sorted_data['EURO_PERIOD'] == period]
+                    if len(period_data) > 0:
+                        ax.plot(period_data['DATE'], period_data[col_name], 
+                               color=colors[period], label=period, linewidth=2, alpha=0.8)
+                
+                # Add adoption year line
+                if country in timeline:
+                    adoption_year = timeline[country]['adoption_year']
+                    adoption_date = pd.to_datetime(f'{adoption_year}-01-01')
+                    ax.axvline(x=adoption_date, color='black', linestyle='--', alpha=0.5, linewidth=1)
+                    ax.text(adoption_date, ax.get_ylim()[1]*0.9, 'Euro Adoption', 
+                           rotation=90, fontsize=7, ha='right')
+                
+                ax.set_title(clean_name, fontweight='bold', fontsize=9)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=8)
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                ax.legend(loc='upper right', fontsize=7)
+                ax.tick_params(labelsize=7)
+                ax.grid(True, alpha=0.3)
+        
+        plt.suptitle(f'{country.replace(", Republic of", "")} - Time Series Analysis', fontsize=12, fontweight='bold')
+        plt.tight_layout()
+        st.pyplot(fig2)
+        
+        st.markdown("---")
+
 def main():
     """Main Case Study 2 application"""
     
@@ -328,6 +572,9 @@ def main():
     # Load data with selected version
     with st.spinner(f"Loading and processing Euro adoption data ({study_version})..."):
         final_data, analysis_indicators, metadata = load_case_study_2_data(include_crisis_years)
+    
+    # Overall Capital Flows Analysis (NEW SECTION)
+    show_overall_capital_flows_analysis_cs2(include_crisis_years)
     
     if final_data is None:
         st.stop()
