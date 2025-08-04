@@ -3872,33 +3872,33 @@ def show_case_study_2_lithuania_restructured():
 # Country-specific analysis functions
 def show_estonia_overall_analysis(include_crisis_years=True):
     """Show Estonia overall capital flows analysis"""
-    country = 'Estonia, Republic of'
-    show_country_overall_analysis(country, include_crisis_years)
+    from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
+    show_overall_capital_flows_analysis_cs2(include_crisis_years)
 
 def show_estonia_indicator_analysis(include_crisis_years=True):
     """Show Estonia indicator-level analysis"""
-    country = 'Estonia, Republic of'
-    show_country_indicator_analysis(country, include_crisis_years)
+    from case_study_2_euro_adoption import show_indicator_level_analysis_cs2
+    show_indicator_level_analysis_cs2('Estonia, Republic of', include_crisis_years)
 
 def show_latvia_overall_analysis(include_crisis_years=True):
     """Show Latvia overall capital flows analysis"""
-    country = 'Latvia, Republic of'
-    show_country_overall_analysis(country, include_crisis_years)
+    from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
+    show_overall_capital_flows_analysis_cs2(include_crisis_years)
 
 def show_latvia_indicator_analysis(include_crisis_years=True):
     """Show Latvia indicator-level analysis"""
-    country = 'Latvia, Republic of'
-    show_country_indicator_analysis(country, include_crisis_years)
+    from case_study_2_euro_adoption import show_indicator_level_analysis_cs2
+    show_indicator_level_analysis_cs2('Latvia, Republic of', include_crisis_years)
 
 def show_lithuania_overall_analysis(include_crisis_years=True):
     """Show Lithuania overall capital flows analysis"""
-    country = 'Lithuania, Republic of'
-    show_country_overall_analysis(country, include_crisis_years)
+    from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
+    show_overall_capital_flows_analysis_cs2(include_crisis_years)
 
 def show_lithuania_indicator_analysis(include_crisis_years=True):
     """Show Lithuania indicator-level analysis"""
-    country = 'Lithuania, Republic of'
-    show_country_indicator_analysis(country, include_crisis_years)
+    from case_study_2_euro_adoption import show_indicator_level_analysis_cs2
+    show_indicator_level_analysis_cs2('Lithuania, Republic of', include_crisis_years)
 
 def show_country_overall_analysis(country, include_crisis_years=True):
     """Show overall capital flows analysis for a specific country"""

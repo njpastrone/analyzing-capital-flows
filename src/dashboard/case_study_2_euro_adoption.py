@@ -240,8 +240,11 @@ def perform_temporal_volatility_tests(data, country, indicators, period_column='
 def load_overall_capital_flows_data_cs2(include_crisis_years=True):
     """Load data specifically for Case Study 2 Overall Capital Flows Analysis"""
     try:
-        # Use comprehensive dataset
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        # Use comprehensive dataset with robust path finding
+        current_dir = Path(__file__).parent
+        # Navigate up to find the project root (contains updated_data)
+        project_root = current_dir.parent.parent
+        data_dir = project_root / "updated_data" / "Clean"
         comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
         
         if not comprehensive_file.exists():
@@ -333,10 +336,10 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         return None, None, None
 
 def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
-    """Display Overall Capital Flows Analysis section for Case Study 2"""
+    """Display Overall Capital Flows Analysis section for Case Study 2 - matches CS1 template exactly"""
     st.header("📈 Overall Capital Flows Analysis")
     study_version = "Full Series" if include_crisis_years else "Crisis-Excluded"
-    st.markdown(f"*High-level summary of aggregate net capital flows - {study_version} Analysis*")
+    st.markdown(f"*High-level summary of aggregate net capital flows before detailed disaggregated analysis - {study_version}*")
     
     # Load data
     overall_data, indicators_mapping, metadata = load_overall_capital_flows_data_cs2(include_crisis_years)
@@ -348,166 +351,111 @@ def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
     # Use consistent COLORBLIND_SAFE palette
     colors = {'Pre-Euro': COLORBLIND_SAFE[0], 'Post-Euro': COLORBLIND_SAFE[1]}
     
-    # Analysis by country
-    countries = metadata['countries']
-    timeline = metadata['timeline']
+    # Summary statistics (matching CS1 format exactly)
+    st.subheader("📊 Summary Statistics by Period")
     
-    for country in countries:
-        country_data = overall_data[overall_data['COUNTRY'] == country].copy()
-        
-        if len(country_data) == 0:
-            continue
+    summary_stats = []
+    for clean_name, col_name in indicators_mapping.items():
+        if col_name in overall_data.columns:
+            for period in ['Pre-Euro', 'Post-Euro']:
+                period_data = overall_data[overall_data['EURO_PERIOD'] == period][col_name].dropna()
+                if len(period_data) > 0:
+                    summary_stats.append({
+                        'Indicator': clean_name,
+                        'Period': period,
+                        'Mean': period_data.mean(),
+                        'Std Dev': period_data.std(),
+                        'Median': period_data.median(),
+                        'Min': period_data.min(),
+                        'Max': period_data.max(),
+                        'Count': len(period_data)
+                    })
+    
+    summary_df = pd.DataFrame(summary_stats)
+    
+    # Display summary table (matching CS1 pivot structure)
+    pivot_summary = summary_df.pivot_table(
+        index='Indicator', 
+        columns='Period', 
+        values=['Mean', 'Std Dev', 'Median'],
+        aggfunc='first'
+    ).round(2)
+    
+    st.dataframe(pivot_summary, use_container_width=True)
+    
+    # Distribution Comparison - 2x2 matrix of boxplots (matching CS1 exactly)
+    st.subheader("📦 Distribution Comparison by Period")
+    
+    fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+    axes = axes.flatten()
+    
+    for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+        if col_name in overall_data.columns and i < 4:
+            ax = axes[i]
             
-        st.subheader(f"🏛️ {country.replace(', Republic of', '')}")
-        
-        # Display adoption info
-        if country in timeline:
-            adoption_year = timeline[country]['adoption_year']
-            st.markdown(f"*Euro adoption: {adoption_year}*")
-        
-        # Summary statistics by period (formatted like Case Study 1)
-        st.markdown("**📊 Summary Statistics by Period**")
-        
-        summary_stats = []
-        for clean_name, col_name in indicators_mapping.items():
-            if col_name in country_data.columns:
-                for period in ['Pre-Euro', 'Post-Euro']:
-                    period_data = country_data[country_data['EURO_PERIOD'] == period][col_name].dropna()
-                    if len(period_data) > 0:
-                        summary_stats.append({
-                            'Indicator': clean_name,
-                            'Period': period,
-                            'Mean': period_data.mean(),
-                            'Std Dev': period_data.std(),
-                            'Median': period_data.median(),
-                            'Min': period_data.min(),
-                            'Max': period_data.max(),
-                            'Count': len(period_data)
-                        })
-        
-        if summary_stats:
-            summary_df = pd.DataFrame(summary_stats)
+            # Prepare data for boxplot
+            pre_data = overall_data[overall_data['EURO_PERIOD'] == 'Pre-Euro'][col_name].dropna()
+            post_data = overall_data[overall_data['EURO_PERIOD'] == 'Post-Euro'][col_name].dropna()
             
-            # Create clean pivot table like Case Study 1
-            pivot_summary = summary_df.pivot_table(
-                index='Indicator', 
-                columns='Period', 
-                values=['Mean', 'Std Dev', 'Median'],
-                aggfunc='first'
-            ).round(2)
-            
-            st.dataframe(pivot_summary, use_container_width=True)
-        
-        st.markdown("**🔍 Volatility Changes**")
-        
-        # Calculate volatility changes
-        col1, col2 = st.columns(2)
-        volatility_changes = []
-        for clean_name, col_name in indicators_mapping.items():
-            if col_name in country_data.columns:
-                pre_data = country_data[country_data['EURO_PERIOD'] == 'Pre-Euro'][col_name].dropna()
-                post_data = country_data[country_data['EURO_PERIOD'] == 'Post-Euro'][col_name].dropna()
+            if len(pre_data) > 0 and len(post_data) > 0:
+                # Create boxplot
+                bp = ax.boxplot([pre_data, post_data], 
+                               labels=['Pre-Euro', 'Post-Euro'], 
+                               patch_artist=True)
                 
-                if len(pre_data) > 0 and len(post_data) > 0:
-                    pre_std = pre_data.std()
-                    post_std = post_data.std()
-                    change_ratio = post_std / pre_std if pre_std != 0 else float('inf')
-                    
-                    if change_ratio < 0.8:
-                        change_desc = f"📉 Decreased ({change_ratio:.1f}x)"
-                    elif change_ratio > 1.2:
-                        change_desc = f"📈 Increased ({change_ratio:.1f}x)"
-                    else:
-                        change_desc = "➡️ Similar levels"
-                    
-                    volatility_changes.append(f"**{clean_name}**: {change_desc}")
-        
-        # Display volatility changes in columns
-        mid_point = len(volatility_changes) // 2
-        with col1:
-            for change in volatility_changes[:mid_point]:
-                st.write(change)
-        with col2:
-            for change in volatility_changes[mid_point:]:
-                st.write(change)
-        
-        # Side-by-side boxplots for this country
-        st.markdown("**📦 Distribution Comparison**")
-        
-        fig, axes = plt.subplots(2, 2, figsize=(12, 8))
-        axes = axes.flatten()
-        
-        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
-            if col_name in country_data.columns and i < 4:
-                ax = axes[i]
+                # Color the boxes
+                bp['boxes'][0].set_facecolor(colors['Pre-Euro'])
+                bp['boxes'][1].set_facecolor(colors['Post-Euro'])
+                for box in bp['boxes']:
+                    box.set_alpha(0.7)
                 
-                # Prepare data for boxplot
-                pre_data = country_data[country_data['EURO_PERIOD'] == 'Pre-Euro'][col_name].dropna()
-                post_data = country_data[country_data['EURO_PERIOD'] == 'Post-Euro'][col_name].dropna()
-                
-                if len(pre_data) > 0 and len(post_data) > 0:
-                    # Create boxplot
-                    bp = ax.boxplot([pre_data, post_data], 
-                                   labels=['Pre-Euro', 'Post-Euro'], 
-                                   patch_artist=True)
-                    
-                    # Color the boxes
-                    bp['boxes'][0].set_facecolor(colors['Pre-Euro'])
-                    bp['boxes'][1].set_facecolor(colors['Post-Euro'])
-                    for box in bp['boxes']:
-                        box.set_alpha(0.7)
-                    
-                    ax.set_title(clean_name, fontweight='bold', fontsize=9)
-                    ax.set_ylabel('% of GDP (annualized)', fontsize=8)
-                    ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-                    ax.tick_params(labelsize=7)
-        
-        plt.suptitle(f'{country.replace(", Republic of", "")} - Overall Capital Flows', fontsize=12, fontweight='bold')
-        plt.tight_layout()
-        st.pyplot(fig)
-        
-        # Time series for this country
-        st.markdown("**📈 Time Series Over Time**")
-        
-        # Create date column
-        country_data_ts = country_data.copy()
-        country_data_ts['DATE'] = pd.to_datetime(country_data_ts['YEAR'].astype(str) + '-Q' + country_data_ts['QUARTER'].astype(str))
-        
-        fig2, axes2 = plt.subplots(2, 2, figsize=(12, 8))
-        axes2 = axes2.flatten()
-        
-        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
-            if col_name in country_data.columns and i < 4:
-                ax = axes2[i]
-                
-                # Plot time series with period coloring
-                sorted_data = country_data_ts.sort_values('DATE')
-                
-                for period in ['Pre-Euro', 'Post-Euro']:
-                    period_data = sorted_data[sorted_data['EURO_PERIOD'] == period]
-                    if len(period_data) > 0:
-                        ax.plot(period_data['DATE'], period_data[col_name], 
-                               color=colors[period], label=period, linewidth=2, alpha=0.8)
-                
-                # Add adoption year line
-                if country in timeline:
-                    adoption_year = timeline[country]['adoption_year']
-                    adoption_date = pd.to_datetime(f'{adoption_year}-01-01')
-                    ax.axvline(x=adoption_date, color='black', linestyle='--', alpha=0.7, linewidth=1.5, 
-                              label=f'Euro Adoption ({adoption_year})')
-                
-                ax.set_title(clean_name, fontweight='bold', fontsize=9)
-                ax.set_ylabel('% of GDP (annualized)', fontsize=8)
+                ax.set_title(clean_name, fontweight='bold', fontsize=10)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=9)
                 ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-                ax.legend(loc='upper right', fontsize=7)
-                ax.tick_params(labelsize=7)
-                ax.grid(True, alpha=0.3)
-        
-        plt.suptitle(f'{country.replace(", Republic of", "")} - Time Series Analysis', fontsize=12, fontweight='bold')
-        plt.tight_layout()
-        st.pyplot(fig2)
-        
-        st.markdown("---")
+                ax.tick_params(labelsize=8)
+    
+    fig.tight_layout()
+    st.pyplot(fig)
+    
+    # Time Series - 2x2 matrix (matching CS1 exactly)
+    st.subheader("📈 Time Series by Period")
+    
+    # Create date column
+    overall_data_ts = overall_data.copy()
+    overall_data_ts['DATE'] = pd.to_datetime(overall_data_ts['YEAR'].astype(str) + '-Q' + overall_data_ts['QUARTER'].astype(str))
+    
+    fig2, axes2 = plt.subplots(2, 2, figsize=(15, 10))
+    axes2 = axes2.flatten()
+    
+    for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+        if col_name in overall_data.columns and i < 4:
+            ax = axes2[i]
+            
+            # Plot time series by period
+            sorted_data = overall_data_ts.sort_values('DATE')
+            
+            for period in ['Pre-Euro', 'Post-Euro']:
+                period_data = sorted_data[sorted_data['EURO_PERIOD'] == period]
+                if len(period_data) > 0:
+                    # Aggregate by date (average across countries for each period)
+                    period_agg = period_data.groupby('DATE')[col_name].mean().reset_index()
+                    if len(period_agg) > 0:
+                        ax.plot(period_agg['DATE'], period_agg[col_name], 
+                               color=colors[period], label=period, linewidth=2, alpha=0.8)
+            
+            ax.set_title(clean_name, fontweight='bold', fontsize=10)
+            ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+            ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+            ax.legend(loc='upper right', fontsize=8)
+            ax.tick_params(labelsize=8)
+            ax.grid(True, alpha=0.3)
+    
+    fig2.tight_layout()
+    st.pyplot(fig2)
+
+def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=True):
+    """Show indicator-level analysis for a specific country - sections 1-6"""
+    st.info("⚠️ This section is under development and will be completed in the next phase.")
 
 def main():
     """Main Case Study 2 application"""
@@ -683,8 +631,8 @@ def main():
     # 1. Summary Statistics and Boxplots
     st.header("1. Summary Statistics and Boxplots")
     
-    # Create temporal boxplots
-    fig1, ax1 = plt.subplots(1, 1, figsize=(4, 3))
+    # Create temporal boxplots (matching CS1 sizing)
+    fig1, ax1 = plt.subplots(1, 1, figsize=(6, 4))
     mean_data = boxplot_data[boxplot_data['Statistic'] == 'Mean']
     mean_pre = mean_data[mean_data['PERIOD'] == 'Pre-Euro']['Value']
     mean_post = mean_data[mean_data['PERIOD'] == 'Post-Euro']['Value']
@@ -718,8 +666,8 @@ def main():
         key=f"download_means_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
     )
     
-    # Standard deviations boxplot
-    fig2, ax2 = plt.subplots(1, 1, figsize=(4, 3))
+    # Standard deviations boxplot (matching CS1 sizing)
+    fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4))
     std_data = boxplot_data[boxplot_data['Statistic'] == 'Standard Deviation']
     std_pre = std_data[std_data['PERIOD'] == 'Pre-Euro']['Value']
     std_post = std_data[std_data['PERIOD'] == 'Post-Euro']['Value']
