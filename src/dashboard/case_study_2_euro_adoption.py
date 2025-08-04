@@ -455,7 +455,246 @@ def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
 
 def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=True):
     """Show indicator-level analysis for a specific country - sections 1-6"""
-    st.info("⚠️ This section is under development and will be completed in the next phase.")
+    
+    # Load data using standardized CS2 data loading
+    final_data, analysis_indicators, metadata = load_case_study_2_data(include_crisis_years)
+    
+    if final_data is None:
+        st.error("❌ Failed to load crisis-excluded data.")
+        return
+    
+    # Country mapping for display
+    country_mapping = {
+        'Estonia, Republic of': 'Estonia',
+        'Latvia, Republic of': 'Latvia', 
+        'Lithuania, Republic of': 'Lithuania'
+    }
+    
+    selected_display_country = country_mapping.get(selected_country, selected_country.replace(', Republic of', ''))
+    
+    # Get timeline information
+    timeline = metadata['timeline']
+    country_info = timeline[selected_country]
+    
+    # Get period information based on mode
+    if include_crisis_years:
+        pre_period = country_info['pre_period_full']
+        post_period = country_info['post_period_full']
+        period_label = "Full Series"
+    else:
+        pre_period = country_info['pre_period_crisis_excluded']
+        post_period = country_info['post_period_crisis_excluded']
+        period_label = "Crisis-Excluded"
+    
+    st.info(f"""
+    **{selected_display_country} Analysis ({period_label}):** Euro adoption on {country_info['adoption_date']}
+    - **Pre-Euro Period:** {pre_period[0]} to {pre_period[1]}
+    - **Post-Euro Period:** {post_period[0]} to {post_period[1]} (includes adoption year {country_info['adoption_year']})
+    """)
+    
+    # Generate unique session ID for widget keys
+    import time
+    import random
+    session_id = f"{selected_display_country}_{int(time.time() * 1000)}_{random.randint(1000, 9999)}"
+    
+    # Calculate statistics for selected country
+    period_column = metadata['period_column']
+    country_stats = calculate_temporal_statistics(final_data, selected_country, analysis_indicators, period_column)
+    boxplot_data = create_temporal_boxplot_data(final_data, selected_country, analysis_indicators, period_column) 
+    test_results = perform_temporal_volatility_tests(final_data, selected_country, analysis_indicators, period_column)
+    
+    # 1. Summary Statistics and Boxplots (matching CS1 exactly)
+    st.subheader("📊 Summary Statistics by Time Period")
+    
+    # Create temporal boxplots (matching CS1 sizing)
+    fig1, ax1 = plt.subplots(1, 1, figsize=(6, 4))
+    mean_data = boxplot_data[boxplot_data['Statistic'] == 'Mean']
+    mean_pre = mean_data[mean_data['PERIOD'] == 'Pre-Euro']['Value']
+    mean_post = mean_data[mean_data['PERIOD'] == 'Post-Euro']['Value']
+    
+    bp1 = ax1.boxplot([mean_pre, mean_post], labels=['Pre-Euro', 'Post-Euro'], patch_artist=True)
+    bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+    bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+    
+    study_title_suffix = " (Crisis-Excluded)" if not include_crisis_years else ""
+    ax1.set_title(f'Panel A: Distribution of Means Across All Capital Flow Indicators{study_title_suffix}', 
+                 fontweight='bold', fontsize=10, pad=10)
+    ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
+    ax1.tick_params(axis='both', which='major', labelsize=8)
+    ax1.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    ax1.text(0.02, 0.98, f'Pre-Euro Avg: {mean_pre.mean():.2f}%\\nPost-Euro Avg: {mean_post.mean():.2f}%', 
+            transform=ax1.transAxes, verticalalignment='top', fontsize=8,
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+    
+    plt.tight_layout()
+    st.pyplot(fig1)
+    
+    # Standard deviations boxplot (matching CS1 sizing)
+    fig2, ax2 = plt.subplots(1, 1, figsize=(6, 4))
+    std_data = boxplot_data[boxplot_data['Statistic'] == 'Standard Deviation']
+    std_pre = std_data[std_data['PERIOD'] == 'Pre-Euro']['Value']
+    std_post = std_data[std_data['PERIOD'] == 'Post-Euro']['Value']
+    
+    bp2 = ax2.boxplot([std_pre, std_post], labels=['Pre-Euro', 'Post-Euro'], patch_artist=True)
+    bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
+    bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
+    
+    ax2.set_title(f'Panel B: Distribution of Standard Deviations Across All Capital Flow Indicators{study_title_suffix}', 
+                 fontweight='bold', fontsize=10, pad=10)
+    ax2.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
+    ax2.tick_params(axis='both', which='major', labelsize=8)
+    ax2.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    volatility_ratio = std_pre.mean() / std_post.mean() if std_post.mean() != 0 else float('inf')
+    ax2.text(0.02, 0.98, f'Pre-Euro Avg: {std_pre.mean():.2f}%\\nPost-Euro Avg: {std_post.mean():.2f}%\\nRatio: {volatility_ratio:.2f}x', 
+            transform=ax2.transAxes, verticalalignment='top', fontsize=8,
+            bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
+    
+    plt.tight_layout()
+    st.pyplot(fig2)
+    
+    # 2. Time Series - Individual Charts (following CS1 standards exactly)
+    st.subheader("📈 Time Series by Indicator")
+    
+    # Create date column for plotting
+    final_data_copy = final_data.copy()
+    final_data_copy['Date'] = pd.to_datetime(
+        final_data_copy['YEAR'].astype(str) + '-' + 
+        ((final_data_copy['QUARTER'] - 1) * 3 + 1).astype(str) + '-01'
+    )
+    
+    # Filter for selected country
+    country_data = final_data_copy[final_data_copy['COUNTRY'] == selected_country]
+    
+    # Euro adoption date
+    adoption_year = country_info['adoption_year']
+    adoption_date = pd.to_datetime(f'{adoption_year}-01-01')
+    
+    version_suffix = "_crisis_excluded" if not include_crisis_years else ""
+    
+    # Create individual time series charts (following CS1 format exactly)
+    for i, indicator in enumerate(analysis_indicators):
+        fig_ts, ax = plt.subplots(1, 1, figsize=(6, 2.5))  # CS1 standard dimensions
+        
+        clean_name = indicator.replace('_PGDP', '').replace('_', ' ')
+        
+        # Get test statistic for title
+        indicator_clean = indicator.replace('_PGDP', '')
+        f_stat = test_results[test_results['Indicator'] == indicator_clean]['F_Statistic'].iloc[0] if len(test_results[test_results['Indicator'] == indicator_clean]) > 0 else 0
+        
+        # Panel letter (A, B, C, etc.)
+        panel_letter = chr(65 + i)
+        
+        # Plot pre-Euro data
+        pre_data = country_data[country_data[period_column] == 'Pre-Euro']
+        if not include_crisis_years and len(pre_data) > 0:
+            # Crisis-excluded: segment plotting to avoid connecting across excluded periods
+            pre_data_sorted = pre_data.sort_values('Date')
+            segments = []
+            current_segment = []
+            
+            for _, row in pre_data_sorted.iterrows():
+                if len(current_segment) == 0:
+                    current_segment.append(row)
+                else:
+                    last_date = current_segment[-1]['Date']
+                    current_date = row['Date']
+                    gap_years = (current_date - last_date).days / 365.25
+                    
+                    if gap_years > 2:  # Gap indicates crisis exclusion
+                        if current_segment:
+                            segments.append(pd.DataFrame(current_segment))
+                        current_segment = [row]
+                    else:
+                        current_segment.append(row)
+            
+            if current_segment:
+                segments.append(pd.DataFrame(current_segment))
+            
+            # Plot each segment separately
+            for j, segment in enumerate(segments):
+                if len(segment) > 0:
+                    ax.plot(segment['Date'], segment[indicator], 
+                           color=COLORBLIND_SAFE[0], linewidth=1.5, label='Pre-Euro' if j == 0 else "")
+        else:
+            # Normal plotting for full series
+            if len(pre_data) > 0:
+                ax.plot(pre_data['Date'], pre_data[indicator], 
+                       color=COLORBLIND_SAFE[0], linewidth=1.5, label='Pre-Euro')
+        
+        # Plot post-Euro data
+        post_data = country_data[country_data[period_column] == 'Post-Euro']
+        if not include_crisis_years and len(post_data) > 0:
+            # Crisis-excluded: segment plotting
+            post_data_sorted = post_data.sort_values('Date')
+            segments = []
+            current_segment = []
+            
+            for _, row in post_data_sorted.iterrows():
+                if len(current_segment) == 0:
+                    current_segment.append(row)
+                else:
+                    last_date = current_segment[-1]['Date']
+                    current_date = row['Date']
+                    gap_years = (current_date - last_date).days / 365.25
+                    
+                    if gap_years > 2:  # Gap indicates crisis exclusion
+                        if current_segment:
+                            segments.append(pd.DataFrame(current_segment))
+                        current_segment = [row]
+                    else:
+                        current_segment.append(row)
+            
+            if current_segment:
+                segments.append(pd.DataFrame(current_segment))
+            
+            # Plot each segment separately
+            for j, segment in enumerate(segments):
+                if len(segment) > 0:
+                    ax.plot(segment['Date'], segment[indicator], 
+                           color=COLORBLIND_SAFE[1], linewidth=1.5, label='Post-Euro' if j == 0 else "")
+        else:
+            # Normal plotting for full series
+            if len(post_data) > 0:
+                ax.plot(post_data['Date'], post_data[indicator], 
+                       color=COLORBLIND_SAFE[1], linewidth=1.5, label='Post-Euro')
+        
+        # Add Euro adoption line
+        ax.axvline(x=adoption_date, color='red', linestyle='--', alpha=0.7, linewidth=2, label='Euro Adoption')
+        
+        # Add crisis period shading for crisis-excluded version
+        if not include_crisis_years:
+            ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
+                      alpha=0.15, color='red', label='GFC (excluded)' if i == 0 else "")
+            ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
+                      alpha=0.15, color='orange', label='COVID (excluded)' if i == 0 else "")
+        
+        # Formatting (following CS1 standards exactly)
+        ax.set_title(f'Panel {panel_letter}: {clean_name}{study_title_suffix} (F-statistic: {f_stat:.2f})', 
+                    fontweight='bold', fontsize=9, pad=8)
+        ax.set_ylabel('% of GDP (annualized)', fontsize=8)
+        ax.set_xlabel('Year', fontsize=8)
+        ax.tick_params(axis='both', which='major', labelsize=7)
+        ax.legend(loc='best', fontsize=7, frameon=True, fancybox=False, shadow=False)
+        ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+        
+        plt.tight_layout()
+        st.pyplot(fig_ts)
+        
+        # Individual download button (following CS1 pattern)
+        buf_ts = io.BytesIO()
+        fig_ts.savefig(buf_ts, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+        buf_ts.seek(0)
+        
+        clean_filename = clean_name.replace(' ', '_').replace('(', '').replace(')', '').replace('-', '_')
+        
+        st.download_button(
+            label=f"📥 Download {clean_name} Time Series (PNG)",
+            data=buf_ts.getvalue(),
+            file_name=f"{selected_display_country}_{clean_filename}_timeseries{version_suffix}.png",
+            mime="image/png",
+            key=f"download_ts_{selected_display_country}_{i}_{clean_filename}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
+        )
 
 def main():
     """Main Case Study 2 application"""
