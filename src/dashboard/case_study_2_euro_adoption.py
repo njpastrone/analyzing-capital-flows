@@ -54,31 +54,104 @@ def create_euro_adoption_timeline():
         }
     }
 
-def load_case_study_2_data(include_crisis_years=True):
-    """Load processed Euro adoption analysis data with version selection"""
-    try:
-        # Load processed data files
-        data_dir = Path(__file__).parent.parent.parent / "data"
+def create_euro_periods(data, include_crisis_years=True):
+    """Create Euro adoption period labels for comprehensive dataset"""
+    timeline = create_expanded_euro_adoption_timeline()
+    
+    # Create period column based on crisis inclusion
+    period_col = 'EURO_PERIOD_FULL' if include_crisis_years else 'EURO_PERIOD_CRISIS_EXCLUDED'
+    data[period_col] = 'Unknown'
+    
+    for country, info in timeline.items():
+        country_mask = data['COUNTRY'] == country
         
         if include_crisis_years:
-            processed_file = data_dir / "case_study_2_euro_adoption_data.csv"
-            study_version = "Full Series"
+            # Full series: use pre_period_full and post_period_full
+            pre_start, pre_end = info['pre_period_full']
+            post_start, post_end = info['post_period_full']
+            
+            pre_mask = country_mask & (data['YEAR'] >= pre_start) & (data['YEAR'] <= pre_end)
+            post_mask = country_mask & (data['YEAR'] >= post_start) & (data['YEAR'] <= post_end)
         else:
-            processed_file = data_dir / "case_study_2_euro_adoption_data_crisis_excluded.csv"
-            study_version = "Crisis-Excluded"
+            # Crisis-excluded: use pre_period_crisis_excluded and post_period_crisis_excluded
+            pre_start, pre_end = info['pre_period_crisis_excluded']
+            post_start, post_end = info['post_period_crisis_excluded']
+            
+            # Exclude crisis years
+            crisis_years = info['crisis_years']
+            non_crisis_mask = ~data['YEAR'].isin(crisis_years)
+            
+            pre_mask = country_mask & (data['YEAR'] >= pre_start) & (data['YEAR'] <= pre_end) & non_crisis_mask
+            post_mask = country_mask & (data['YEAR'] >= post_start) & (data['YEAR'] <= post_end) & non_crisis_mask
         
-        if not processed_file.exists():
-            st.error(f"Case Study 2 {study_version.lower()} data not found. Please run data_processor_case_study_2.py first.")
+        data.loc[pre_mask, period_col] = 'Pre-Euro'
+        data.loc[post_mask, period_col] = 'Post-Euro'
+    
+    return data
+
+def load_case_study_2_data(include_crisis_years=True):
+    """Load Euro adoption analysis data from comprehensive dataset"""
+    try:
+        # Load comprehensive dataset
+        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "  # Note trailing space
+        
+        if not comprehensive_file.exists():
+            st.error(f"Comprehensive dataset not found at {comprehensive_file}")
             return None, None, None
         
-        # Load processed data
-        final_data = pd.read_csv(processed_file)
+        # Load comprehensive data and filter for CS2 countries
+        df = pd.read_csv(comprehensive_file)
+        cs2_data = df[df['CS2_GROUP'].notna()].copy()
+        
+        if cs2_data.empty:
+            st.error("No CS2 countries found in comprehensive dataset")
+            return None, None, None
+        
+        # Create Euro adoption periods for each country
+        cs2_data = create_euro_periods(cs2_data, include_crisis_years)
+        study_version = "Full Series" if include_crisis_years else "Crisis-Excluded"
+        
+        # Use the processed data format
+        final_data = cs2_data
         
         # Get analysis indicators (columns ending with _PGDP)
-        analysis_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
+        all_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
+        # Filter to only indicators with data for CS2 countries
+        all_indicators = [col for col in all_indicators if final_data[col].notna().any()]
+        
+        # Match CS1 indicator set exactly - map comprehensive dataset names to CS1 names
+        cs1_indicator_mapping = {
+            'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct investment, Total financial assets/liabilities',
+            'Liabilities - Direct investment, Total financial assets/liabilities': 'Liabilities - Direct investment, Total financial assets/liabilities', 
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities': 'Net - Direct investment, Total financial assets/liabilities',
+            'Assets - Portfolio investment, Total financial assets/liabilities': 'Assets - Portfolio investment, Total financial assets/liabilities',
+            'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio investment, Total financial assets/liabilities',
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio investment, Total financial assets/liabilities',
+            'Assets - Portfolio investment, Debt securities': 'Assets - Portfolio investment, Debt securities',
+            'Liabilities - Portfolio investment, Debt securities': 'Liabilities - Portfolio investment, Debt securities',
+            'Assets - Portfolio investment, Equity and investment fund shares': 'Assets - Portfolio investment, Equity and investment fund shares',
+            'Liabilities - Portfolio investment, Equity and investment fund shares': 'Liabilities - Portfolio investment, Equity and investment fund shares',
+            'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities': 'Net - Other investment, Total financial assets/liabilities',
+            'Assets - Other investment, Debt instruments': 'Assets - Other investment, Debt instruments',
+            'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank',
+            'Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank'
+        }
+        
+        # Create renamed columns for the 14 CS1 indicators
+        analysis_indicators = []
+        for original_col in all_indicators:
+            clean_name = original_col.replace('_PGDP', '')
+            if clean_name in cs1_indicator_mapping:
+                cs1_name = cs1_indicator_mapping[clean_name]
+                new_col = cs1_name + '_PGDP'
+                # Rename the column in the dataset
+                final_data = final_data.rename(columns={original_col: new_col})
+                analysis_indicators.append(new_col)
+        
         analysis_indicators = sort_indicators_by_type(analysis_indicators)
         
-        # Create timeline information (updated with new periods)
+        # Create timeline information with full period structure
         timeline = create_expanded_euro_adoption_timeline()
         
         # Analysis countries (simplified country names for display)
@@ -86,8 +159,6 @@ def load_case_study_2_data(include_crisis_years=True):
         
         # Determine which period column to use
         period_column = 'EURO_PERIOD_CRISIS_EXCLUDED' if not include_crisis_years else 'EURO_PERIOD_FULL'
-        if period_column not in final_data.columns:
-            period_column = 'EURO_PERIOD'  # Fallback for backward compatibility
         
         # Create metadata
         metadata = {
@@ -256,43 +327,33 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         # Filter for Case Study 2 data (CS2_GROUP not null)
         case_two_data = comprehensive_df[comprehensive_df['CS2_GROUP'].notna()].copy()
         
-        # Create Euro adoption timeline
-        timeline = create_euro_adoption_timeline()
+        # Create Euro adoption timeline with full 1999-2024 periods
+        timeline = create_expanded_euro_adoption_timeline()
         
-        # Add period classification
-        def classify_period(row, timeline, include_crisis_years):
+        # Add period classification using CS1 methodology
+        def classify_period(row, timeline):
             country = row['COUNTRY']
             year = row['YEAR']
             
             if country in timeline:
                 adoption_year = timeline[country]['adoption_year']
                 
-                if include_crisis_years:
-                    # Full series analysis
-                    if year < adoption_year:
-                        return 'Pre-Euro'
-                    elif year >= adoption_year:
-                        return 'Post-Euro'
-                else:
-                    # Crisis-excluded analysis
-                    pre_start, pre_end = timeline[country]['pre_period']
-                    post_start, post_end = timeline[country]['post_period']
-                    
-                    if pre_start <= year <= pre_end:
-                        return 'Pre-Euro'
-                    elif post_start <= year <= post_end:
-                        return 'Post-Euro'
-                    else:
-                        return 'Excluded'
+                # Always use full 1999-2024 timeline, just classify periods
+                if year < adoption_year:
+                    return 'Pre-Euro'
+                elif year >= adoption_year:
+                    return 'Post-Euro'
             return 'Unknown'
         
         case_two_data['EURO_PERIOD'] = case_two_data.apply(
-            lambda row: classify_period(row, timeline, include_crisis_years), axis=1
+            lambda row: classify_period(row, timeline), axis=1
         )
         
-        # Filter out excluded periods if crisis-excluded version
+        # Apply crisis filtering using CS1 methodology - filter data, not timeline
         if not include_crisis_years:
-            case_two_data = case_two_data[case_two_data['EURO_PERIOD'] != 'Excluded'].copy()
+            # Define crisis years: GFC (2008-2010) + COVID (2020-2022)
+            crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
+            case_two_data = case_two_data[~case_two_data['YEAR'].isin(crisis_years)].copy()
         
         # Define the 4 overall capital flows indicators (3 base + 1 computed)
         base_indicators_mapping = {
@@ -335,14 +396,18 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         st.error(f"Error loading Case Study 2 overall capital flows data: {str(e)}")
         return None, None, None
 
-def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
-    """Display Overall Capital Flows Analysis section for Case Study 2 - matches CS1 template exactly"""
+def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_country, include_crisis_years=True):
+    """Display Overall Capital Flows Analysis section for Case Study 2 - country-specific version"""
     st.header("📈 Overall Capital Flows Analysis")
     study_version = "Full Series" if include_crisis_years else "Crisis-Excluded"
-    st.markdown(f"*High-level summary of aggregate net capital flows before detailed disaggregated analysis - {study_version}*")
+    st.markdown(f"*High-level summary of aggregate net capital flows for {selected_display_country} - {study_version}*")
     
-    # Load data
+    # Load data and filter for selected country
     overall_data, indicators_mapping, metadata = load_overall_capital_flows_data_cs2(include_crisis_years)
+    
+    if overall_data is not None:
+        # Filter for selected country only
+        overall_data = overall_data[overall_data['COUNTRY'] == selected_country].copy()
     
     if overall_data is None or indicators_mapping is None:
         st.error("Failed to load overall capital flows data.")
@@ -431,17 +496,80 @@ def show_overall_capital_flows_analysis_cs2(include_crisis_years=True):
         if col_name in overall_data.columns and i < 4:
             ax = axes2[i]
             
-            # Plot time series by period
+            # Plot time series with proper crisis period handling
             sorted_data = overall_data_ts.sort_values('DATE')
             
-            for period in ['Pre-Euro', 'Post-Euro']:
-                period_data = sorted_data[sorted_data['EURO_PERIOD'] == period]
-                if len(period_data) > 0:
-                    # Aggregate by date (average across countries for each period)
+            # Since we're now working with single-country data, period overlap is resolved
+            if not include_crisis_years:
+                # Crisis-excluded: plot data in segments to avoid connecting across excluded periods
+                for period in ['Pre-Euro', 'Post-Euro']:
+                    period_data = sorted_data[sorted_data['EURO_PERIOD'] == period]
+                    if len(period_data) == 0:
+                        continue
+                    
+                    # Aggregate by date (single country, so just group by DATE)
                     period_agg = period_data.groupby('DATE')[col_name].mean().reset_index()
-                    if len(period_agg) > 0:
-                        ax.plot(period_agg['DATE'], period_agg[col_name], 
-                               color=colors[period], label=period, linewidth=2, alpha=0.8)
+                    
+                    if len(period_agg) == 0:
+                        continue
+                    
+                    # Find segments separated by crisis periods
+                    segments = []
+                    current_segment = []
+                    
+                    for _, row in period_agg.iterrows():
+                        year = row['DATE'].year
+                        # Check if this year is adjacent to the previous year (allowing for gaps)
+                        if len(current_segment) == 0:
+                            current_segment.append(row)
+                        else:
+                            prev_year = current_segment[-1]['DATE'].year
+                            # If there's a gap of more than 1 year, start a new segment
+                            if year - prev_year > 1:
+                                segments.append(pd.DataFrame(current_segment))
+                                current_segment = [row]
+                            else:
+                                current_segment.append(row)
+                    
+                    # Add the last segment
+                    if current_segment:
+                        segments.append(pd.DataFrame(current_segment))
+                    
+                    # Plot each segment separately
+                    for j, segment in enumerate(segments):
+                        if len(segment) > 0:
+                            ax.plot(segment['DATE'], segment[col_name], 
+                                   color=colors[period], linewidth=2, alpha=0.8,
+                                   label=period if j == 0 else "")
+            else:
+                # Full series: simple aggregation by period (single country, no overlap possible)
+                for period in ['Pre-Euro', 'Post-Euro']:
+                    period_data = sorted_data[sorted_data['EURO_PERIOD'] == period]
+                    if len(period_data) > 0:
+                        # Aggregate by date (single country)
+                        period_agg = period_data.groupby('DATE')[col_name].mean().reset_index()
+                        if len(period_agg) > 0:
+                            ax.plot(period_agg['DATE'], period_agg[col_name], 
+                                   color=colors[period], label=period, linewidth=2, alpha=0.8)
+            
+            # Add crisis period shading for crisis-excluded version
+            if not include_crisis_years:
+                ax.axvspan(pd.to_datetime('2008-01-01'), pd.to_datetime('2010-12-31'), 
+                          alpha=0.15, color='red', label='GFC (excluded)' if i == 0 else "")
+                ax.axvspan(pd.to_datetime('2020-01-01'), pd.to_datetime('2022-12-31'), 
+                          alpha=0.15, color='orange', label='COVID (excluded)' if i == 0 else "")
+            
+            # Add Euro adoption line for selected country only
+            country_adoption_years = {
+                'Estonia, Republic of': 2011, 
+                'Latvia, Republic of': 2014, 
+                'Lithuania, Republic of': 2015
+            }
+            adoption_year = country_adoption_years.get(selected_country)
+            if adoption_year:
+                adoption_date = pd.to_datetime(f'{adoption_year}-01-01')
+                ax.axvline(x=adoption_date, color='red', linestyle='--', alpha=0.7, linewidth=2, 
+                          label='Euro Adoption' if i == 0 else "")
             
             ax.set_title(clean_name, fontweight='bold', fontsize=10)
             ax.set_ylabel('% of GDP (annualized)', fontsize=9)
@@ -1552,8 +1680,7 @@ def main():
     with st.spinner(f"Loading and processing Euro adoption data ({study_version})..."):
         final_data, analysis_indicators, metadata = load_case_study_2_data(include_crisis_years)
     
-    # Overall Capital Flows Analysis (NEW SECTION)
-    show_overall_capital_flows_analysis_cs2(include_crisis_years)
+    # Note: Overall Capital Flows Analysis moved to after country selection for country-specific display
     
     if final_data is None:
         st.stop()
@@ -1600,6 +1727,9 @@ def main():
     
     # Final session_id includes all variable components for complete uniqueness
     session_id = f"{session_id}_{selected_display_country.lower()}"
+    
+    # Overall Capital Flows Analysis (Country-Specific)
+    show_overall_capital_flows_analysis_cs2(selected_country, selected_display_country, include_crisis_years)
     
     timeline = metadata['timeline']
     country_info = timeline[selected_country]

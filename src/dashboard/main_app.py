@@ -3873,7 +3873,7 @@ def show_case_study_2_lithuania_restructured():
 def show_estonia_overall_analysis(include_crisis_years=True):
     """Show Estonia overall capital flows analysis"""
     from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
-    show_overall_capital_flows_analysis_cs2(include_crisis_years)
+    show_overall_capital_flows_analysis_cs2('Estonia, Republic of', 'Estonia', include_crisis_years)
 
 def show_estonia_indicator_analysis(include_crisis_years=True):
     """Show Estonia indicator-level analysis"""
@@ -3883,7 +3883,7 @@ def show_estonia_indicator_analysis(include_crisis_years=True):
 def show_latvia_overall_analysis(include_crisis_years=True):
     """Show Latvia overall capital flows analysis"""
     from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
-    show_overall_capital_flows_analysis_cs2(include_crisis_years)
+    show_overall_capital_flows_analysis_cs2('Latvia, Republic of', 'Latvia', include_crisis_years)
 
 def show_latvia_indicator_analysis(include_crisis_years=True):
     """Show Latvia indicator-level analysis"""
@@ -3893,7 +3893,7 @@ def show_latvia_indicator_analysis(include_crisis_years=True):
 def show_lithuania_overall_analysis(include_crisis_years=True):
     """Show Lithuania overall capital flows analysis"""
     from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
-    show_overall_capital_flows_analysis_cs2(include_crisis_years)
+    show_overall_capital_flows_analysis_cs2('Lithuania, Republic of', 'Lithuania', include_crisis_years)
 
 def show_lithuania_indicator_analysis(include_crisis_years=True):
     """Show Lithuania indicator-level analysis"""

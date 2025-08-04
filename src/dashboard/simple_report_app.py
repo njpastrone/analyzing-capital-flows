@@ -38,7 +38,10 @@ def create_indicator_nicknames():
         'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio (Total)',
         'Net - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
         'Net - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net - Other investment, Total financial assets/liabilities': 'Net - Other Investment'
+        'Net - Other investment, Total financial assets/liabilities': 'Net - Other Investment',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities': 'Net - Other Investment'
     }
 
 def get_nickname(indicator_name):
