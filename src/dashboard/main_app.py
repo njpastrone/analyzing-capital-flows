@@ -42,7 +42,7 @@ def main():
         "🇪🇪 Case Study 2 – Estonia",
         "🇱🇻 Case Study 2 – Latvia", 
         "🇱🇹 Case Study 2 – Lithuania",
-        "🌏 Case Study 3: Emerging Markets",
+        "🇮🇸 Case Study 3 – Iceland vs Small Open Economies",
         "📊 Comparative Analysis",
         "📖 Methodology & Data"
     ])
@@ -66,7 +66,7 @@ def main():
         show_case_study_2_lithuania_restructured()
     
     with tab7:
-        show_case_study_3_placeholder()
+        show_case_study_3_restructured()
     
     with tab8:
         show_comparative_analysis_placeholder()
@@ -2101,63 +2101,48 @@ def show_case_study_2():
     # Call the Case Study 2 main function
     case_study_2_main()
 
-def show_case_study_3_placeholder():
-    """Placeholder for Case Study 3 - Emerging Markets"""
+def show_case_study_3_restructured():
+    """Display restructured Case Study 3 - Iceland vs Small Open Economies with complete sequential structure"""
     
-    st.header("🌏 Case Study 3: Emerging Markets Capital Flow Volatility")
-    
+    st.info("📋 **Case Study 3: Iceland vs. Small Open Economies Capital Flow Volatility Analysis**")
     st.markdown("""
-    ### Research Scope
-    
-    **Objective:** Compare capital flow volatility patterns across major emerging market economies
-    
-    **Countries Under Consideration:**
-    - **Latin America:** Brazil, Mexico, Argentina, Chile
-    - **Asia:** India, Thailand, Indonesia, Malaysia  
-    - **Europe:** Turkey, Poland, Czech Republic
-    - **Africa:** South Africa
-    
-    **Research Questions:**
-    1. How does capital flow volatility vary across emerging market regions?
-    2. What institutional factors explain differences in volatility patterns?
-    3. How do global financial cycles affect different emerging markets?
-    4. What policy frameworks are associated with lower volatility?
+    This case study examines Iceland's capital flow volatility patterns compared to other small open economies
+    to understand the unique characteristics of Iceland's financial integration from 1999-2025.
     """)
+    
+    # Call the Case Study 3 main function which contains complete sequential structure (Full → Crisis-Excluded)
+    case_study_3_main(context="main_app")
+    
+    # Download Reports Section
+    st.markdown("---")
+    st.header("📥 Downloadable Reports")
     
     col1, col2 = st.columns(2)
     
     with col1:
-        st.subheader("Analytical Framework")
-        st.markdown("""
-        **Panel Data Analysis:**
-        - Fixed effects models
-        - Random effects specifications
-        - Dynamic panel estimation
-        
-        **Institutional Variables:**
-        - Exchange rate regime
-        - Capital account openness
-        - Financial development index
-        - Governance indicators
-        
-        **Global Factors:**
-        - VIX volatility index
-        - US monetary policy
-        - Commodity price cycles
-        - Global risk appetite
-        """)
+        # Placeholder for CS3 HTML report generation
+        st.info("🚧 **CS3 HTML Report Generation**\n\nComprehensive HTML report functionality will be implemented to match CS1 features.")
     
     with col2:
-        st.subheader("Expected Deliverables")
-        st.markdown("""
-        1. **Cross-Country Volatility Rankings**
-        2. **Institutional Determinants Analysis**
-        3. **Policy Recommendations Matrix**
-        4. **Early Warning Indicators**
-        5. **Interactive Dashboard**
-        """)
+        # Placeholder for CS3 ZIP bundle generation  
+        st.info("🚧 **CS3 Data Bundle**\n\nDownloadable ZIP bundle with all CS3 analysis outputs will be implemented.")
+
+def case_study_3_main(context="main_app"):
+    """Display Case Study 3 - Iceland vs Small Open Economies with complete sequential structure"""
+    
+    # Import the CS3 report functions
+    try:
+        from cs3_report_app import case_study_3_main as cs3_main, case_study_3_main_crisis_excluded as cs3_crisis_main
         
-        st.info("📅 **Timeline:** Q3 2024 target completion")
+        # Full Time Period Analysis
+        cs3_main(context=context)
+        
+        # Crisis-Excluded Analysis  
+        cs3_crisis_main(context=context)
+        
+    except ImportError as e:
+        st.error(f"❌ Error importing CS3 functions: {str(e)}")
+        st.info("🚧 **Case Study 3 Implementation**\n\nCS3 analysis functions are being implemented to match CS1 structure.")
 
 def show_comparative_analysis_placeholder():
     """Placeholder for Comparative Analysis across all case studies"""
