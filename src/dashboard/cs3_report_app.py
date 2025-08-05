@@ -135,15 +135,15 @@ def main():
     # Note: st.set_page_config() is now handled by main_app.py (matching simple_report_app.py)
     # Removing page config call to prevent margin/layout conflicts that affect PDF export
     
-    st.title("🇮🇸 Iceland vs Small Open Economies Analysis")
-    st.subheader("Capital Flow Volatility Comparison (1999-2025)")
+    st.title("🇮🇸 Comparative Analysis: Iceland and Small Open Economies")
+    st.subheader("Capital Flow Volatility Patterns (1999-2025)")
     
     st.markdown("""
-    **Research Focus:** How does Iceland's capital flow volatility compare to other small open economies?
+    **Research Focus:** How do capital flow volatility patterns compare between Iceland and other small open economies with similar characteristics?
     
-    **Methodology:** Cross-sectional comparison of capital flow patterns between Iceland and small open economies from 1999-2025.
+    **Methodology:** Cross-sectional comparison of capital flow patterns between Iceland and comparable small open economies from 1999-2025.
     
-    **Key Hypothesis:** Iceland exhibits higher capital flow volatility compared to other small open economies due to its unique economic structure.
+    **Key Hypothesis:** Iceland and other small open economies may exhibit different capital flow volatility patterns despite similar economic structures and currency regimes.
     """)
     
     # Data and Methodology section (matching simple_report_app.py format) 
@@ -156,9 +156,9 @@ def main():
         
         ### Methodology
         1. **Data Normalization:** All BOP flows converted to annualized % of GDP
-        2. **Statistical Analysis:** Comprehensive descriptive statistics and F-tests for variance equality
-        3. **Volatility Measures:** Standard deviation, coefficient of variation, variance ratios
-        4. **Cross-sectional Comparison:** Iceland vs Small Open Economies group analysis
+        2. **Statistical Analysis:** F-tests for variance equality without directional assumptions
+        3. **Volatility Measures:** Standard deviation, coefficient of variation, comparative patterns
+        4. **Comparative Framework:** Neutral analysis of volatility differences between similar economies
         
         ### Time Period Coverage
         - **Full Analysis Period:** 1999-2025 (all available data)
@@ -269,7 +269,7 @@ def case_study_3_main(context="standalone"):
     bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax1.set_title('Panel A: Distribution of Means\\nAll Capital Flow Indicators', 
+    ax1.set_title('Panel A: Distribution of Means\\nComparing Iceland and Small Open Economies', 
                   fontweight='bold', fontsize=10, pad=12)
     ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax1.tick_params(axis='both', which='major', labelsize=8)
@@ -287,7 +287,7 @@ def case_study_3_main(context="standalone"):
     bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax2.set_title('Panel B: Distribution of Std Deviations\\nAll Capital Flow Indicators', 
+    ax2.set_title('Panel B: Distribution of Volatility (Std Dev)\\nComparing Iceland and Small Open Economies', 
                   fontweight='bold', fontsize=10, pad=12)
     ax2.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
     ax2.tick_params(axis='both', which='major', labelsize=8)
@@ -363,7 +363,7 @@ def case_study_3_main(context="standalone"):
         with col1:
             st.metric("Total Indicators", total_indicators)
         with col2:
-            st.metric("Iceland Higher Volatility", f"{iceland_higher_count}/{total_indicators}")
+            st.metric("Iceland More Volatile", f"{iceland_higher_count}/{total_indicators}")
         with col3:
             st.metric("Significant at 5%", f"{sig_5pct_count}/{total_indicators}")
         with col4:
@@ -526,7 +526,7 @@ def case_study_3_main(context="standalone"):
     # 3. Hypothesis Testing Results
     st.header("3. Hypothesis Testing Results")
     
-    st.markdown("**F-Tests for Equal Variances (Iceland vs. Small Open Economies)** | H₀: Equal volatility | H₁: Different volatility | α = 0.05")
+    st.markdown("**F-Tests for Variance Equality Between Iceland and Small Open Economies** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
     # Create a clean static table for hypothesis tests
     results_display = test_results.copy()
@@ -541,7 +541,7 @@ def case_study_3_main(context="standalone"):
         lambda row: '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else '', 
         axis=1
     )
-    results_display['Higher Volatility'] = results_display['Iceland_Higher_Volatility'].map({True: 'Iceland', False: 'Small Open Economies'})
+    results_display['More Volatile'] = results_display['Iceland_Higher_Volatility'].map({True: 'Iceland', False: 'Small Open Economies'})
     
     # Create formatted table
     test_table_data = []
@@ -551,7 +551,7 @@ def case_study_3_main(context="standalone"):
             'F-Statistic': f"{row['F_Statistic']:.2f}",
             'P-Value': f"{row['P_Value']:.4f}",
             'Significance': row['Significant'],
-            'Higher Volatility': row['Higher Volatility']
+            'More Volatile': row['More Volatile']
         })
     
     test_df = pd.DataFrame(test_table_data)
@@ -635,7 +635,7 @@ def case_study_3_main(context="standalone"):
         st.markdown("**Legend:**")
         st.markdown("- **F-Statistic**: Ratio of variances")
         st.markdown("- **P-Value**: Statistical significance")
-        st.markdown("- **Higher Volatility**: Which group shows more volatility")
+        st.markdown("- **More Volatile**: Which group exhibits greater volatility")
     
     # Test summary
     total_indicators = len(test_results)
@@ -645,14 +645,22 @@ def case_study_3_main(context="standalone"):
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Iceland Higher Volatility", f"{iceland_higher_count}/{total_indicators}", f"{iceland_higher_count/total_indicators*100:.1f}%")
+        st.metric("Iceland More Volatile", f"{iceland_higher_count}/{total_indicators}", f"{iceland_higher_count/total_indicators*100:.1f}%")
     with col2:
         st.metric("Significant (5%)", f"{sig_5pct_count}/{total_indicators}", f"{sig_5pct_count/total_indicators*100:.1f}%")
     with col3:
         st.metric("Significant (1%)", f"{sig_1pct_count}/{total_indicators}", f"{sig_1pct_count/total_indicators*100:.1f}%")
     
-    conclusion = "Strong evidence supports" if iceland_higher_count/total_indicators > 0.6 else "Mixed evidence for"
-    st.success(f"**Conclusion:** {conclusion} the hypothesis that Iceland has higher capital flow volatility.")
+    if iceland_higher_count/total_indicators > 0.7:
+        conclusion = "Iceland shows significantly higher volatility than"
+    elif iceland_higher_count/total_indicators > 0.5:
+        conclusion = "Iceland shows moderately different volatility patterns from"
+    elif iceland_higher_count/total_indicators > 0.3:
+        conclusion = "Iceland and Small Open Economies show similar volatility with some differences in"
+    else:
+        conclusion = "Small Open Economies show higher volatility than Iceland in"
+    
+    st.success(f"**Conclusion:** {conclusion} other small open economies across capital flow indicators.")
     
     st.markdown("---")
     
@@ -752,17 +760,17 @@ def case_study_3_main(context="standalone"):
         ### Statistical Evidence:
         - **{iceland_higher_count/total_indicators*100:.1f}% of capital flow indicators** show higher volatility in Iceland
         - **{sig_5pct_count/total_indicators*100:.1f}% of indicators** show statistically significant differences (p<0.05)
-        - **Iceland's average volatility** is {volatility_ratio:.2f} times higher than Small Open Economies
-        - **Most significant differences** in portfolio investment and direct investment flows
+        - **Volatility ratio (Iceland/SOE):** {volatility_ratio:.2f}x
+        - **Pattern analysis:** Capital flow volatility patterns {'are relatively similar' if volatility_ratio < 1.5 else 'show notable differences'} between the two groups
         """)
     
     with col2:
         st.markdown(f"""
-        ### Additional Statistical Context:
-        - **Time period coverage**: 1999 to 2025 (full dataset)
-        - **Data completeness**: Analysis based on comprehensive observations
-        - **Methodology**: F-test for variance equality, 5% significance level
-        - **Cross-validation**: Results consistent across multiple statistical measures
+        ### Policy Context:
+        - **Comparative advantage**: Both groups share similar small open economy characteristics
+        - **Currency regimes**: Mix of independent currencies and currency boards
+        - **Economic structures**: Similar exposure to global financial flows
+        - **Key insight**: Differences may reflect Iceland's specific geographic and economic factors
         """)
     
     # Download section
@@ -855,7 +863,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax1.set_title('Panel A: Distribution of Means\\nAll Indicators (Crisis-Excluded)', 
+    ax1.set_title('Panel A: Distribution of Means (Crisis-Excluded)\\nComparing Iceland and Small Open Economies', 
                   fontweight='bold', fontsize=10, pad=12)
     ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax1.tick_params(axis='both', which='major', labelsize=8)
@@ -873,7 +881,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax2.set_title('Panel B: Distribution of Std Deviations\\nAll Indicators (Crisis-Excluded)', 
+    ax2.set_title('Panel B: Distribution of Volatility (Crisis-Excluded)\\nComparing Iceland and Small Open Economies', 
                   fontweight='bold', fontsize=10, pad=12)
     ax2.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
     ax2.tick_params(axis='both', which='major', labelsize=8)
@@ -949,7 +957,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         with col1:
             st.metric("Total Indicators", total_indicators)
         with col2:
-            st.metric("Iceland Higher Volatility", f"{iceland_higher_count}/{total_indicators}")
+            st.metric("Iceland More Volatile", f"{iceland_higher_count}/{total_indicators}")
         with col3:
             st.metric("Significant at 5%", f"{sig_5pct_count}/{total_indicators}")
         with col4:
@@ -1060,7 +1068,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     # 3. Hypothesis Testing Results (Crisis-Excluded)
     st.header("3. Hypothesis Testing Results (Crisis-Excluded)")
     
-    st.markdown("**F-Tests for Equal Variances (Iceland vs. Small Open Economies) - Crisis-Excluded** | H₀: Equal volatility | H₁: Different volatility | α = 0.05")
+    st.markdown("**F-Tests for Variance Equality (Crisis-Excluded Analysis)** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
     # Create a clean static table for hypothesis tests (crisis-excluded)
     results_display = test_results.copy()
@@ -1075,7 +1083,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         lambda row: '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else '', 
         axis=1
     )
-    results_display['Higher Volatility'] = results_display['Iceland_Higher_Volatility'].map({True: 'Iceland', False: 'Small Open Economies'})
+    results_display['More Volatile'] = results_display['Iceland_Higher_Volatility'].map({True: 'Iceland', False: 'Small Open Economies'})
     
     # Create formatted table (crisis-excluded)
     test_table_data = []
@@ -1085,7 +1093,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             'F-Statistic': f"{row['F_Statistic']:.2f}",
             'P-Value': f"{row['P_Value']:.4f}",
             'Significance': row['Significant'],
-            'Higher Volatility': row['Higher Volatility']
+            'More Volatile': row['More Volatile']
         })
     
     test_df = pd.DataFrame(test_table_data)
@@ -1117,7 +1125,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         st.markdown("**Legend:**")
         st.markdown("- **F-Statistic**: Ratio of variances")
         st.markdown("- **P-Value**: Statistical significance")
-        st.markdown("- **Higher Volatility**: Which group shows more volatility")
+        st.markdown("- **More Volatile**: Which group exhibits greater volatility")
     
     # Test summary (crisis-excluded)
     total_indicators = len(test_results)
@@ -1127,14 +1135,22 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     
     col1, col2, col3 = st.columns(3)
     with col1:
-        st.metric("Iceland Higher Volatility", f"{iceland_higher_count}/{total_indicators}", f"{iceland_higher_count/total_indicators*100:.1f}%")
+        st.metric("Iceland More Volatile", f"{iceland_higher_count}/{total_indicators}", f"{iceland_higher_count/total_indicators*100:.1f}%")
     with col2:
         st.metric("Significant (5%)", f"{sig_5pct_count}/{total_indicators}", f"{sig_5pct_count/total_indicators*100:.1f}%")
     with col3:
         st.metric("Significant (1%)", f"{sig_1pct_count}/{total_indicators}", f"{sig_1pct_count/total_indicators*100:.1f}%")
     
-    conclusion = "Strong evidence supports" if iceland_higher_count/total_indicators > 0.6 else "Mixed evidence for"
-    st.success(f"**Conclusion (Crisis-Excluded):** {conclusion} the hypothesis that Iceland has higher capital flow volatility.")
+    if iceland_higher_count/total_indicators > 0.7:
+        conclusion = "Iceland shows significantly higher volatility than"
+    elif iceland_higher_count/total_indicators > 0.5:
+        conclusion = "Iceland shows moderately different volatility patterns from"
+    elif iceland_higher_count/total_indicators > 0.3:
+        conclusion = "Iceland and Small Open Economies show similar volatility with some differences in"
+    else:
+        conclusion = "Small Open Economies show higher volatility than Iceland in"
+    
+    st.success(f"**Conclusion (Crisis-Excluded):** {conclusion} other small open economies across capital flow indicators (excluding crisis periods).")
     
     # 4. Key Findings Summary (Crisis-Excluded)
     st.header("4. Key Findings Summary (Crisis-Excluded)")
@@ -1146,17 +1162,17 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         ### Statistical Evidence (Crisis-Excluded):
         - **{iceland_higher_count/total_indicators*100:.1f}% of capital flow indicators** show higher volatility in Iceland
         - **{sig_5pct_count/total_indicators*100:.1f}% of indicators** show statistically significant differences (p<0.05)
-        - **Iceland's average volatility** is {volatility_ratio:.2f} times higher than Small Open Economies
-        - **Most significant differences** in portfolio investment and direct investment flows
+        - **Volatility ratio (Iceland/SOE):** {volatility_ratio:.2f}x (excluding crisis periods)
+        - **Pattern analysis:** Non-crisis volatility patterns {'are relatively similar' if volatility_ratio < 1.5 else 'show notable differences'} between groups
         """)
     
     with col2:
         st.markdown(f"""
-        ### Additional Statistical Context:
+        ### Methodological Notes:
         - **Crisis periods excluded**: 2008-2010 (GFC) and 2020-2022 (COVID-19)
-        - **Data completeness**: Analysis based on non-crisis observations only
-        - **Methodology**: F-test for variance equality, 5% significance level
-        - **Cross-validation**: Results consistent with full-period analysis
+        - **Comparison basis**: Similar small open economy structures
+        - **Statistical approach**: F-test for variance equality without directional assumptions
+        - **Interpretation**: Focus on pattern differences rather than superiority/inferiority
         """)
     
     # Download section (Crisis-Excluded)

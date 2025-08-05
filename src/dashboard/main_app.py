@@ -42,7 +42,7 @@ def main():
         "🇪🇪 Case Study 2 – Estonia",
         "🇱🇻 Case Study 2 – Latvia", 
         "🇱🇹 Case Study 2 – Lithuania",
-        "🇮🇸 Case Study 3 – Iceland vs Small Open Economies",
+        "🇮🇸 Case Study 3 – Iceland & Small Open Economies",
         "📊 Comparative Analysis",
         "📖 Methodology & Data"
     ])
@@ -2104,10 +2104,11 @@ def show_case_study_2():
 def show_case_study_3_restructured():
     """Display restructured Case Study 3 - Iceland vs Small Open Economies with complete sequential structure"""
     
-    st.info("📋 **Case Study 3: Iceland vs. Small Open Economies Capital Flow Volatility Analysis**")
+    st.info("📋 **Case Study 3: Comparative Analysis of Iceland and Small Open Economies**")
     st.markdown("""
-    This case study examines Iceland's capital flow volatility patterns compared to other small open economies
-    to understand the unique characteristics of Iceland's financial integration from 1999-2025.
+    This case study compares capital flow volatility patterns between Iceland and other small open economies
+    with similar characteristics, exploring whether differences exist despite comparable economic structures and 
+    currency regimes from 1999-2025.
     """)
     
     # Call the Case Study 3 main function which contains complete sequential structure (Full → Crisis-Excluded)
