@@ -48,8 +48,8 @@ def get_nickname(indicator_name):
     """Get nickname for indicator, fallback to shortened version"""
     nicknames = create_indicator_nicknames()
     nickname = nicknames.get(indicator_name, indicator_name[:25] + '...' if len(indicator_name) > 25 else indicator_name)
-    # Further truncate for table display to prevent column bleeding
-    return nickname[:18] + '...' if len(nickname) > 18 else nickname
+    # Truncate for table display while maintaining readability
+    return nickname[:35] + '...' if len(nickname) > 35 else nickname
 
 def get_investment_type_order(indicator_name):
     """
@@ -445,7 +445,84 @@ def show_overall_capital_flows_analysis():
         aggfunc='first'
     ).round(2)
     
-    st.dataframe(pivot_summary, use_container_width=True)
+    # Create custom HTML table with strict column width control for overall summary
+    st.markdown("""
+    <style>
+    .overall-summary-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+        font-size: 8px !important;
+        font-family: Arial, sans-serif !important;
+    }
+    .overall-summary-table th, .overall-summary-table td {
+        border: 1px solid #ddd !important;
+        padding: 2px !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+    .overall-summary-table th {
+        background-color: #f0f0f0 !important;
+        font-weight: bold !important;
+        font-size: 9px !important;
+    }
+    .overall-summary-table th:first-child, .overall-summary-table td:first-child {
+        width: 220px !important;
+        max-width: 220px !important;
+        text-align: left !important;
+        font-weight: bold !important;
+    }
+    .overall-summary-table th:not(:first-child), .overall-summary-table td:not(:first-child) {
+        width: 70px !important;
+        max-width: 70px !important;
+    }
+    .overall-summary-table tr:nth-child(even) {
+        background-color: #f9f9f9 !important;
+    }
+    @media print {
+        .overall-summary-table {
+            font-size: 7px !important;
+        }
+        .overall-summary-table th:first-child, .overall-summary-table td:first-child {
+            width: 180px !important;
+            max-width: 180px !important;
+        }
+        .overall-summary-table th:not(:first-child), .overall-summary-table td:not(:first-child) {
+            width: 60px !important;
+            max-width: 60px !important;
+        }
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Convert pivot table to regular DataFrame for HTML generation
+    pivot_df = pivot_summary.reset_index()
+    
+    # Generate HTML table content
+    html_table = '<table class="overall-summary-table">'
+    html_table += '<thead><tr>'
+    for col in pivot_df.columns:
+        col_name = str(col).replace('(', '').replace(')', '').replace("'", '') if isinstance(col, tuple) else str(col)
+        html_table += f'<th>{col_name}</th>'
+    html_table += '</tr></thead><tbody>'
+    
+    for _, row in pivot_df.iterrows():
+        html_table += '<tr>'
+        for col in pivot_df.columns:
+            value = row[col]
+            if pd.isna(value):
+                value = '-'
+            elif isinstance(value, (int, float)):
+                value = f'{value:.2f}'
+            html_table += f'<td>{value}</td>'
+        html_table += '</tr>'
+    
+    html_table += '</tbody></table>'
+    
+    # Display the custom HTML table
+    st.markdown(html_table, unsafe_allow_html=True)
     
     # Side-by-side boxplots
     st.subheader("📦 Distribution Comparison by Group")
@@ -974,8 +1051,8 @@ def main():
         font-size: 9px !important;
     }
     .section2-table th:first-child, .section2-table td:first-child {
-        width: 120px !important;
-        max-width: 120px !important;
+        width: 220px !important;
+        max-width: 220px !important;
         text-align: left !important;
         font-weight: bold !important;
     }
@@ -991,8 +1068,8 @@ def main():
             font-size: 7px !important;
         }
         .section2-table th:first-child, .section2-table td:first-child {
-            width: 100px !important;
-            max-width: 100px !important;
+            width: 180px !important;
+            max-width: 180px !important;
         }
         .section2-table th:not(:first-child), .section2-table td:not(:first-child) {
             width: 60px !important;
@@ -1104,7 +1181,78 @@ def main():
             {'selector': 'td:first-child', 'props': [('text-align', 'left')]}  # Left-align indicator names
         ])
         
-        st.dataframe(styled_test_table, use_container_width=True, hide_index=True)
+        # Create custom HTML table with strict column width control for hypothesis testing
+        st.markdown("""
+        <style>
+        .hypothesis-test-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            font-size: 8px !important;
+            font-family: Arial, sans-serif !important;
+        }
+        .hypothesis-test-table th, .hypothesis-test-table td {
+            border: 1px solid #ddd !important;
+            padding: 2px !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .hypothesis-test-table th {
+            background-color: #e6f3ff !important;
+            font-weight: bold !important;
+            font-size: 9px !important;
+        }
+        .hypothesis-test-table th:first-child, .hypothesis-test-table td:first-child {
+            width: 220px !important;
+            max-width: 220px !important;
+            text-align: left !important;
+            font-weight: bold !important;
+        }
+        .hypothesis-test-table th:not(:first-child), .hypothesis-test-table td:not(:first-child) {
+            width: 70px !important;
+            max-width: 70px !important;
+        }
+        .hypothesis-test-table tr:nth-child(even) {
+            background-color: #f9f9f9 !important;
+        }
+        @media print {
+            .hypothesis-test-table {
+                font-size: 7px !important;
+            }
+            .hypothesis-test-table th:first-child, .hypothesis-test-table td:first-child {
+                width: 180px !important;
+                max-width: 180px !important;
+            }
+            .hypothesis-test-table th:not(:first-child), .hypothesis-test-table td:not(:first-child) {
+                width: 60px !important;
+                max-width: 60px !important;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Convert styled DataFrame to regular DataFrame for HTML generation
+        test_df_html = styled_test_table.data
+        
+        # Generate HTML table content
+        html_table = '<table class="hypothesis-test-table">'
+        html_table += '<thead><tr>'
+        for col in test_df_html.columns:
+            html_table += f'<th>{col}</th>'
+        html_table += '</tr></thead><tbody>'
+        
+        for _, row in test_df_html.iterrows():
+            html_table += '<tr>'
+            for col in test_df_html.columns:
+                html_table += f'<td>{row[col]}</td>'
+            html_table += '</tr>'
+        
+        html_table += '</tbody></table>'
+        
+        # Display the custom HTML table
+        st.markdown(html_table, unsafe_allow_html=True)
         st.caption("Significance levels: *** p<0.001, ** p<0.01, * p<0.05")
     
     with col2:
@@ -1362,6 +1510,23 @@ def main():
                         pass
                 else:
                     st.error("❌ Failed to generate HTML report.")
+    
+    # Crisis-Excluded Analysis Section
+    st.markdown("---")
+    st.markdown("---")
+    st.header("🚫 Excluding Financial Crises")
+    st.markdown("*Complete analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
+    
+    # Overall Capital Flows Analysis - Crisis Excluded
+    show_overall_capital_flows_analysis_crisis_excluded()
+    
+    # Disaggregated Capital Flows Analysis - Crisis Excluded (Sections 1-6)
+    st.markdown("---")
+    st.header("📊 Disaggregated Capital Flows Analysis")
+    st.markdown("*Detailed analysis of individual capital flow indicators (Crisis-Excluded)*")
+    
+    # Run the complete crisis-excluded analysis
+    case_study_1_main_crisis_excluded()
 
 def generate_html_report(final_data, analysis_indicators, test_results, group_stats, boxplot_data):
     """Generate an HTML report that exactly matches the app interface structure"""
@@ -2397,8 +2562,8 @@ def case_study_1_main_crisis_excluded():
         font-size: 9px !important;
     }
     .section2-table-ce th:first-child, .section2-table-ce td:first-child {
-        width: 120px !important;
-        max-width: 120px !important;
+        width: 220px !important;
+        max-width: 220px !important;
         text-align: left !important;
         font-weight: bold !important;
     }
@@ -2414,8 +2579,8 @@ def case_study_1_main_crisis_excluded():
             font-size: 7px !important;
         }
         .section2-table-ce th:first-child, .section2-table-ce td:first-child {
-            width: 100px !important;
-            max-width: 100px !important;
+            width: 180px !important;
+            max-width: 180px !important;
         }
         .section2-table-ce th:not(:first-child), .section2-table-ce td:not(:first-child) {
             width: 60px !important;
@@ -2516,7 +2681,78 @@ def case_study_1_main_crisis_excluded():
             {'selector': 'td:first-child', 'props': [('text-align', 'left'), ('font-weight', 'bold')]}
         ])
         
-        st.dataframe(styled_test_table, use_container_width=True, hide_index=True)
+        # Create custom HTML table with strict column width control for crisis-excluded hypothesis testing
+        st.markdown("""
+        <style>
+        .hypothesis-test-table-ce {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            font-size: 8px !important;
+            font-family: Arial, sans-serif !important;
+        }
+        .hypothesis-test-table-ce th, .hypothesis-test-table-ce td {
+            border: 1px solid #ddd !important;
+            padding: 2px !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .hypothesis-test-table-ce th {
+            background-color: #e6f3ff !important;
+            font-weight: bold !important;
+            font-size: 9px !important;
+        }
+        .hypothesis-test-table-ce th:first-child, .hypothesis-test-table-ce td:first-child {
+            width: 220px !important;
+            max-width: 220px !important;
+            text-align: left !important;
+            font-weight: bold !important;
+        }
+        .hypothesis-test-table-ce th:not(:first-child), .hypothesis-test-table-ce td:not(:first-child) {
+            width: 70px !important;
+            max-width: 70px !important;
+        }
+        .hypothesis-test-table-ce tr:nth-child(even) {
+            background-color: #f9f9f9 !important;
+        }
+        @media print {
+            .hypothesis-test-table-ce {
+                font-size: 7px !important;
+            }
+            .hypothesis-test-table-ce th:first-child, .hypothesis-test-table-ce td:first-child {
+                width: 180px !important;
+                max-width: 180px !important;
+            }
+            .hypothesis-test-table-ce th:not(:first-child), .hypothesis-test-table-ce td:not(:first-child) {
+                width: 60px !important;
+                max-width: 60px !important;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Convert styled DataFrame to regular DataFrame for HTML generation
+        test_df_html = styled_test_table.data
+        
+        # Generate HTML table content
+        html_table = '<table class="hypothesis-test-table-ce">'
+        html_table += '<thead><tr>'
+        for col in test_df_html.columns:
+            html_table += f'<th>{col}</th>'
+        html_table += '</tr></thead><tbody>'
+        
+        for _, row in test_df_html.iterrows():
+            html_table += '<tr>'
+            for col in test_df_html.columns:
+                html_table += f'<td>{row[col]}</td>'
+            html_table += '</tr>'
+        
+        html_table += '</tbody></table>'
+        
+        # Display the custom HTML table
+        st.markdown(html_table, unsafe_allow_html=True)
     
     with col2:
         # Summary statistics
@@ -2925,7 +3161,84 @@ def show_overall_capital_flows_analysis_crisis_excluded():
             aggfunc='first'
         ).round(2)
         
-        st.dataframe(pivot_summary, use_container_width=True)
+        # Create custom HTML table with strict column width control for crisis-excluded overall summary
+        st.markdown("""
+        <style>
+        .overall-summary-table-ce {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            font-size: 8px !important;
+            font-family: Arial, sans-serif !important;
+        }
+        .overall-summary-table-ce th, .overall-summary-table-ce td {
+            border: 1px solid #ddd !important;
+            padding: 2px !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .overall-summary-table-ce th {
+            background-color: #f0f0f0 !important;
+            font-weight: bold !important;
+            font-size: 9px !important;
+        }
+        .overall-summary-table-ce th:first-child, .overall-summary-table-ce td:first-child {
+            width: 220px !important;
+            max-width: 220px !important;
+            text-align: left !important;
+            font-weight: bold !important;
+        }
+        .overall-summary-table-ce th:not(:first-child), .overall-summary-table-ce td:not(:first-child) {
+            width: 70px !important;
+            max-width: 70px !important;
+        }
+        .overall-summary-table-ce tr:nth-child(even) {
+            background-color: #f9f9f9 !important;
+        }
+        @media print {
+            .overall-summary-table-ce {
+                font-size: 7px !important;
+            }
+            .overall-summary-table-ce th:first-child, .overall-summary-table-ce td:first-child {
+                width: 180px !important;
+                max-width: 180px !important;
+            }
+            .overall-summary-table-ce th:not(:first-child), .overall-summary-table-ce td:not(:first-child) {
+                width: 60px !important;
+                max-width: 60px !important;
+            }
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Convert pivot table to regular DataFrame for HTML generation
+        pivot_df = pivot_summary.reset_index()
+        
+        # Generate HTML table content
+        html_table = '<table class="overall-summary-table-ce">'
+        html_table += '<thead><tr>'
+        for col in pivot_df.columns:
+            col_name = str(col).replace('(', '').replace(')', '').replace("'", '') if isinstance(col, tuple) else str(col)
+            html_table += f'<th>{col_name}</th>'
+        html_table += '</tr></thead><tbody>'
+        
+        for _, row in pivot_df.iterrows():
+            html_table += '<tr>'
+            for col in pivot_df.columns:
+                value = row[col]
+                if pd.isna(value):
+                    value = '-'
+                elif isinstance(value, (int, float)):
+                    value = f'{value:.2f}'
+                html_table += f'<td>{value}</td>'
+            html_table += '</tr>'
+        
+        html_table += '</tbody></table>'
+        
+        # Display the custom HTML table
+        st.markdown(html_table, unsafe_allow_html=True)
         
         # Side-by-side boxplots by individual indicator (2x2 format to match Full Time Period)
         st.markdown("**📦 Distribution Comparison by Group (Crisis-Excluded)**")

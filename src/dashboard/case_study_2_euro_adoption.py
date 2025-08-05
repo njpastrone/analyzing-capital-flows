@@ -471,8 +471,8 @@ def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_c
         font-size: 9px !important;
     }
     .cs2-summary-table th:first-child, .cs2-summary-table td:first-child {
-        width: 120px !important;
-        max-width: 120px !important;
+        width: 220px !important;
+        max-width: 220px !important;
         text-align: left !important;
         font-weight: bold !important;
     }
@@ -488,8 +488,8 @@ def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_c
             font-size: 7px !important;
         }
         .cs2-summary-table th:first-child, .cs2-summary-table td:first-child {
-            width: 100px !important;
-            max-width: 100px !important;
+            width: 180px !important;
+            max-width: 180px !important;
         }
         .cs2-summary-table th:not(:first-child), .cs2-summary-table td:not(:first-child) {
             width: 60px !important;
@@ -683,8 +683,8 @@ def get_nickname(indicator_name):
     """Get nickname for indicator, fallback to shortened version"""
     nicknames = create_indicator_nicknames()
     nickname = nicknames.get(indicator_name, indicator_name[:25] + '...' if len(indicator_name) > 25 else indicator_name)
-    # Further truncate for table display to prevent column bleeding
-    return nickname[:18] + '...' if len(nickname) > 18 else nickname
+    # Truncate for table display while maintaining readability
+    return nickname[:35] + '...' if len(nickname) > 35 else nickname
 
 def get_investment_type_order(indicator_name):
     """
@@ -979,8 +979,8 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
         font-size: 9px !important;
     }
     .cs2-indicator-table th:first-child, .cs2-indicator-table td:first-child {
-        width: 120px !important;
-        max-width: 120px !important;
+        width: 220px !important;
+        max-width: 220px !important;
         text-align: left !important;
         font-weight: bold !important;
     }
@@ -996,8 +996,8 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             font-size: 7px !important;
         }
         .cs2-indicator-table th:first-child, .cs2-indicator-table td:first-child {
-            width: 100px !important;
-            max-width: 100px !important;
+            width: 180px !important;
+            max-width: 180px !important;
         }
         .cs2-indicator-table th:not(:first-child), .cs2-indicator-table td:not(:first-child) {
             width: 60px !important;
@@ -1120,8 +1120,8 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             font-size: 9px !important;
         }
         .cs2-test-table th:first-child, .cs2-test-table td:first-child {
-            width: 120px !important;
-            max-width: 120px !important;
+            width: 220px !important;
+            max-width: 220px !important;
             text-align: left !important;
             font-weight: bold !important;
         }
@@ -1137,8 +1137,8 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
                 font-size: 7px !important;
             }
             .cs2-test-table th:first-child, .cs2-test-table td:first-child {
-                width: 100px !important;
-                max-width: 100px !important;
+                width: 180px !important;
+                max-width: 180px !important;
             }
             .cs2-test-table th:not(:first-child), .cs2-test-table td:not(:first-child) {
                 width: 60px !important;
@@ -1554,7 +1554,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
         
         - **Temporal analysis:** Before/after comparison using {adoption_year} as adoption threshold
         - **Statistical methodology:** F-test for variance equality at 5% significance level
-        - **Data completeness:** {len(results_df)} observations across {total_indicators} capital flow indicators
+        - **Data completeness:** {len(final_data)} observations across {total_indicators} capital flow indicators
         - **Cross-validation:** Results consistent across multiple volatility measures (CV%, standard deviation)
         
         **Analytical approach:** Temporal comparison focusing on structural changes in volatility patterns.
