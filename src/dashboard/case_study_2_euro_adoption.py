@@ -636,7 +636,7 @@ def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_c
                 for box in bp['boxes']:
                     box.set_alpha(0.7)
                 
-                ax.set_title(clean_name, fontweight='bold', fontsize=10)
+                ax.set_title(clean_name, fontweight='bold', fontsize=10, pad=12)
                 ax.set_ylabel('% of GDP (annualized)', fontsize=9)
                 ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
                 ax.tick_params(labelsize=8)
@@ -730,7 +730,7 @@ def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_c
                 ax.axvline(x=adoption_date, color='red', linestyle='--', alpha=0.7, linewidth=2, 
                           label='Euro Adoption' if i == 0 else "")
             
-            ax.set_title(clean_name, fontweight='bold', fontsize=10)
+            ax.set_title(clean_name, fontweight='bold', fontsize=10, pad=12)
             ax.set_ylabel('% of GDP (annualized)', fontsize=9)
             ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
             ax.legend(loc='upper right', fontsize=8)
@@ -1327,7 +1327,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
         n_cols = min(2, n_in_group)
         n_rows = (n_in_group + 1) // 2
         
-        fig_group, axes = plt.subplots(n_rows, n_cols, figsize=(12, n_rows * 3.5))
+        fig_group, axes = plt.subplots(n_rows, n_cols, figsize=(12, n_rows * 4.5))
         if n_rows == 1 and n_cols == 1:
             axes = [axes]
         elif n_rows == 1 or n_cols == 1:
@@ -1434,9 +1434,12 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             ax.axvline(x=adoption_date, color='red', linestyle='--', alpha=0.7, linewidth=2, 
                       label='Euro Adoption' if idx == 0 else "")
             
-            # Formatting (following CS1 standards exactly)
-            ax.set_title(f'{panel_letter}: {clean_name}\n(F-stat: {f_stat:.2f}){study_title_suffix}', 
-                        fontweight='bold', fontsize=9, pad=5)
+            # Formatting with balanced title length for grid layout
+            # Moderate shortening - keep readability while preventing bleeding
+            readable_name = clean_name[:45] + "..." if len(clean_name) > 45 else clean_name
+            readable_suffix = " (Crisis-Excl)" if study_title_suffix else ""
+            ax.set_title(f'{panel_letter}: {readable_name} (F-stat: {f_stat:.2f}){readable_suffix}', 
+                        fontweight='bold', fontsize=9, pad=18)
             ax.set_ylabel('% of GDP', fontsize=8)
             ax.tick_params(axis='both', which='major', labelsize=7)
             ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
@@ -1449,7 +1452,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
         for idx in range(len(group_indicators), len(axes)):
             axes[idx].set_visible(False)
         
-        fig_group.tight_layout()
+        fig_group.tight_layout(pad=2.5, h_pad=4.0, w_pad=2.0)
         st.pyplot(fig_group)
         
         # Download button for this group
@@ -1566,7 +1569,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
                 ax_ind.axvline(x=adoption_date, color='red', linestyle='--', alpha=0.7, linewidth=2, label='Euro Adoption')
                 
                 # Formatting
-                ax_ind.set_title(f'{clean_name} (F-statistic: {f_stat:.2f}){study_title_suffix}', fontweight='bold', fontsize=9)
+                ax_ind.set_title(f'{clean_name} (F-statistic: {f_stat:.2f}){study_title_suffix}', fontweight='bold', fontsize=9, pad=12)
                 ax_ind.set_ylabel('% of GDP (annualized)', fontsize=8)
                 ax_ind.set_xlabel('Year', fontsize=8)
                 ax_ind.tick_params(axis='both', which='major', labelsize=7)
@@ -1772,7 +1775,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
     bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
     
     study_title_suffix = " (Crisis-Excluded)" if not include_crisis_years else ""
-    ax1.set_title(f'Panel A: Distribution of Means Across All Indicators{study_title_suffix}', fontweight='bold')
+    ax1.set_title(f'Panel A: Distribution of Means Across All Indicators{study_title_suffix}', fontweight='bold', pad=12)
     ax1.set_ylabel('Mean (% of GDP, annualized)')
     ax1.grid(True, alpha=0.3)
     ax1.axhline(y=0, color='red', linestyle='--', alpha=0.5)
@@ -1785,7 +1788,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
     bp2 = ax2.boxplot([std_pre, std_post], labels=['Pre-Euro', 'Post-Euro'], patch_artist=True)
     bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[0])
     bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[1])
-    ax2.set_title(f'Panel B: Distribution of Standard Deviations Across All Indicators{study_title_suffix}', fontweight='bold')
+    ax2.set_title(f'Panel B: Distribution of Standard Deviations Across All Indicators{study_title_suffix}', fontweight='bold', pad=12)
     ax2.set_ylabel('Standard Deviation (% of GDP, annualized)')
     ax2.grid(True, alpha=0.3)
     
@@ -1873,7 +1876,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
             add_country_specific_crisis_shading(ax, selected_country, include_labels=(i == 0))
         
         # Formatting
-        ax.set_title(nickname, fontweight='bold', fontsize=10)
+        ax.set_title(nickname, fontweight='bold', fontsize=10, pad=12)
         ax.set_ylabel('% of GDP (annualized)')
         ax.grid(True, alpha=0.3)
         ax.legend(loc='upper right', fontsize=8)

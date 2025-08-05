@@ -1339,7 +1339,7 @@ def main(context="standalone"):
             f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
             panel_letter = chr(65 + i)  # A, B, C, etc.
             ax.set_title(f'{panel_letter}: {nickname}\n(F-stat: {f_stat:.2f})', 
-                        fontweight='bold', fontsize=9, pad=5)
+                        fontweight='bold', fontsize=9, pad=12)
             ax.set_ylabel('% of GDP', fontsize=8)
             ax.tick_params(axis='both', which='major', labelsize=7)
             ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
@@ -1675,7 +1675,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
             panel_letter = chr(65 + i)  # A, B, C, etc.
             ax.set_title(f'Panel {panel_letter}: {nickname} (F-statistic: {f_stat:.2f})', 
-                        fontweight='bold', fontsize=9, pad=8)
+                        fontweight='bold', fontsize=9, pad=12)
             ax.set_ylabel('% of GDP (annualized)', fontsize=8)
             ax.set_xlabel('Year', fontsize=8)
             ax.tick_params(axis='both', which='major', labelsize=7)
@@ -2903,7 +2903,7 @@ def case_study_1_main_crisis_excluded(context="standalone"):
             f_stat = test_results[test_results['Indicator'] == clean_name]['F_Statistic'].iloc[0]
             panel_letter = chr(65 + i)  # A, B, C, etc.
             ax.set_title(f'{panel_letter}: {nickname}\n(F-stat: {f_stat:.2f}) - Crisis-Excluded', 
-                        fontweight='bold', fontsize=9, pad=5)
+                        fontweight='bold', fontsize=9, pad=12)
             ax.set_ylabel('% of GDP', fontsize=8)
             ax.tick_params(axis='both', which='major', labelsize=7)
             ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
