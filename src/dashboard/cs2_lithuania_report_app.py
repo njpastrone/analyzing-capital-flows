@@ -54,7 +54,7 @@ def main():
     with st.expander("📋 Data and Methodology", expanded=False):
         st.markdown("""
         ### Data Sources
-        - **Balance of Payments Data:** IMF, quarterly frequency (1999-2024)
+        - **Balance of Payments Data:** IMF, quarterly frequency (1999-2025)
         - **GDP Data:** IMF World Economic Outlook, annual frequency
         - **Country:** Lithuania, Republic of
         
@@ -67,7 +67,7 @@ def main():
         ### Euro Adoption Timeline
         - **Euro Adoption Date:** January 1, 2015
         - **Pre-Euro Period:** 1999-2014 (full series) 
-        - **Post-Euro Period:** 2015-2024 (full series)
+        - **Post-Euro Period:** 2015-2025 (full series)
         - **Crisis Exclusion:** Global Financial Crisis (2008-2010) and COVID-19 (2020-2022)
         """)
     

@@ -95,7 +95,7 @@ def show_project_overview():
         st.header("Case Studies Overview")
         
         # Case study cards
-        st.subheader("🇮🇸 Case Study 1: Iceland vs. Eurozone (1999-2024)")
+        st.subheader("🇮🇸 Case Study 1: Iceland vs. Eurozone (1999-2025)")
         st.markdown("""
         **Status:** ✅ Complete  
         **Focus:** Pre-Euro adoption analysis comparing Iceland's independent monetary policy with Eurozone stability  
@@ -111,7 +111,7 @@ def show_project_overview():
         **Key Finding:** Mixed evidence for volatility reduction, country-specific patterns emerge
         """)
         
-        st.subheader("🌏 Case Study 3: Emerging Markets Comparison (2000-2024)")
+        st.subheader("🌏 Case Study 3: Emerging Markets Comparison (2000-2025)")
         st.markdown("""
         **Status:** 📋 Planned  
         **Focus:** Capital flow patterns across different emerging market economies  
@@ -125,7 +125,7 @@ def show_project_overview():
         # Metrics
         st.metric("Case Studies", "3", "2 completed")
         st.metric("Countries Analyzed", "28+", "Iceland, Eurozone, Baltics")
-        st.metric("Time Period", "1999-2024", "25 years")
+        st.metric("Time Period", "1999-2025", "26 years")
         st.metric("Data Points", "75,000+", "High frequency")
         
         st.header("Data Sources")
@@ -444,7 +444,7 @@ def show_case_study_1_pipeline():
     
     st.info("""
     **Research Question:** Should Iceland adopt the Euro based on capital flow volatility patterns?
-    **Methodology:** Compare volatility between Iceland and Eurozone countries (1999-2024)
+    **Methodology:** Compare volatility between Iceland and Eurozone countries (1999-2025)")
     **Status:** ✅ Finalized - Default data and results are protected
     """)
     
@@ -2083,7 +2083,7 @@ def show_case_study_1():
     st.info("📋 **Case Study 1: Iceland vs. Eurozone Capital Flow Volatility Analysis**")
     st.markdown("""
     This case study examines whether Iceland should adopt the Euro by comparing capital flow volatility 
-    patterns between Iceland and the Eurozone bloc from 1999-2024.
+    patterns between Iceland and the Eurozone bloc from 1999-2025.
     """)
     
     # Call the original Case Study 1 main function (preserved exactly)
@@ -2268,25 +2268,25 @@ def show_methodology_and_data():
         data_sources = [
             {
                 "Source": "IMF Balance of Payments Statistics",
-                "Coverage": "1999-2024, Quarterly",
+                "Coverage": "1999-2025, Quarterly",
                 "Variables": "All BOP components, 190+ countries",
                 "Quality": "High - Official statistics"
             },
             {
                 "Source": "IMF World Economic Outlook", 
-                "Coverage": "1980-2024, Annual",
+                "Coverage": "1980-2025, Annual",
                 "Variables": "GDP, inflation, fiscal indicators",
                 "Quality": "High - Standardized methodology"
             },
             {
                 "Source": "OECD International Direct Investment",
-                "Coverage": "1990-2024, Annual/Quarterly", 
+                "Coverage": "1990-2025, Annual/Quarterly", 
                 "Variables": "FDI flows and stocks by partner",
                 "Quality": "High - OECD countries only"
             },
             {
                 "Source": "BIS International Banking Statistics",
-                "Coverage": "1977-2024, Quarterly",
+                "Coverage": "1977-2025, Quarterly",
                 "Variables": "Cross-border banking flows",
                 "Quality": "High - Central bank reported"
             }
@@ -2330,43 +2330,16 @@ def show_methodology_and_data():
         """)
 
 def show_case_study_1_restructured():
-    """Display restructured Case Study 1 - Iceland vs Eurozone with Full and Crisis-Excluded sections"""
+    """Display restructured Case Study 1 - Iceland vs Eurozone with complete sequential structure"""
     
     st.info("📋 **Case Study 1: Iceland vs. Eurozone Capital Flow Volatility Analysis**")
     st.markdown("""
     This case study examines whether Iceland should adopt the Euro by comparing capital flow volatility 
-    patterns between Iceland and the Eurozone bloc from 1999-2024.
+    patterns between Iceland and the Eurozone bloc from 1999-2025.
     """)
     
-    # Create sections for Full Time Period and Excluding Financial Crises
-    st.markdown("---")
-    
-    # Full Time Period Section
-    st.header("📈 Full Time Period Analysis")
-    st.markdown("**Time Period:** 1999-2024 (Complete Dataset)")
-    
-    st.markdown("#### Overall Capital Flows Analysis")
-    # Call the original Case Study 1 main function for full period
+    # Call the Case Study 1 main function which contains complete sequential structure (Full → Crisis-Excluded)
     case_study_1_main(context="main_app")
-    
-    st.markdown("#### Indicator-Level Analysis")
-    st.markdown("*Detailed analysis by individual capital flow indicators is included above.*")
-    
-    st.markdown("---")
-    
-    # Excluding Financial Crises Section  
-    st.header("📉 Excluding Financial Crises Analysis")
-    st.markdown("**Time Period:** 1999-2024 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)")
-    
-    st.markdown("#### Overall Capital Flows Analysis")
-    # Import the crisis-excluded function
-    from simple_report_app import show_overall_capital_flows_analysis_crisis_excluded
-    show_overall_capital_flows_analysis_crisis_excluded()
-    
-    st.markdown("#### Indicator-Level Analysis")
-    # Import the crisis-excluded main function
-    from simple_report_app import case_study_1_main_crisis_excluded
-    case_study_1_main_crisis_excluded(context="main_app")
     
     # Download Reports Section
     st.markdown("---")
@@ -2697,7 +2670,7 @@ def generate_case_study_1_full_report():
         <div class="info-box">
             <strong>Research Question:</strong> Should Iceland adopt the Euro as its currency?<br>
             <strong>Hypothesis:</strong> Iceland's capital flows show more volatility than the Eurozone bloc average<br>
-            <strong>Time Period:</strong> 1999-2024 (Complete Dataset)
+            <strong>Time Period:</strong> 1999-2025 (Complete Dataset)
         </div>
         
         <div style="margin: 20px 0;">
@@ -2709,7 +2682,7 @@ def generate_case_study_1_full_report():
         <hr>
         
         <h2>📈 Full Time Period Analysis</h2>
-        <p><strong>Time Period:</strong> 1999-2024 (Complete Dataset)</p>
+        <p><strong>Time Period:</strong> 1999-2025 (Complete Dataset)</p>
         
         <h4>Overall Capital Flows Analysis</h4>
         <p><em>High-level summary of aggregate net capital flows before detailed disaggregated analysis</em></p>
@@ -2726,7 +2699,7 @@ def generate_case_study_1_full_report():
         <hr>
         
         <h2>📉 Excluding Financial Crises Analysis</h2>
-        <p><strong>Time Period:</strong> 1999-2024 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)</p>
+        <p><strong>Time Period:</strong> 1999-2025 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)</p>
         
         <h4>Overall Capital Flows Analysis</h4>
         <div class="warning-box">
@@ -2964,7 +2937,7 @@ def generate_disaggregated_analysis_html(final_data, analysis_indicators, group_
     <h3>4. Time Series Analysis</h3>
     <div class="info-box">
         <strong>Time Series Visualization:</strong> Individual time series plots for each indicator would appear here in the interactive dashboard, 
-        showing Iceland vs Eurozone average patterns over the full 1999-2024 period with F-statistics for each indicator.
+        showing Iceland vs Eurozone average patterns over the full 1999-2025 period with F-statistics for each indicator.
     </div>
     
     <h3>5. Key Findings Summary</h3>
@@ -3001,7 +2974,7 @@ def generate_case_study_1_fallback_report(analysis_type, error_msg=""):
     </head>
     <body>
         <h1>🇮🇸 Case Study 1: Iceland vs Eurozone Capital Flow Volatility Analysis</h1>
-        <h2 style="text-align: center; color: #666;">{analysis_type} (1999-2024)</h2>
+        <h2 style="text-align: center; color: #666;">{analysis_type} (1999-2025)</h2>
         
         <div class="error-box">
             <strong>⚠️ Data Loading Error:</strong> Unable to load analysis data for the HTML report generation.
@@ -3057,12 +3030,12 @@ def generate_case_study_1_crisis_report():
         </head>
         <body>
             <h1>🇮🇸 Case Study 1: Iceland vs Eurozone Capital Flow Volatility Analysis</h1>
-            <h2 style="text-align: center; color: #666;">Crisis-Excluded Analysis (1999-2024)</h2>
+            <h2 style="text-align: center; color: #666;">Crisis-Excluded Analysis (1999-2025)</h2>
             
             <div class="info-box">
                 <strong>🔍 Research Question:</strong> Should Iceland adopt the Euro based on capital flow volatility patterns during normal economic times?<br>
                 <strong>📊 Hypothesis:</strong> Iceland's capital flows show more volatility than the Eurozone bloc average, even excluding crisis periods<br>
-                <strong>⏱️ Time Period:</strong> 1999-2024 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)<br>
+                <strong>⏱️ Time Period:</strong> 1999-2025 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)<br>
                 <strong>🎯 Focus:</strong> Structural volatility differences in normal economic conditions
             </div>
             

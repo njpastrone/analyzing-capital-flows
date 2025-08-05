@@ -186,27 +186,27 @@ def create_expanded_euro_adoption_timeline():
             'adoption_date': '2011-01-01',
             'adoption_year': 2011,
             'pre_period_full': (1999, 2010),
-            'post_period_full': (2011, 2024),              # Include 2011 adoption year
+            'post_period_full': (2011, 2025),              # Include 2011 adoption year
             'pre_period_crisis_excluded': (1999, 2007),    # Excludes 2008-2010
-            'post_period_crisis_excluded': (2011, 2024),   # Include 2011, excludes 2020-2022, includes 2023-2024
+            'post_period_crisis_excluded': (2011, 2025),   # Include 2011, excludes 2020-2022, includes 2023-2025
             'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]
         },
         'Latvia, Republic of': {
             'adoption_date': '2014-01-01',
             'adoption_year': 2014,
             'pre_period_full': (1999, 2013),
-            'post_period_full': (2014, 2024),              # Include 2014 adoption year
+            'post_period_full': (2014, 2025),              # Include 2014 adoption year
             'pre_period_crisis_excluded': (1999, 2013),    # Include 2013 - crisis years (2008-2012) filtered by non_crisis_mask
-            'post_period_crisis_excluded': (2014, 2024),   # Include 2014, excludes 2020-2022, includes 2023-2024
+            'post_period_crisis_excluded': (2014, 2025),   # Include 2014, excludes 2020-2022, includes 2023-2025
             'crisis_years': [2008, 2009, 2010, 2011, 2012, 2020, 2021, 2022]  # Add Latvian Banking Crisis (2011-2012)
         },
         'Lithuania, Republic of': {
             'adoption_date': '2015-01-01',
             'adoption_year': 2015,
             'pre_period_full': (1999, 2014),
-            'post_period_full': (2015, 2024),              # Include 2015 adoption year
+            'post_period_full': (2015, 2025),              # Include 2015 adoption year
             'pre_period_crisis_excluded': (1999, 2014),    # Excludes 2008-2010 within range
-            'post_period_crisis_excluded': (2015, 2024),   # Include 2015, excludes 2020-2022, includes 2023-2024
+            'post_period_crisis_excluded': (2015, 2025),   # Include 2015, excludes 2020-2022, includes 2023-2025
             'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]
         }
     }
@@ -396,7 +396,7 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         # Filter for Case Study 2 data (CS2_GROUP not null)
         case_two_data = comprehensive_df[comprehensive_df['CS2_GROUP'].notna()].copy()
         
-        # Create Euro adoption timeline with full 1999-2024 periods
+        # Create Euro adoption timeline with full 1999-2025 periods
         timeline = create_expanded_euro_adoption_timeline()
         
         # Add period classification using CS1 methodology
@@ -407,7 +407,7 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
             if country in timeline:
                 adoption_year = timeline[country]['adoption_year']
                 
-                # Always use full 1999-2024 timeline, just classify periods
+                # Always use full 1999-2025 timeline, just classify periods
                 if year < adoption_year:
                     return 'Pre-Euro'
                 elif year >= adoption_year:
@@ -1923,7 +1923,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
             <p><strong>Research Question:</strong> How did Euro adoption affect capital flow volatility in {selected_display_country}?</p>
             <p><strong>Approach:</strong> Temporal comparison of capital flow volatility before and after Euro adoption ({adoption_year})</p>
             <p><strong>Statistical Test:</strong> F-tests for equality of variances between Pre-Euro and Post-Euro periods</p>
-            <p><strong>Data Period:</strong> 1999-2024 quarterly data, normalized to % of GDP (annualized)</p>
+            <p><strong>Data Period:</strong> 1999-2025 quarterly data, normalized to % of GDP (annualized)</p>
             {"<p><strong>Crisis Exclusion:</strong> Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods excluded from analysis</p>" if not include_crisis_years else ""}
         </div>
         
@@ -2043,7 +2043,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
         <div class="section">
             <h2>6. Technical Appendix</h2>
             <p><strong>Data Source:</strong> IMF Balance of Payments Statistics, World Economic Outlook Database</p>
-            <p><strong>Coverage:</strong> {len(analysis_indicators)} capital flow indicators across quarterly observations (1999-2024)</p>
+            <p><strong>Coverage:</strong> {len(analysis_indicators)} capital flow indicators across quarterly observations (1999-2025)</p>
             <p><strong>Statistical Software:</strong> Python with SciPy statistical package</p>
             <p><strong>Euro Adoption Date:</strong> {selected_display_country} adopted the Euro on January 1, {adoption_year}</p>
             <p><strong>Report Generation:</strong> Automated analysis pipeline with Claude Code assistance</p>

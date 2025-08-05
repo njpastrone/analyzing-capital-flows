@@ -230,21 +230,21 @@ def process_case_study_2_data():
             'adoption_date': '2011-01-01',
             'adoption_year': 2011,
             'pre_period_full': (1999, 2010),      # 12 years before
-            'post_period_full': (2011, 2024),     # 14 years after (include 2011 adoption year)
+            'post_period_full': (2011, 2025),     # 15 years after (include 2011 adoption year)
             'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]  # GFC + COVID-19
         },
         'Latvia, Republic of': {
             'adoption_date': '2014-01-01', 
             'adoption_year': 2014,
             'pre_period_full': (1999, 2013),      # 15 years before  
-            'post_period_full': (2014, 2024),     # 11 years after (include 2014 adoption year)
+            'post_period_full': (2014, 2025),     # 12 years after (include 2014 adoption year)
             'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]  # GFC + COVID-19
         },
         'Lithuania, Republic of': {
             'adoption_date': '2015-01-01',
             'adoption_year': 2015,
             'pre_period_full': (1999, 2014),      # 16 years before
-            'post_period_full': (2015, 2024),     # 10 years after (include 2015 adoption year)
+            'post_period_full': (2015, 2025),     # 11 years after (include 2015 adoption year)
             'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]  # GFC + COVID-19
         }
     }

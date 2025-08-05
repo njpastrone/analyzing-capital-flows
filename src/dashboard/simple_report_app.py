@@ -656,7 +656,7 @@ def main(context="standalone"):
     with st.expander("📋 Data and Methodology", expanded=False):
         st.markdown("""
         ### Data Sources
-        - **Balance of Payments Data:** IMF, quarterly frequency (1999-2024)
+        - **Balance of Payments Data:** IMF, quarterly frequency (1999-2025)
         - **GDP Data:** IMF World Economic Outlook, annual frequency
         - **Countries:** Iceland vs. 10 initial Euro adopters (excluding Luxembourg)
         
@@ -671,9 +671,9 @@ def main(context="standalone"):
         - **Eurozone Bloc:** Austria, Belgium, Finland, France, Germany, Ireland, Italy, Netherlands, Portugal, Spain
         """)
     
-    # Load data
+    # Load full time period data for the first section
     with st.spinner("Loading and processing data..."):
-        final_data, analysis_indicators, metadata = load_default_data()
+        final_data, analysis_indicators, metadata = load_default_data(include_crisis_years=True)
     
     if final_data is None:
         st.stop()
@@ -693,7 +693,11 @@ def main(context="standalone"):
     
     st.markdown("---")
     
-    # Overall Capital Flows Analysis (NEW SECTION)
+    # Full Time Period Section (always displayed)
+    st.header("📊 Full Time Period Analysis")
+    st.markdown("*Complete temporal analysis using all available data*")
+    
+    # Overall Capital Flows Analysis - Full Time Period
     show_overall_capital_flows_analysis()
     
     # Calculate all statistics
@@ -1438,7 +1442,7 @@ def main(context="standalone"):
     with col2:
         st.markdown(f"""
         ### Additional Statistical Context:
-        - **Time period coverage**: 1999 to 2024 (full dataset)
+        - **Time period coverage**: 1999 to 2025 (full dataset)
         - **Data completeness**: Analysis based on comprehensive observations
         - **Methodology**: F-test for variance equality, 5% significance level
         - **Cross-validation**: Results consistent across multiple statistical measures
@@ -1514,22 +1518,21 @@ def main(context="standalone"):
                 else:
                     st.error("❌ Failed to generate HTML report.")
     
-    # Crisis-Excluded Analysis Section
+    # Crisis-Excluded Analysis Section (always displayed)
     st.markdown("---")
-    st.markdown("---")
+    st.markdown("---") 
     st.header("🚫 Excluding Financial Crises")
     st.markdown("*Complete analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
     
     # Overall Capital Flows Analysis - Crisis Excluded
+    st.subheader("📈 Overall Capital Flows Analysis")
     show_overall_capital_flows_analysis_crisis_excluded()
     
-    # Disaggregated Capital Flows Analysis - Crisis Excluded (Sections 1-6)
+    # Indicator-Level Analysis - Crisis Excluded (Sections 1-6)
     st.markdown("---")
-    st.header("📊 Disaggregated Capital Flows Analysis")
-    st.markdown("*Detailed analysis of individual capital flow indicators (Crisis-Excluded)*")
+    st.subheader("🔍 Indicator-Level Analysis")
+    case_study_1_main_crisis_excluded(context=context)
     
-    # Run the complete crisis-excluded analysis
-    case_study_1_main_crisis_excluded()
 
 def generate_html_report(final_data, analysis_indicators, test_results, group_stats, boxplot_data):
     """Generate an HTML report that exactly matches the app interface structure"""
@@ -1863,7 +1866,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
                 <div class="column">
                     <h3>Additional Statistical Context:</h3>
                     <ul>
-                        <li>Time period coverage: 1999 to 2024 (full dataset)</li>
+                        <li>Time period coverage: 1999 to 2025 (full dataset)</li>
                         <li>Data completeness: Analysis based on comprehensive observations</li>
                         <li>Methodology: F-test for variance equality, 5% significance level</li>
                         <li>Cross-validation: Results consistent across multiple statistical measures</li>
@@ -2043,7 +2046,7 @@ def generate_overall_html_content_crisis_excluded(overall_data, indicators_mappi
     overall_html_crisis_excluded = f"""
     <h2>📉 Excluding Financial Crises Analysis</h2>
     <p><em>Analysis of capital flow volatility excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods</em></p>
-    <p><strong>Time Period:</strong> 1999-2024 (Excluding crisis years: 2008, 2009, 2010, 2020, 2021, 2022)</p>
+    <p><strong>Time Period:</strong> 1999-2025 (Excluding crisis years: 2008, 2009, 2010, 2020, 2021, 2022)</p>
     
     <h3>📈 Overall Capital Flows Analysis (Crisis-Excluded)</h3>
     <p><em>High-level summary of aggregate net capital flows with crisis periods removed</em></p>
@@ -2186,7 +2189,7 @@ def create_all_flows_time_series_charts(overall_data, indicators_mapping):
                 axes[i].set_xlabel('Year', fontsize=10)
         
         # Add overall title with explicit positioning
-        fig.suptitle('Overall Capital Flows Analysis: Iceland vs Eurozone (1999-2024)', 
+        fig.suptitle('Overall Capital Flows Analysis: Iceland vs Eurozone (1999-2025)', 
                     fontsize=16, fontweight='bold', y=0.96)
         
         # Adjust layout with specific parameters
@@ -3056,7 +3059,7 @@ def case_study_1_main_crisis_excluded(context="standalone"):
     with col2:
         st.markdown(f"""
         ### Additional Statistical Context (Crisis-Excluded):
-        - **Time period coverage**: 1999 to 2024 (crisis periods excluded)
+        - **Time period coverage**: 1999 to 2025 (crisis periods excluded)
         - **Data completeness**: Analysis based on crisis-excluded dataset
         - **Methodology**: F-test for variance equality, 5% significance level
         - **Robustness**: Results remain consistent when excluding major crisis periods
