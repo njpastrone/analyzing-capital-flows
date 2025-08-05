@@ -68,7 +68,7 @@ def main():
         - **Euro Adoption Date:** January 1, 2014
         - **Pre-Euro Period:** 1999-2013 (full series) 
         - **Post-Euro Period:** 2014-2024 (full series)
-        - **Crisis Exclusion:** Global Financial Crisis (2008-2010) and COVID-19 (2020-2022)
+        - **Crisis Exclusion:** Global Financial Crisis (2008-2010), Latvian Banking Crisis (2011-2012), and COVID-19 (2020-2022)
         """)
     
     # Add PDF export tip (matching simple_report_app.py)
@@ -117,7 +117,7 @@ def main():
     # Crisis-Excluded Section
     st.markdown("---")
     st.header("🚫 Excluding Financial Crises")
-    st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
+    st.markdown("*Analysis excluding Global Financial Crisis (2008-2010), Latvian Banking Crisis (2011-2012), and COVID-19 (2020-2022) periods*")
     
     # Overall Capital Flows Analysis - Crisis Excluded
     st.subheader("📈 Overall Capital Flows Analysis")

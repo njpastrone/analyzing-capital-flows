@@ -2087,7 +2087,7 @@ def show_case_study_1():
     """)
     
     # Call the original Case Study 1 main function (preserved exactly)
-    case_study_1_main()
+    case_study_1_main(context="main_app")
 
 def show_case_study_2():
     """Display Case Study 2 - Euro Adoption Impact (Baltic Countries)"""
@@ -2347,7 +2347,7 @@ def show_case_study_1_restructured():
     
     st.markdown("#### Overall Capital Flows Analysis")
     # Call the original Case Study 1 main function for full period
-    case_study_1_main()
+    case_study_1_main(context="main_app")
     
     st.markdown("#### Indicator-Level Analysis")
     st.markdown("*Detailed analysis by individual capital flow indicators is included above.*")
@@ -2366,7 +2366,7 @@ def show_case_study_1_restructured():
     st.markdown("#### Indicator-Level Analysis")
     # Import the crisis-excluded main function
     from simple_report_app import case_study_1_main_crisis_excluded
-    case_study_1_main_crisis_excluded()
+    case_study_1_main_crisis_excluded(context="main_app")
     
     # Download Reports Section
     st.markdown("---")

@@ -188,7 +188,7 @@ def create_expanded_euro_adoption_timeline():
             'pre_period_full': (1999, 2010),
             'post_period_full': (2011, 2024),              # Include 2011 adoption year
             'pre_period_crisis_excluded': (1999, 2007),    # Excludes 2008-2010
-            'post_period_crisis_excluded': (2011, 2019),   # Include 2011, excludes 2020-2022
+            'post_period_crisis_excluded': (2011, 2024),   # Include 2011, excludes 2020-2022, includes 2023-2024
             'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]
         },
         'Latvia, Republic of': {
@@ -196,9 +196,9 @@ def create_expanded_euro_adoption_timeline():
             'adoption_year': 2014,
             'pre_period_full': (1999, 2013),
             'post_period_full': (2014, 2024),              # Include 2014 adoption year
-            'pre_period_crisis_excluded': (1999, 2013),    # Excludes 2008-2010 within range
-            'post_period_crisis_excluded': (2014, 2019),   # Include 2014, excludes 2020-2022
-            'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]
+            'pre_period_crisis_excluded': (1999, 2013),    # Include 2013 - crisis years (2008-2012) filtered by non_crisis_mask
+            'post_period_crisis_excluded': (2014, 2024),   # Include 2014, excludes 2020-2022, includes 2023-2024
+            'crisis_years': [2008, 2009, 2010, 2011, 2012, 2020, 2021, 2022]  # Add Latvian Banking Crisis (2011-2012)
         },
         'Lithuania, Republic of': {
             'adoption_date': '2015-01-01',
@@ -206,10 +206,77 @@ def create_expanded_euro_adoption_timeline():
             'pre_period_full': (1999, 2014),
             'post_period_full': (2015, 2024),              # Include 2015 adoption year
             'pre_period_crisis_excluded': (1999, 2014),    # Excludes 2008-2010 within range
-            'post_period_crisis_excluded': (2015, 2019),   # Include 2015, excludes 2020-2022
+            'post_period_crisis_excluded': (2015, 2024),   # Include 2015, excludes 2020-2022, includes 2023-2024
             'crisis_years': [2008, 2009, 2010, 2020, 2021, 2022]
         }
     }
+
+def get_country_specific_crisis_text(country):
+    """Get crisis exclusion text for a specific country"""
+    timeline = create_expanded_euro_adoption_timeline()
+    
+    if country in timeline:
+        crisis_years = timeline[country]['crisis_years']
+        
+        crisis_labels = []
+        if any(year in crisis_years for year in [2008, 2009, 2010]):
+            crisis_labels.append("GFC (2008-2010)")
+        if any(year in crisis_years for year in [2011, 2012]) and country == 'Latvia, Republic of':
+            crisis_labels.append("Latvian Banking Crisis (2011-2012)")
+        if any(year in crisis_years for year in [2020, 2021, 2022]):
+            crisis_labels.append("COVID (2020-2022)")
+        
+        if crisis_labels:
+            return " + ".join(crisis_labels)
+        else:
+            return "No crisis periods"
+    else:
+        return "GFC (2008-2010) + COVID (2020-2022)"
+
+def add_country_specific_crisis_shading(ax, country, include_labels=False):
+    """Add country-specific crisis period shading to time series charts"""
+    timeline = create_expanded_euro_adoption_timeline()
+    
+    if country in timeline and timeline[country]['crisis_years']:
+        crisis_years = timeline[country]['crisis_years']
+        
+        # Define crisis periods and their colors
+        crisis_periods = {
+            'GFC': {'years': [2008, 2009, 2010], 'color': 'red', 'label': 'GFC (excluded)'},
+            'COVID': {'years': [2020, 2021, 2022], 'color': 'orange', 'label': 'COVID (excluded)'}
+        }
+        
+        # Add Latvia-specific banking crisis
+        if country == 'Latvia, Republic of':
+            crisis_periods['Latvian Banking'] = {
+                'years': [2011, 2012], 
+                'color': 'purple', 
+                'label': 'Latvian Banking Crisis (excluded)'
+            }
+        
+        # Add shading for each crisis period that affects this country
+        for crisis_name, crisis_info in crisis_periods.items():
+            crisis_years_set = set(crisis_info['years'])
+            country_crisis_years_set = set(crisis_years)
+            
+            # Only add shading if this crisis affects this country
+            if crisis_years_set.intersection(country_crisis_years_set):
+                start_year = min(crisis_info['years'])
+                end_year = max(crisis_info['years'])
+                
+                ax.axvspan(
+                    pd.to_datetime(f'{start_year}-01-01'), 
+                    pd.to_datetime(f'{end_year}-12-31'),
+                    alpha=0.15, 
+                    color=crisis_info['color'], 
+                    label=crisis_info['label'] if include_labels else ""
+                )
+    else:
+        # Default crisis shading for countries not in timeline
+        ax.axvspan(pd.to_datetime('2008-01-01'), pd.to_datetime('2010-12-31'), 
+                  alpha=0.15, color='red', label='GFC (excluded)' if include_labels else "")
+        ax.axvspan(pd.to_datetime('2020-01-01'), pd.to_datetime('2022-12-31'), 
+                  alpha=0.15, color='orange', label='COVID (excluded)' if include_labels else "")
 
 def calculate_temporal_statistics(data, country, indicators, period_column='EURO_PERIOD'):
     """Calculate statistics comparing pre-Euro vs post-Euro periods for a country"""
@@ -351,11 +418,28 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
             lambda row: classify_period(row, timeline), axis=1
         )
         
-        # Apply crisis filtering using CS1 methodology - filter data, not timeline
+        # Apply crisis filtering using country-specific crisis periods
         if not include_crisis_years:
-            # Define crisis years: GFC (2008-2010) + COVID (2020-2022)
-            crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
-            case_two_data = case_two_data[~case_two_data['YEAR'].isin(crisis_years)].copy()
+            # Filter data based on country-specific crisis years
+            rows_to_keep = []
+            
+            for _, row in case_two_data.iterrows():
+                country = row['COUNTRY']
+                year = row['YEAR']
+                
+                if country in timeline:
+                    country_crisis_years = timeline[country]['crisis_years']
+                    # Keep row if year is not in country's crisis years
+                    if year not in country_crisis_years:
+                        rows_to_keep.append(True)
+                    else:
+                        rows_to_keep.append(False)
+                else:
+                    # For unknown countries, apply default crisis exclusion
+                    default_crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
+                    rows_to_keep.append(year not in default_crisis_years)
+            
+            case_two_data = case_two_data[rows_to_keep].copy()
         
         # Define the 4 overall capital flows indicators (3 base + 1 computed)
         base_indicators_mapping = {
@@ -632,10 +716,7 @@ def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_c
             
             # Add crisis period shading for crisis-excluded version
             if not include_crisis_years:
-                ax.axvspan(pd.to_datetime('2008-01-01'), pd.to_datetime('2010-12-31'), 
-                          alpha=0.15, color='red', label='GFC (excluded)' if i == 0 else "")
-                ax.axvspan(pd.to_datetime('2020-01-01'), pd.to_datetime('2022-12-31'), 
-                          alpha=0.15, color='orange', label='COVID (excluded)' if i == 0 else "")
+                add_country_specific_crisis_shading(ax, selected_country, include_labels=(i == 0))
             
             # Add Euro adoption line for selected country only
             country_adoption_years = {
@@ -857,7 +938,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             data=buf_full.getvalue(),
             file_name=f"{selected_display_country}_boxplots_combined{version_suffix}.png",
             mime="image/png",
-            key=f"download_combined_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
+            key=f"download_combined_cs2_{selected_display_country.lower()}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
         )
     
     with col2:
@@ -886,7 +967,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             data=buf2.getvalue(),
             file_name=f"{selected_display_country}_stddev_boxplot{version_suffix}.png",
             mime="image/png",
-            key=f"download_stddev_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
+            key=f"download_stddev_cs2_{selected_display_country.lower()}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
         )
     
     # Comprehensive Statistical Summary from Boxplots (matching CS1)
@@ -1048,7 +1129,11 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
     # 3. Hypothesis Testing Results
     st.header("3. Hypothesis Testing Results")
     
-    st.markdown(f"**F-Tests for Equal Variances: {selected_display_country} Pre-Euro vs Post-Euro{' (Crisis-Excluded)' if not include_crisis_years else ''}** | H₀: Equal variances | H₁: Different variances | α = 0.05{' | Excludes: GFC (2008-2010) + COVID (2020-2022)' if not include_crisis_years else ''}")
+    country_mapping = {'Estonia': 'Estonia, Republic of', 'Latvia': 'Latvia, Republic of', 'Lithuania': 'Lithuania, Republic of'}
+    selected_country_full = country_mapping[selected_display_country]
+    crisis_text = get_country_specific_crisis_text(selected_country_full) if not include_crisis_years else ""
+    
+    st.markdown(f"**F-Tests for Equal Variances: {selected_display_country} Pre-Euro vs Post-Euro{' (Crisis-Excluded)' if not include_crisis_years else ''}** | H₀: Equal variances | H₁: Different variances | α = 0.05{f' | Excludes: {crisis_text}' if not include_crisis_years else ''}")
     
     # Create hypothesis test results table (matching CS1 format)
     results_display = test_results.copy()
@@ -1265,17 +1350,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             
             # Add crisis period shading for crisis-excluded version (only on first plot of group)
             if not include_crisis_years:
-                if idx == 0:
-                    ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
-                              alpha=0.15, color='red', label='GFC (excluded)')
-                    ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
-                              alpha=0.15, color='orange', label='COVID (excluded)')
-                else:
-                    # Add shading without labels
-                    ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
-                              alpha=0.15, color='red')
-                    ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
-                              alpha=0.15, color='orange')
+                add_country_specific_crisis_shading(ax, selected_country, include_labels=(idx == 0))
             
             # Plot pre-Euro data
             pre_data = country_data[country_data[period_column] == 'Pre-Euro']
@@ -1388,7 +1463,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             data=buf_group.getvalue(),
             file_name=f"{selected_display_country}_timeseries_group_{group_letter}{version_suffix}.png",
             mime="image/png",
-            key=f"download_ts_group_{selected_display_country}_{group_idx}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
+            key=f"download_ts_group_cs2_{selected_display_country.lower()}_{group_idx}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
         )
     
     # Create individual figures for detailed downloads (matching CS1)
@@ -1412,10 +1487,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
                 
                 # Add crisis period shading if applicable
                 if not include_crisis_years:
-                    ax_ind.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
-                                  alpha=0.15, color='red', label='GFC (excluded)')
-                    ax_ind.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
-                                  alpha=0.15, color='orange', label='COVID (excluded)')
+                    add_country_specific_crisis_shading(ax_ind, selected_country, include_labels=True)
                 
                 # Plot data with proper segmentation for crisis-excluded
                 pre_data = country_data[country_data[period_column] == 'Pre-Euro']
@@ -1515,7 +1587,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
                         data=buf_ind.getvalue(),
                         file_name=f"{selected_display_country}_{clean_filename}_timeseries{version_suffix}.png",
                         mime="image/png",
-                        key=f"download_ts_{selected_display_country}_{i}_{clean_filename}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
+                        key=f"download_ts_cs2_{selected_display_country.lower()}_{i}_{clean_filename}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
                     )
                 
                 plt.close(fig_ind)
@@ -1576,7 +1648,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             data=summary_csv,
             file_name=f"{selected_display_country}_summary_statistics{version_suffix}.csv",
             mime="text/csv",
-            key=f"download_summary_csv_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
+            key=f"download_summary_csv_cs2_{selected_display_country.lower()}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
             help="Comprehensive statistical summary table with CV ratios"
         )
     
@@ -1588,7 +1660,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             data=test_csv,
             file_name=f"{selected_display_country}_hypothesis_tests{version_suffix}.csv",
             mime="text/csv",
-            key=f"download_tests_csv_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
+            key=f"download_tests_csv_cs2_{selected_display_country.lower()}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
             help="F-test results with significance levels and conclusions"
         )
     
@@ -1600,7 +1672,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
             data=country_csv,
             file_name=f"{selected_display_country}_country_statistics{version_suffix}.csv",
             mime="text/csv",
-            key=f"download_country_csv_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
+            key=f"download_country_csv_cs2_{selected_display_country.lower()}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
             help="Detailed temporal statistics by indicator and period"
         )
     
@@ -1608,7 +1680,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
         # HTML Report Generator
         if st.button(
             "📄 Generate HTML Report",
-            key=f"generate_html_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
+            key=f"generate_html_cs2_{selected_display_country.lower()}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}",
             help="Generate comprehensive HTML report with embedded charts"
         ):
             with st.spinner('Generating comprehensive HTML report...'):
@@ -1637,7 +1709,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
                         data=html_content,
                         file_name=html_filename,
                         mime="text/html",
-                        key=f"download_html_{selected_display_country}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
+                        key=f"download_html_cs2_{selected_display_country.lower()}{'_crisis_excluded' if not include_crisis_years else '_full'}_{session_id}"
                     )
                     
                     st.success("✅ HTML report generated successfully!")
@@ -1797,10 +1869,8 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
         
         # Add crisis period shading if showing crisis-excluded version
         if not include_crisis_years:
-            ax.axvspan(pd.to_datetime('2008-01-01'), pd.to_datetime('2010-12-31'), 
-                      alpha=0.2, color='gray', label='GFC (excluded)' if i == 0 else "")
-            ax.axvspan(pd.to_datetime('2020-01-01'), pd.to_datetime('2022-12-31'), 
-                      alpha=0.2, color='orange', label='COVID (excluded)' if i == 0 else "")
+            selected_country = {'Estonia': 'Estonia, Republic of', 'Latvia': 'Latvia, Republic of', 'Lithuania': 'Lithuania, Republic of'}[selected_display_country]
+            add_country_specific_crisis_shading(ax, selected_country, include_labels=(i == 0))
         
         # Formatting
         ax.set_title(nickname, fontweight='bold', fontsize=10)
@@ -2025,7 +2095,7 @@ def main():
         ["Full Series", "Crisis-Excluded"],
         index=0,
         help="Full Series uses all available data. Crisis-Excluded removes major crisis periods (GFC 2008-2010 + COVID 2020-2022).",
-        key=f"cs2_study_version_{unique_key_prefix}"
+        key=f"cs2_study_version_cs2_{unique_key_prefix}"
     )
     
     include_crisis_years = (study_version == "Full Series")
@@ -2043,7 +2113,7 @@ def main():
     if study_version == "Full Series":
         st.info("📈 **Full Series:** Maximizes data usage with all available pre/post Euro periods (asymmetric windows)")
     else:
-        st.warning("🚫 **Crisis-Excluded:** Removes major crisis periods (GFC 2008-2010 + COVID 2020-2022) to isolate Euro adoption effects")
+        st.warning(f"🚫 **Crisis-Excluded:** Removes major crisis periods ({get_country_specific_crisis_text(selected_country)}) to isolate Euro adoption effects")
     
     st.markdown("---")
     
@@ -2055,7 +2125,7 @@ def main():
         ### Temporal Analysis Design ({study_version})
         - **Methodology:** Before-after comparison for each country
         - **Analysis Periods:** Asymmetric windows maximizing available data
-        - **Crisis Handling:** {'Includes all available data' if include_crisis_years else 'Excludes major crisis periods (GFC 2008-2010 + COVID 2020-2022)'}
+        - **Crisis Handling:** {'Includes all available data' if include_crisis_years else f'Excludes major crisis periods ({get_country_specific_crisis_text(selected_country)})'}
         - **Data Normalization:** All BOP flows converted to annualized % of GDP
         
         ### Country-Specific Analysis Periods ({study_version})
@@ -2121,7 +2191,7 @@ def main():
         "Choose a Baltic country to analyze:",
         ['Estonia', 'Latvia', 'Lithuania'],
         index=0,
-        key=f"cs2_country_select_{unique_key_prefix}"
+        key=f"cs2_country_select_cs2_{unique_key_prefix}"
     )
     
     selected_country = country_mapping[selected_display_country]

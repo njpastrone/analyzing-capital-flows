@@ -637,7 +637,7 @@ def show_overall_capital_flows_analysis():
     
     st.markdown("---")
 
-def main():
+def main(context="standalone"):
     """Main report application"""
     
     # Title and header
@@ -765,7 +765,7 @@ def main():
             data=buf_full.getvalue(),
             file_name="case_study_1_boxplots_combined.png",
             mime="image/png",
-            key="download_combined"
+            key=f"download_combined_cs1_full_{context}"
         )
     
     with col2:
@@ -795,7 +795,7 @@ def main():
             data=buf1.getvalue(),
             file_name="case_study_1_means_boxplot.png",
             mime="image/png",
-            key="download_means"
+            key=f"download_means_cs1_full_{context}"
         )
     
     # Summary statistics from boxplots
@@ -933,7 +933,7 @@ def main():
             data=buf_1b.getvalue(),
             file_name="case_study_1_individual_country_boxplots.png",
             mime="image/png",
-            key="download_individual_combined"
+            key=f"download_individual_combined_cs1_full_{context}"
         )
     
     with col2:
@@ -969,7 +969,7 @@ def main():
             data=buf4.getvalue(),
             file_name="case_study_1_individual_stddev_boxplot.png",
             mime="image/png",
-            key="download_individual_stddev"
+            key=f"download_individual_stddev_cs1_full_{context}"
         )
     
     # Summary of individual country comparison
@@ -1362,7 +1362,7 @@ def main():
             data=buf_group.getvalue(),
             file_name=f"case_study_1_timeseries_group_{group_letter}.png",
             mime="image/png",
-            key=f"download_ts_group_{group_idx}"
+            key=f"download_ts_group_{group_idx}_cs1_full_{context}"
         )
     
     # Create individual figures for detailed downloads
@@ -1414,7 +1414,7 @@ def main():
                         data=buf_ind.getvalue(),
                         file_name=f"case_study_1_{clean_filename}_timeseries.png",
                         mime="image/png",
-                        key=f"download_ts_{i}"
+                        key=f"download_ts_{i}_cs1_full_{context}"
                     )
                 
                 plt.close(fig_ind)
@@ -1457,7 +1457,8 @@ def main():
             label="📥 Download Summary Table (CSV)",
             data=csv,
             file_name="case_study_1_summary_statistics.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key=f"download_summary_csv_cs1_full_{context}"
         )
     
     with col2:
@@ -1467,7 +1468,8 @@ def main():
             label="📥 Download Test Results (CSV)",
             data=csv,
             file_name="case_study_1_hypothesis_tests.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key=f"download_tests_csv_cs1_full_{context}"
         )
     
     with col3:
@@ -1477,7 +1479,8 @@ def main():
             label="📥 Download Group Statistics (CSV)",
             data=csv,
             file_name="case_study_1_group_statistics.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key=f"download_group_csv_cs1_full_{context}"
         )
     
     with col4:
@@ -1495,7 +1498,7 @@ def main():
                         data=html_data,
                         file_name=f"capital_flows_report_{datetime.now().strftime('%Y%m%d')}.html",
                         mime="text/html",
-                        key="html_download"
+                        key=f"html_download_cs1_full_{context}"
                     )
                     
                     st.success("✅ HTML report generated successfully!")
@@ -2207,7 +2210,7 @@ def create_all_flows_time_series_charts(overall_data, indicators_mapping):
         return f"<div class='warning-box'><strong>⚠️ Chart Generation Error:</strong> {str(e)}</div>"
 
 # Crisis-Excluded Analysis Functions
-def case_study_1_main_crisis_excluded():
+def case_study_1_main_crisis_excluded(context="standalone"):
     """Main Case Study 1 application with crisis periods excluded"""
     final_data, analysis_indicators, metadata = load_default_data(include_crisis_years=False)
     
@@ -2304,7 +2307,7 @@ def case_study_1_main_crisis_excluded():
             data=buf_full.getvalue(),
             file_name="case_study_1_boxplots_combined_crisis_excluded.png",
             mime="image/png",
-            key="download_combined_crisis_excluded"
+            key=f"download_combined_cs1_crisis_excluded_{context}"
         )
     
     with col2:
@@ -2332,7 +2335,7 @@ def case_study_1_main_crisis_excluded():
             data=buf2.getvalue(),
             file_name="case_study_1_stddev_boxplot_crisis_excluded.png",
             mime="image/png",
-            key="download_stddev_crisis_excluded"
+            key=f"download_stddev_cs1_crisis_excluded_{context}"
         )
     
     # 1b. Individual Country Comparisons
@@ -2444,7 +2447,7 @@ def case_study_1_main_crisis_excluded():
             data=buf_1b.getvalue(),
             file_name="case_study_1_individual_country_boxplots_crisis_excluded.png",
             mime="image/png",
-            key="download_individual_combined_crisis_excluded"
+            key=f"download_individual_combined_cs1_crisis_excluded_{context}"
         )
     
     with col2:
@@ -2480,7 +2483,7 @@ def case_study_1_main_crisis_excluded():
             data=buf4.getvalue(),
             file_name="case_study_1_individual_stddev_boxplot_crisis_excluded.png",
             mime="image/png",
-            key="download_individual_stddev_crisis_excluded"
+            key=f"download_individual_stddev_cs1_crisis_excluded_{context}"
         )
     
     # Summary of individual country comparison
@@ -2924,7 +2927,7 @@ def case_study_1_main_crisis_excluded():
             data=buf_group.getvalue(),
             file_name=f"case_study_1_timeseries_group_{group_letter}_crisis_excluded.png",
             mime="image/png",
-            key=f"download_ts_group_crisis_excluded_{group_idx}"
+            key=f"download_ts_group_{group_idx}_cs1_crisis_excluded_{context}"
         )
     
     # Create individual figures for detailed downloads
@@ -3029,7 +3032,7 @@ def case_study_1_main_crisis_excluded():
                         data=buf_ind.getvalue(),
                         file_name=f"case_study_1_{clean_filename}_timeseries_crisis_excluded.png",
                         mime="image/png",
-                        key=f"download_ts_crisis_excluded_{i}"
+                        key=f"download_ts_{i}_cs1_crisis_excluded_{context}"
                     )
                 
                 plt.close(fig_ind)
@@ -3072,7 +3075,8 @@ def case_study_1_main_crisis_excluded():
             label="📥 Download Summary Table (CSV)",
             data=csv,
             file_name="case_study_1_summary_statistics_crisis_excluded.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key=f"download_summary_csv_cs1_crisis_excluded_{context}"
         )
     
     with col2:
@@ -3082,7 +3086,8 @@ def case_study_1_main_crisis_excluded():
             label="📥 Download Test Results (CSV)",
             data=csv_tests,
             file_name="case_study_1_hypothesis_tests_crisis_excluded.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key=f"download_tests_csv_cs1_crisis_excluded_{context}"
         )
     
     with col3:
@@ -3092,12 +3097,13 @@ def case_study_1_main_crisis_excluded():
             label="📥 Download Individual Data (CSV)",
             data=csv_individual,
             file_name="case_study_1_individual_country_data_crisis_excluded.csv",
-            mime="text/csv"
+            mime="text/csv",
+            key=f"download_individual_csv_cs1_crisis_excluded_{context}"
         )
     
     with col4:
         # Overall Data Download
-        if st.button("📥 Download All Data (ZIP)", key="download_all_crisis_excluded"):
+        if st.button("📥 Download All Data (ZIP)", key=f"download_all_cs1_crisis_excluded_{context}"):
             # Create ZIP file with all CSV data
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
@@ -3113,7 +3119,7 @@ def case_study_1_main_crisis_excluded():
                 data=zip_buffer.getvalue(),
                 file_name="case_study_1_all_data_crisis_excluded.zip",
                 mime="application/zip",
-                key="download_zip_crisis_excluded"
+                key=f"download_zip_cs1_crisis_excluded_{context}"
             )
 
 def show_overall_capital_flows_analysis_crisis_excluded():
