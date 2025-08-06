@@ -1997,6 +1997,18 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     
     st.markdown("---")
     
+    # Calculate summary statistics for Section 5 (Crisis-Excluded)
+    if test_results is not None and len(test_results) > 0:
+        total_indicators = len(test_results)
+        iceland_higher_count = test_results['Iceland_Higher_Volatility'].sum()
+        sig_5pct_count = test_results['Significant_5pct'].sum()
+        sig_1pct_count = test_results['Significant_1pct'].sum()
+    else:
+        total_indicators = len(analysis_indicators)
+        iceland_higher_count = 0
+        sig_5pct_count = 0
+        sig_1pct_count = 0
+    
     # 5. Key Findings Summary (Crisis-Excluded)
     st.header("5️⃣ Key Findings Summary (Crisis-Excluded)")
     
