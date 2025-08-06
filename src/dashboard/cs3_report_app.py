@@ -222,7 +222,10 @@ def case_study_3_main(context="standalone"):
     """CS3 main analysis function - exact replica of CS1 structure"""
     
     # Load CS3 data
-    from cs3_complete_functions import load_cs3_data, calculate_group_statistics, create_boxplot_data, perform_volatility_tests, create_plot_base64, sort_indicators_by_type, get_investment_type_order
+    from cs3_complete_functions import (load_cs3_data, calculate_group_statistics, create_boxplot_data, 
+                                        perform_volatility_tests, create_plot_base64, sort_indicators_by_type, 
+                                        get_investment_type_order, create_individual_country_boxplot_data,
+                                        load_overall_capital_flows_data_cs3)
     
     # Load full time period data
     with st.spinner("Loading and processing CS3 data..."):
@@ -246,12 +249,173 @@ def case_study_3_main(context="standalone"):
     
     st.markdown("---")
     
-    # Overall Capital Flows Analysis
+    # Overall Capital Flows Analysis - Complete Implementation
     st.subheader("📈 Overall Capital Flows Analysis")
+    st.markdown("*High-level summary of aggregate net capital flows before detailed disaggregated analysis*")
+    
+    # Load overall capital flows data
+    overall_data, indicators_mapping = load_overall_capital_flows_data_cs3(include_crisis_years=True)
+    
+    if overall_data is not None and indicators_mapping is not None:
+        # Use consistent COLORBLIND_SAFE palette
+        colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+        
+        # Summary statistics
+        st.subheader("📊 Summary Statistics by Group")
+        
+        summary_stats = []
+        for clean_name, col_name in indicators_mapping.items():
+            if col_name in overall_data.columns:
+                for group in ['Iceland', 'Small Open Economies']:
+                    group_data = overall_data[overall_data['GROUP'] == group][col_name].dropna()
+                    summary_stats.append({
+                        'Indicator': clean_name,
+                        'Group': group,
+                        'Mean': group_data.mean(),
+                        'Std Dev': group_data.std(),
+                        'Median': group_data.median(),
+                        'Min': group_data.min(),
+                        'Max': group_data.max(),
+                        'Count': len(group_data)
+                    })
+        
+        summary_df = pd.DataFrame(summary_stats)
+        
+        # Display summary table
+        pivot_summary = summary_df.pivot_table(
+            index='Indicator', 
+            columns='Group', 
+            values=['Mean', 'Std Dev', 'Median'],
+            aggfunc='first'
+        ).round(2)
+        
+        st.dataframe(pivot_summary, use_container_width=True)
+        
+        # Side-by-side boxplots
+        st.subheader("📦 Distribution Comparison by Group")
+        
+        fig_overall, axes = plt.subplots(2, 2, figsize=(15, 10))
+        axes = axes.flatten()
+        
+        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+            if col_name in overall_data.columns and i < 4:
+                ax = axes[i]
+                
+                # Prepare data for boxplot
+                iceland_data = overall_data[overall_data['GROUP'] == 'Iceland'][col_name].dropna()
+                soe_data = overall_data[overall_data['GROUP'] == 'Small Open Economies'][col_name].dropna()
+                
+                # Create boxplot
+                bp = ax.boxplot([iceland_data, soe_data], 
+                               labels=['Iceland', 'Small Open Economies'], 
+                               patch_artist=True)
+                
+                # Color the boxes
+                bp['boxes'][0].set_facecolor(colors['Iceland'])
+                bp['boxes'][1].set_facecolor(colors['Small Open Economies'])
+                for box in bp['boxes']:
+                    box.set_alpha(0.7)
+                
+                ax.set_title(clean_name, fontweight='bold', fontsize=10)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                ax.tick_params(labelsize=8)
+        
+        fig_overall.tight_layout()
+        st.pyplot(fig_overall)
+        
+        # Time series plots
+        st.subheader("📈 Time Series by Group")
+        
+        # Create date column
+        overall_data_ts = overall_data.copy()
+        overall_data_ts['DATE'] = pd.to_datetime(
+            overall_data_ts['YEAR'].astype(str) + '-Q' + overall_data_ts['QUARTER'].astype(str)
+        )
+        
+        fig_ts, axes_ts = plt.subplots(2, 2, figsize=(15, 10))
+        axes_ts = axes_ts.flatten()
+        
+        for i, (clean_name, col_name) in enumerate(indicators_mapping.items()):
+            if col_name in overall_data.columns and i < 4:
+                ax = axes_ts[i]
+                
+                # Plot Iceland data
+                iceland_data = overall_data_ts[overall_data_ts['GROUP'] == 'Iceland'].sort_values('DATE')
+                if len(iceland_data) > 0:
+                    ax.plot(iceland_data['DATE'], iceland_data[col_name], 
+                           color=colors['Iceland'], label='Iceland', linewidth=2, alpha=0.8)
+                
+                # Plot Small Open Economies average
+                soe_data = overall_data_ts[overall_data_ts['GROUP'] == 'Small Open Economies']
+                if len(soe_data) > 0:
+                    soe_avg = soe_data.groupby('DATE')[col_name].mean().reset_index()
+                    ax.plot(soe_avg['DATE'], soe_avg[col_name], 
+                           color=colors['Small Open Economies'], label='SOE Average', linewidth=2, alpha=0.8)
+                
+                ax.set_title(clean_name, fontweight='bold', fontsize=10)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                ax.legend(loc='upper right', fontsize=8)
+                ax.tick_params(labelsize=8)
+                ax.grid(True, alpha=0.3)
+        
+        fig_ts.tight_layout()
+        st.pyplot(fig_ts)
+        
+        # Key insights
+        st.subheader("🔍 Key Insights")
+        
+        # Calculate volatility comparison
+        volatility_comparison = []
+        for clean_name, col_name in indicators_mapping.items():
+            if col_name in overall_data.columns:
+                iceland_std = overall_data[overall_data['GROUP'] == 'Iceland'][col_name].std()
+                soe_std = overall_data[overall_data['GROUP'] == 'Small Open Economies'][col_name].std()
+                volatility_comparison.append({
+                    'Indicator': clean_name,
+                    'Iceland Volatility': iceland_std,
+                    'SOE Volatility': soe_std,
+                    'Volatility Ratio': iceland_std / soe_std if soe_std != 0 else float('inf')
+                })
+        
+        vol_df = pd.DataFrame(volatility_comparison)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Volatility Comparison (Standard Deviation)**")
+            for _, row in vol_df.iterrows():
+                ratio = row['Volatility Ratio']
+                if ratio > 1.5:
+                    st.write(f"• **{row['Indicator']}**: Iceland {ratio:.1f}x more volatile")
+                elif ratio < 0.67:
+                    st.write(f"• **{row['Indicator']}**: SOE {1/ratio:.1f}x more volatile")
+                else:
+                    st.write(f"• **{row['Indicator']}**: Similar volatility levels")
+        
+        with col2:
+            st.markdown("**Overall Pattern**")
+            high_vol_count = sum(1 for _, row in vol_df.iterrows() if row['Volatility Ratio'] > 1.5)
+            total_indicators = len(vol_df)
+            
+            if high_vol_count >= total_indicators * 0.75:
+                st.write("🔴 **Iceland shows consistently higher volatility** across most capital flow categories")
+            elif high_vol_count >= total_indicators * 0.5:
+                st.write("🟡 **Mixed volatility patterns** between Iceland and Small Open Economies")
+            else:
+                st.write("🟢 **Similar volatility levels** between Iceland and Small Open Economies")
+    
+    st.markdown("---")
+    
+    # Indicator-level Analysis
+    st.subheader("🔍 Indicator-level Analysis")
+    st.markdown("*Detailed analysis by individual capital flow indicators*")
     
     # Calculate all statistics
     group_stats = calculate_group_statistics(final_data, 'GROUP', analysis_indicators)
     boxplot_data = create_boxplot_data(final_data, analysis_indicators)
+    individual_country_data = create_individual_country_boxplot_data(final_data, analysis_indicators)
     test_results = perform_volatility_tests(final_data, analysis_indicators)
     
     # 1. Summary Statistics and Boxplots
@@ -414,9 +578,118 @@ def case_study_3_main(context="standalone"):
             key=f"download_tests_cs3_full_{context}"
         )
     
-    # Disaggregated Analysis (Sections 1-6) - Complete implementation
+    # 1b. Individual Country Comparisons
+    st.subheader("1b. Individual Country Comparisons: Iceland vs Each Small Open Economy")
+    
+    st.markdown("""
+    **Enhanced Analysis:** Rather than comparing Iceland to Small Open Economies as an aggregate group, 
+    this section compares Iceland's values to each individual small open economy separately.
+    """)
+    
+    # Prepare data for individual country boxplots
+    mean_data_individual = individual_country_data[individual_country_data['Statistic'] == 'Mean']
+    std_data_individual = individual_country_data[individual_country_data['Statistic'] == 'Standard Deviation']
+    
+    # Calculate median values for ordering
+    mean_medians = mean_data_individual.groupby('COUNTRY')['Value'].median().sort_values(ascending=False)
+    std_medians = std_data_individual.groupby('COUNTRY')['Value'].median().sort_values(ascending=False)
+    
+    # Create side-by-side boxplots for Section 1b
+    fig_1b, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 5))
+    
+    # Prepare data for means boxplot, ordered by median
+    mean_boxplot_data = []
+    mean_boxplot_labels = []
+    iceland_mean_position = None
+    
+    for i, (country, _) in enumerate(mean_medians.items()):
+        country_means = mean_data_individual[mean_data_individual['COUNTRY'] == country]['Value']
+        mean_boxplot_data.append(country_means)
+        mean_boxplot_labels.append(country)
+        if country == 'Iceland':
+            iceland_mean_position = i
+    
+    # Create means boxplot
+    bp3 = ax3.boxplot(mean_boxplot_data, labels=mean_boxplot_labels, patch_artist=True)
+    
+    # Color Iceland distinctly (red) and others (blue)
+    for i, box in enumerate(bp3['boxes']):
+        if i == iceland_mean_position:
+            box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
+            box.set_alpha(0.8)
+        else:
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_alpha(0.6)
+    
+    ax3.set_title('Panel C: Distribution of Means - Iceland vs Individual Small Open Economies\n(Ordered by Descending Median Value)', 
+                  fontweight='bold', fontsize=10, pad=10)
+    ax3.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
+    ax3.tick_params(axis='x', rotation=45, labelsize=8)
+    ax3.tick_params(axis='y', labelsize=8)
+    ax3.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Add reference line for Iceland's median
+    iceland_median_mean = mean_medians.get('Iceland', 0)
+    ax3.axhline(y=iceland_median_mean, color=COLORBLIND_SAFE[3], linestyle='--', alpha=0.7, linewidth=1.5, 
+                label=f'Iceland Median: {iceland_median_mean:.2f}%')
+    ax3.legend(loc='upper right', fontsize=8)
+    
+    # Prepare data for std dev boxplot, ordered by median
+    std_boxplot_data = []
+    std_boxplot_labels = []
+    iceland_std_position = None
+    
+    for i, (country, _) in enumerate(std_medians.items()):
+        country_stds = std_data_individual[std_data_individual['COUNTRY'] == country]['Value']
+        std_boxplot_data.append(country_stds)
+        std_boxplot_labels.append(country)
+        if country == 'Iceland':
+            iceland_std_position = i
+    
+    # Create std dev boxplot
+    bp4 = ax4.boxplot(std_boxplot_data, labels=std_boxplot_labels, patch_artist=True)
+    
+    # Color Iceland distinctly (red) and others (blue)
+    for i, box in enumerate(bp4['boxes']):
+        if i == iceland_std_position:
+            box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
+            box.set_alpha(0.8)
+        else:
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_alpha(0.6)
+    
+    ax4.set_title('Panel D: Distribution of Volatility - Iceland vs Individual Small Open Economies\n(Ordered by Descending Median Value)', 
+                  fontweight='bold', fontsize=10, pad=10)
+    ax4.set_ylabel('Std Dev (% of GDP, annualized)', fontsize=9)
+    ax4.tick_params(axis='x', rotation=45, labelsize=8)
+    ax4.tick_params(axis='y', labelsize=8)
+    ax4.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Add reference line for Iceland's median
+    iceland_median_std = std_medians.get('Iceland', 0)
+    ax4.axhline(y=iceland_median_std, color=COLORBLIND_SAFE[3], linestyle='--', alpha=0.7, linewidth=1.5, 
+                label=f'Iceland Median: {iceland_median_std:.2f}%')
+    ax4.legend(loc='upper right', fontsize=8)
+    
+    fig_1b.tight_layout()
+    st.pyplot(fig_1b)
+    
+    # Download button for Section 1b
+    buf_1b = io.BytesIO()
+    fig_1b.savefig(buf_1b, format='png', dpi=300, facecolor='white')
+    buf_1b.seek(0)
+    
+    st.download_button(
+        label="📥 Download Individual Country Comparisons (PNG)",
+        data=buf_1b.getvalue(),
+        file_name=f"cs3_individual_country_comparisons_full.png",
+        mime="image/png",
+        key=f"download_1b_cs3_full_{context}"
+    )
+    
+    # Disaggregated Analysis (Sections 2-6) - Complete implementation
     st.markdown("---")
-    st.header("🔍 Disaggregated Analysis (Sections 1-6)")
+    st.header("🔍 Disaggregated Analysis (Sections 2-6)")
     st.markdown("*Detailed analysis by individual capital flow indicators*")
     
     # 2. Comprehensive Statistical Summary Table
@@ -820,7 +1093,10 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     """CS3 crisis-excluded analysis function - exact replica of CS1 structure"""
     
     # Load CS3 data with crisis exclusion
-    from cs3_complete_functions import load_cs3_data, calculate_group_statistics, create_boxplot_data, perform_volatility_tests, create_plot_base64, sort_indicators_by_type, get_investment_type_order
+    from cs3_complete_functions import (load_cs3_data, calculate_group_statistics, create_boxplot_data, 
+                                        perform_volatility_tests, create_plot_base64, sort_indicators_by_type, 
+                                        get_investment_type_order, create_individual_country_boxplot_data,
+                                        load_overall_capital_flows_data_cs3)
     
     # Load crisis-excluded data
     with st.spinner("Loading and processing CS3 crisis-excluded data..."):
@@ -843,9 +1119,101 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         excluded_years = metadata.get('crisis_years', [])
         st.metric("Excluded Years", ', '.join(map(str, excluded_years)))
     
+    st.markdown("---")
+    
+    # Overall Capital Flows Analysis - Crisis-Excluded
+    st.subheader("📈 Overall Capital Flows Analysis (Crisis-Excluded)")
+    st.markdown("*High-level summary of aggregate net capital flows excluding crisis periods*")
+    
+    # Load overall capital flows data
+    overall_data_crisis, indicators_mapping_crisis = load_overall_capital_flows_data_cs3(include_crisis_years=False)
+    
+    if overall_data_crisis is not None and indicators_mapping_crisis is not None:
+        # Use consistent COLORBLIND_SAFE palette
+        colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+        
+        # Summary statistics
+        st.subheader("📊 Summary Statistics by Group (Crisis-Excluded)")
+        
+        summary_stats_crisis = []
+        for clean_name, col_name in indicators_mapping_crisis.items():
+            if col_name in overall_data_crisis.columns:
+                for group in ['Iceland', 'Small Open Economies']:
+                    group_data = overall_data_crisis[overall_data_crisis['GROUP'] == group][col_name].dropna()
+                    summary_stats_crisis.append({
+                        'Indicator': clean_name,
+                        'Group': group,
+                        'Mean': group_data.mean(),
+                        'Std Dev': group_data.std(),
+                        'Median': group_data.median(),
+                        'Count': len(group_data)
+                    })
+        
+        summary_df_crisis = pd.DataFrame(summary_stats_crisis)
+        
+        # Display summary table
+        pivot_summary_crisis = summary_df_crisis.pivot_table(
+            index='Indicator', 
+            columns='Group', 
+            values=['Mean', 'Std Dev', 'Median'],
+            aggfunc='first'
+        ).round(2)
+        
+        st.dataframe(pivot_summary_crisis, use_container_width=True)
+        
+        # Key insights for crisis-excluded
+        st.subheader("🔍 Key Insights (Crisis-Excluded)")
+        
+        # Calculate volatility comparison
+        volatility_comparison_crisis = []
+        for clean_name, col_name in indicators_mapping_crisis.items():
+            if col_name in overall_data_crisis.columns:
+                iceland_std = overall_data_crisis[overall_data_crisis['GROUP'] == 'Iceland'][col_name].std()
+                soe_std = overall_data_crisis[overall_data_crisis['GROUP'] == 'Small Open Economies'][col_name].std()
+                volatility_comparison_crisis.append({
+                    'Indicator': clean_name,
+                    'Iceland Volatility': iceland_std,
+                    'SOE Volatility': soe_std,
+                    'Volatility Ratio': iceland_std / soe_std if soe_std != 0 else float('inf')
+                })
+        
+        vol_df_crisis = pd.DataFrame(volatility_comparison_crisis)
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("**Volatility Comparison (Crisis-Excluded)**")
+            for _, row in vol_df_crisis.iterrows():
+                ratio = row['Volatility Ratio']
+                if ratio > 1.5:
+                    st.write(f"• **{row['Indicator']}**: Iceland {ratio:.1f}x more volatile")
+                elif ratio < 0.67:
+                    st.write(f"• **{row['Indicator']}**: SOE {1/ratio:.1f}x more volatile")
+                else:
+                    st.write(f"• **{row['Indicator']}**: Similar volatility levels")
+        
+        with col2:
+            st.markdown("**Overall Pattern (Crisis-Excluded)**")
+            high_vol_count = sum(1 for _, row in vol_df_crisis.iterrows() if row['Volatility Ratio'] > 1.5)
+            total_indicators = len(vol_df_crisis)
+            
+            if high_vol_count >= total_indicators * 0.75:
+                st.write("🔴 **Iceland shows consistently higher volatility** even excluding crisis periods")
+            elif high_vol_count >= total_indicators * 0.5:
+                st.write("🟡 **Mixed volatility patterns** between Iceland and Small Open Economies")
+            else:
+                st.write("🟢 **Similar volatility levels** when crisis periods are excluded")
+    
+    st.markdown("---")
+    
+    # Indicator-level Analysis (Crisis-Excluded)
+    st.subheader("🔍 Indicator-level Analysis (Crisis-Excluded)")
+    st.markdown("*Detailed analysis by individual capital flow indicators excluding crisis periods*")
+    
     # Calculate all statistics
     group_stats = calculate_group_statistics(final_data, 'GROUP', analysis_indicators)
     boxplot_data = create_boxplot_data(final_data, analysis_indicators)
+    individual_country_data = create_individual_country_boxplot_data(final_data, analysis_indicators)
     test_results = perform_volatility_tests(final_data, analysis_indicators)
     
     # 1. Summary Statistics and Boxplots (Crisis-Excluded)
@@ -940,6 +1308,115 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             mime="image/png",
             key=f"download_stddev_cs3_crisis_{context}"
         )
+    
+    # 1b. Individual Country Comparisons (Crisis-Excluded)
+    st.subheader("1b. Individual Country Comparisons: Iceland vs Each Small Open Economy (Crisis-Excluded)")
+    
+    st.markdown("""
+    **Enhanced Analysis:** Comparing Iceland to each individual small open economy separately,
+    excluding crisis periods to focus on normal market conditions.
+    """)
+    
+    # Prepare data for individual country boxplots (crisis-excluded)
+    mean_data_individual = individual_country_data[individual_country_data['Statistic'] == 'Mean']
+    std_data_individual = individual_country_data[individual_country_data['Statistic'] == 'Standard Deviation']
+    
+    # Calculate median values for ordering
+    mean_medians = mean_data_individual.groupby('COUNTRY')['Value'].median().sort_values(ascending=False)
+    std_medians = std_data_individual.groupby('COUNTRY')['Value'].median().sort_values(ascending=False)
+    
+    # Create side-by-side boxplots for Section 1b (crisis-excluded)
+    fig_1b_crisis, (ax3, ax4) = plt.subplots(1, 2, figsize=(16, 5))
+    
+    # Prepare data for means boxplot, ordered by median
+    mean_boxplot_data = []
+    mean_boxplot_labels = []
+    iceland_mean_position = None
+    
+    for i, (country, _) in enumerate(mean_medians.items()):
+        country_means = mean_data_individual[mean_data_individual['COUNTRY'] == country]['Value']
+        mean_boxplot_data.append(country_means)
+        mean_boxplot_labels.append(country)
+        if country == 'Iceland':
+            iceland_mean_position = i
+    
+    # Create means boxplot
+    bp3 = ax3.boxplot(mean_boxplot_data, labels=mean_boxplot_labels, patch_artist=True)
+    
+    # Color Iceland distinctly (red) and others (blue)
+    for i, box in enumerate(bp3['boxes']):
+        if i == iceland_mean_position:
+            box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
+            box.set_alpha(0.8)
+        else:
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_alpha(0.6)
+    
+    ax3.set_title('Panel C: Distribution of Means - Iceland vs Individual SOEs (Crisis-Excluded)\n(Ordered by Descending Median Value)', 
+                  fontweight='bold', fontsize=10, pad=10)
+    ax3.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
+    ax3.tick_params(axis='x', rotation=45, labelsize=8)
+    ax3.tick_params(axis='y', labelsize=8)
+    ax3.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Add reference line for Iceland's median
+    iceland_median_mean = mean_medians.get('Iceland', 0)
+    ax3.axhline(y=iceland_median_mean, color=COLORBLIND_SAFE[3], linestyle='--', alpha=0.7, linewidth=1.5, 
+                label=f'Iceland Median: {iceland_median_mean:.2f}%')
+    ax3.legend(loc='upper right', fontsize=8)
+    
+    # Prepare data for std dev boxplot, ordered by median
+    std_boxplot_data = []
+    std_boxplot_labels = []
+    iceland_std_position = None
+    
+    for i, (country, _) in enumerate(std_medians.items()):
+        country_stds = std_data_individual[std_data_individual['COUNTRY'] == country]['Value']
+        std_boxplot_data.append(country_stds)
+        std_boxplot_labels.append(country)
+        if country == 'Iceland':
+            iceland_std_position = i
+    
+    # Create std dev boxplot
+    bp4 = ax4.boxplot(std_boxplot_data, labels=std_boxplot_labels, patch_artist=True)
+    
+    # Color Iceland distinctly (red) and others (blue)
+    for i, box in enumerate(bp4['boxes']):
+        if i == iceland_std_position:
+            box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
+            box.set_alpha(0.8)
+        else:
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_alpha(0.6)
+    
+    ax4.set_title('Panel D: Distribution of Volatility - Iceland vs Individual SOEs (Crisis-Excluded)\n(Ordered by Descending Median Value)', 
+                  fontweight='bold', fontsize=10, pad=10)
+    ax4.set_ylabel('Std Dev (% of GDP, annualized)', fontsize=9)
+    ax4.tick_params(axis='x', rotation=45, labelsize=8)
+    ax4.tick_params(axis='y', labelsize=8)
+    ax4.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+    
+    # Add reference line for Iceland's median
+    iceland_median_std = std_medians.get('Iceland', 0)
+    ax4.axhline(y=iceland_median_std, color=COLORBLIND_SAFE[3], linestyle='--', alpha=0.7, linewidth=1.5, 
+                label=f'Iceland Median: {iceland_median_std:.2f}%')
+    ax4.legend(loc='upper right', fontsize=8)
+    
+    fig_1b_crisis.tight_layout()
+    st.pyplot(fig_1b_crisis)
+    
+    # Download button for Section 1b (crisis-excluded)
+    buf_1b_crisis = io.BytesIO()
+    fig_1b_crisis.savefig(buf_1b_crisis, format='png', dpi=300, facecolor='white')
+    buf_1b_crisis.seek(0)
+    
+    st.download_button(
+        label="📥 Download Individual Country Comparisons (Crisis-Excluded) (PNG)",
+        data=buf_1b_crisis.getvalue(),
+        file_name=f"cs3_individual_country_comparisons_crisis_excluded.png",
+        mime="image/png",
+        key=f"download_1b_cs3_crisis_{context}"
+    )
     
     # 2. Hypothesis Test Results (Crisis-Excluded)
     st.header("2. Hypothesis Test Results (Crisis-Excluded)")

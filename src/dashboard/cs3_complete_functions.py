@@ -256,3 +256,67 @@ def get_investment_type_order(indicator_name):
         return 2
     else:
         return 999
+
+def create_individual_country_boxplot_data(data, indicators):
+    """Create dataset for individual country boxplot visualization (CS3 version)"""
+    stats_data = []
+    
+    for country in data['COUNTRY'].unique():
+        country_data = data[data['COUNTRY'] == country]
+        
+        for indicator in indicators:
+            if indicator in data.columns:
+                values = country_data[indicator].dropna()
+                
+                if len(values) > 1:
+                    mean_val = values.mean()
+                    std_val = values.std()
+                    
+                    stats_data.extend([
+                        {'COUNTRY': country, 'Statistic': 'Mean', 'Value': mean_val, 'Indicator': indicator.replace('_PGDP', '')},
+                        {'COUNTRY': country, 'Statistic': 'Standard Deviation', 'Value': std_val, 'Indicator': indicator.replace('_PGDP', '')}
+                    ])
+    
+    return pd.DataFrame(stats_data)
+
+def load_overall_capital_flows_data_cs3(include_crisis_years=True):
+    """Load overall capital flows data for CS3 - aggregate net flows only"""
+    try:
+        # Load CS3 data
+        cs3_data, _, metadata = load_cs3_data(include_crisis_years=include_crisis_years)
+        
+        if cs3_data is None:
+            return None, None
+        
+        # Define overall capital flow indicators (net flows only)
+        overall_indicators = {
+            'Net Direct Investment': 'Net - Direct investment, Total financial assets/liabilities_PGDP',
+            'Net Portfolio Investment': 'Net - Portfolio investment, Total financial assets/liabilities_PGDP',
+            'Net Other Investment': 'Net - Other investment, Total financial assets/liabilities_PGDP',
+            'Total Net Flows': None  # Will be calculated
+        }
+        
+        # Calculate Total Net Flows as sum of the three components
+        net_di = 'Net - Direct investment, Total financial assets/liabilities_PGDP'
+        net_pi = 'Net - Portfolio investment, Total financial assets/liabilities_PGDP'
+        net_oi = 'Net - Other investment, Total financial assets/liabilities_PGDP'
+        
+        # Check which columns exist
+        available_cols = []
+        for col in [net_di, net_pi, net_oi]:
+            if col in cs3_data.columns:
+                available_cols.append(col)
+        
+        if available_cols:
+            # Calculate total net flows as sum of available components
+            cs3_data['Total_Net_Flows_PGDP'] = cs3_data[available_cols].sum(axis=1, skipna=False)
+            overall_indicators['Total Net Flows'] = 'Total_Net_Flows_PGDP'
+        
+        # Filter to only include available indicators
+        available_indicators = {k: v for k, v in overall_indicators.items() if v and v in cs3_data.columns}
+        
+        return cs3_data, available_indicators
+        
+    except Exception as e:
+        st.error(f"Error loading overall capital flows data for CS3: {str(e)}")
+        return None, None
