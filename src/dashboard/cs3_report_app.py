@@ -289,7 +289,67 @@ def case_study_3_main(context="standalone"):
             aggfunc='first'
         ).round(2)
         
-        st.dataframe(pivot_summary, use_container_width=True)
+        # Create custom HTML table for overall capital flows summary
+        st.markdown("""
+        <style>
+        .overall-summary-table {
+            width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            font-size: 9px !important;
+            font-family: Arial, sans-serif !important;
+        }
+        .overall-summary-table th, .overall-summary-table td {
+            border: 1px solid #ddd !important;
+            padding: 3px !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .overall-summary-table th {
+            background-color: #f0f0f0 !important;
+            font-weight: bold !important;
+            font-size: 10px !important;
+        }
+        .overall-summary-table th:first-child, .overall-summary-table td:first-child {
+            width: 180px !important;
+            max-width: 180px !important;
+            text-align: left !important;
+            font-weight: bold !important;
+        }
+        .overall-summary-table th:not(:first-child), .overall-summary-table td:not(:first-child) {
+            width: 80px !important;
+            max-width: 80px !important;
+        }
+        .overall-summary-table tr:nth-child(even) {
+            background-color: #f9f9f9 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+        
+        # Convert pivot table to HTML
+        pivot_df = pivot_summary.reset_index()
+        html_table = '<table class="overall-summary-table">'
+        html_table += '<thead><tr>'
+        for col in pivot_df.columns:
+            col_name = str(col).replace('(', '').replace(')', '').replace("'", '') if isinstance(col, tuple) else str(col)
+            html_table += f'<th>{col_name}</th>'
+        html_table += '</tr></thead><tbody>'
+        
+        for _, row in pivot_df.iterrows():
+            html_table += '<tr>'
+            for col in pivot_df.columns:
+                value = row[col]
+                if pd.isna(value):
+                    value = '-'
+                elif isinstance(value, (int, float)):
+                    value = f'{value:.2f}'
+                html_table += f'<td>{value}</td>'
+            html_table += '</tr>'
+        
+        html_table += '</tbody></table>'
+        st.markdown(html_table, unsafe_allow_html=True)
         
         # Side-by-side boxplots
         st.subheader("📦 Distribution Comparison by Group")
@@ -419,7 +479,7 @@ def case_study_3_main(context="standalone"):
     test_results = perform_volatility_tests(final_data, analysis_indicators)
     
     # 1. Summary Statistics and Boxplots
-    st.header("1. Summary Statistics and Boxplots")
+    st.header("1️⃣ Summary Statistics and Boxplots")
     
     # Create side-by-side boxplots for compact layout (matching CS1)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
@@ -433,12 +493,12 @@ def case_study_3_main(context="standalone"):
     bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax1.set_title('Panel A: Distribution of Means\\nComparing Iceland and Small Open Economies', 
-                  fontweight='bold', fontsize=10, pad=12)
+    ax1.set_title('Panel A: Distribution of Means - Iceland vs SOE', 
+                  fontweight='bold', fontsize=10, pad=15)
     ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax1.tick_params(axis='both', which='major', labelsize=8)
     ax1.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\\nSmall Open Economies Avg: {mean_soe.mean():.2f}%', 
+    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\nSmall Open Economies Avg: {mean_soe.mean():.2f}%', 
             transform=ax1.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -451,14 +511,14 @@ def case_study_3_main(context="standalone"):
     bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax2.set_title('Panel B: Distribution of Volatility (Std Dev)\\nComparing Iceland and Small Open Economies', 
-                  fontweight='bold', fontsize=10, pad=12)
+    ax2.set_title('Panel B: Distribution of Volatility - Iceland vs SOE', 
+                  fontweight='bold', fontsize=10, pad=15)
     ax2.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
     ax2.tick_params(axis='both', which='major', labelsize=8)
     ax2.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
     
     volatility_ratio = std_iceland.mean() / std_soe.mean() if std_soe.mean() != 0 else float('inf')
-    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\\nSmall Open Economies Avg: {std_soe.mean():.2f}%\\nRatio: {volatility_ratio:.2f}x', 
+    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
             transform=ax2.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -493,7 +553,7 @@ def case_study_3_main(context="standalone"):
         ax2_ind.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
         ax2_ind.tick_params(axis='both', which='major', labelsize=8)
         ax2_ind.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\\nSmall Open Economies Avg: {std_soe.mean():.2f}%\\nRatio: {volatility_ratio:.2f}x', 
+        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
                 transform=ax2_ind.transAxes, verticalalignment='top', fontsize=8,
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
         fig2_ind.tight_layout()
@@ -512,7 +572,7 @@ def case_study_3_main(context="standalone"):
         )
     
     # 2. Hypothesis Test Results
-    st.header("2. Hypothesis Test Results")
+    st.header("2️⃣ Hypothesis Test Results")
     
     if test_results is not None and len(test_results) > 0:
         # Calculate summary statistics
@@ -551,32 +611,79 @@ def case_study_3_main(context="standalone"):
         # Create clean indicator names using nicknames
         display_results['Clean_Indicator'] = display_results['Indicator'].apply(get_nickname)
         
-        # Select columns for display
-        table_columns = ['Clean_Indicator', 'Iceland_Std', 'SOE_Std', 'F_Statistic', 'P_Value', 'Significance']
-        
-        st.dataframe(
-            display_results[table_columns].rename(columns={
-                'Clean_Indicator': 'Indicator',
-                'Iceland_Std': 'Iceland Std Dev',
-                'SOE_Std': 'SOE Std Dev',
-                'F_Statistic': 'F-Statistic',
-                'P_Value': 'P-Value',
-                'Significance': 'Sig.'
-            }),
-            use_container_width=True
-        )
-        
-        # Download test results
-        csv_buffer = io.StringIO()
-        test_results.to_csv(csv_buffer, index=False)
-        
-        st.download_button(
-            label="📥 Download Test Results (CSV)",
-            data=csv_buffer.getvalue(),
-            file_name=f"cs3_test_results_full.csv",
-            mime="text/csv",
-            key=f"download_tests_cs3_full_{context}"
-        )
+    # Select columns for display
+    table_columns = ['Clean_Indicator', 'Iceland_Std', 'SOE_Std', 'F_Statistic', 'P_Value', 'Significance']
+    
+    # Create custom HTML table for hypothesis test results
+    st.markdown("""
+    <style>
+    .hypothesis-results-table {
+        width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            font-size: 9px !important;
+            font-family: Arial, sans-serif !important;
+        }
+        .hypothesis-results-table th, .hypothesis-results-table td {
+            border: 1px solid #ddd !important;
+            padding: 3px !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .hypothesis-results-table th {
+            background-color: #e6f3ff !important;
+            font-weight: bold !important;
+            font-size: 10px !important;
+        }
+        .hypothesis-results-table th:first-child, .hypothesis-results-table td:first-child {
+            width: 250px !important;
+            max-width: 250px !important;
+            text-align: left !important;
+            font-weight: bold !important;
+        }
+        .hypothesis-results-table th:not(:first-child), .hypothesis-results-table td:not(:first-child) {
+            width: 80px !important;
+            max-width: 80px !important;
+        }
+        .hypothesis-results-table tr:nth-child(even) {
+            background-color: #f9f9f9 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    
+    # Generate HTML table content
+    html_table = '<table class="hypothesis-results-table">'
+    html_table += '<thead><tr>'
+    html_table += '<th>Indicator</th><th>Iceland Std Dev</th><th>SOE Std Dev</th>'
+    html_table += '<th>F-Statistic</th><th>P-Value</th><th>Sig.</th>'
+    html_table += '</tr></thead><tbody>'
+    
+    for _, row in display_results.iterrows():
+        html_table += '<tr>'
+        html_table += f'<td>{row["Clean_Indicator"]}</td>'
+        html_table += f'<td>{row["Iceland_Std"]:.3f}</td>'
+        html_table += f'<td>{row["SOE_Std"]:.3f}</td>'
+        html_table += f'<td>{row["F_Statistic"]:.3f}</td>'
+        html_table += f'<td>{row["P_Value"]:.4f}</td>'
+        html_table += f'<td>{row["Significance"]}</td>'
+        html_table += '</tr>'
+    
+    html_table += '</tbody></table>'
+    st.markdown(html_table, unsafe_allow_html=True)
+    
+    # Download test results
+    csv_buffer = io.StringIO()
+    test_results.to_csv(csv_buffer, index=False)
+    
+    st.download_button(
+        label="📥 Download Test Results (CSV)",
+        data=csv_buffer.getvalue(),
+        file_name=f"cs3_test_results_full.csv",
+        mime="text/csv",
+        key=f"download_tests_cs3_full_{context}"
+    )
     
     # 1b. Individual Country Comparisons
     st.subheader("1b. Individual Country Comparisons: Iceland vs Each Small Open Economy")
@@ -621,8 +728,8 @@ def case_study_3_main(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
             box.set_alpha(0.6)
     
-    ax3.set_title('Panel C: Distribution of Means - Iceland vs Individual Small Open Economies\n(Ordered by Descending Median Value)', 
-                  fontweight='bold', fontsize=10, pad=10)
+    ax3.set_title('Panel C: Distribution of Means - Iceland vs Individual SOEs', 
+                  fontweight='bold', fontsize=10, pad=15)
     ax3.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax3.tick_params(axis='x', rotation=45, labelsize=8)
     ax3.tick_params(axis='y', labelsize=8)
@@ -658,8 +765,8 @@ def case_study_3_main(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
             box.set_alpha(0.6)
     
-    ax4.set_title('Panel D: Distribution of Volatility - Iceland vs Individual Small Open Economies\n(Ordered by Descending Median Value)', 
-                  fontweight='bold', fontsize=10, pad=10)
+    ax4.set_title('Panel D: Distribution of Volatility - Iceland vs Individual SOEs', 
+                  fontweight='bold', fontsize=10, pad=15)
     ax4.set_ylabel('Std Dev (% of GDP, annualized)', fontsize=9)
     ax4.tick_params(axis='x', rotation=45, labelsize=8)
     ax4.tick_params(axis='y', labelsize=8)
@@ -797,7 +904,7 @@ def case_study_3_main(context="standalone"):
     st.info(f"**Summary:** Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
     
     # 3. Hypothesis Testing Results
-    st.header("3. Hypothesis Testing Results")
+    st.header("3️⃣ Hypothesis Testing Results")
     
     st.markdown("**F-Tests for Variance Equality Between Iceland and Small Open Economies** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
@@ -938,7 +1045,7 @@ def case_study_3_main(context="standalone"):
     st.markdown("---")
     
     # 4. Time Series Visualization
-    st.header("4. Time Series Analysis")
+    st.header("4️⃣ Time Series Analysis")
     
     # Create date column
     final_data_copy = final_data.copy()
@@ -1024,7 +1131,7 @@ def case_study_3_main(context="standalone"):
     st.markdown("---")
     
     # 5. Key Findings Summary
-    st.header("5. Key Findings Summary")
+    st.header("5️⃣ Key Findings Summary")
     
     col1, col2 = st.columns(2)
     
@@ -1039,16 +1146,16 @@ def case_study_3_main(context="standalone"):
     
     with col2:
         st.markdown(f"""
-        ### Policy Context:
-        - **Comparative advantage**: Both groups share similar small open economy characteristics
-        - **Currency regimes**: Mix of independent currencies and currency boards
-        - **Economic structures**: Similar exposure to global financial flows
-        - **Key insight**: Differences may reflect Iceland's specific geographic and economic factors
+        ### Statistical Context:
+        - **Sample characteristics**: Both groups classified as small open economies
+        - **Data quality**: Full quarterly time series coverage
+        - **Methodological approach**: F-tests for variance equality comparison
+        - **Result interpretation**: Statistical differences observed in volatility patterns across groups
         """)
     
     # Download section
     st.markdown("---")
-    st.header("6. Download Results")
+    st.header("6️⃣ Download Results")
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -1159,7 +1266,177 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             aggfunc='first'
         ).round(2)
         
-        st.dataframe(pivot_summary_crisis, use_container_width=True)
+        # Convert pivot table to HTML for crisis-excluded data
+        pivot_df_crisis = pivot_summary_crisis.reset_index()
+        html_table_crisis = '<table class="overall-summary-table">'
+        html_table_crisis += '<thead><tr>'
+        for col in pivot_df_crisis.columns:
+            col_name = str(col).replace('(', '').replace(')', '').replace("'", '') if isinstance(col, tuple) else str(col)
+            html_table_crisis += f'<th>{col_name}</th>'
+        html_table_crisis += '</tr></thead><tbody>'
+        
+        for _, row in pivot_df_crisis.iterrows():
+            html_table_crisis += '<tr>'
+            for col in pivot_df_crisis.columns:
+                value = row[col]
+                if pd.isna(value):
+                    value = '-'
+                elif isinstance(value, (int, float)):
+                    value = f'{value:.2f}'
+                html_table_crisis += f'<td>{value}</td>'
+            html_table_crisis += '</tr>'
+        
+        html_table_crisis += '</tbody></table>'
+        st.markdown(html_table_crisis, unsafe_allow_html=True)
+        
+        # Distribution Comparison by Group (Crisis-Excluded)
+        st.subheader("📊 Distribution Comparison by Group (Crisis-Excluded)")
+        
+        # Create distribution plots for crisis-excluded data
+        fig_dist, axes = plt.subplots(2, 2, figsize=(12, 8))
+        axes = axes.flatten()
+        
+        plot_count = 0
+        for clean_name, col_name in indicators_mapping_crisis.items():
+            if col_name in overall_data_crisis.columns and plot_count < 4:
+                ax = axes[plot_count]
+                
+                # Prepare data for boxplot (EXACT CS1 implementation)
+                iceland_data = overall_data_crisis[overall_data_crisis['GROUP'] == 'Iceland'][col_name].dropna()
+                soe_data = overall_data_crisis[overall_data_crisis['GROUP'] == 'Small Open Economies'][col_name].dropna()
+                
+                # Create boxplot (EXACT CS1 implementation)
+                bp = ax.boxplot([iceland_data, soe_data], 
+                               labels=['Iceland', 'Small Open Economies'], 
+                               patch_artist=True)
+                
+                # Color the boxes (EXACT CS1 styling)
+                bp['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland
+                bp['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # Small Open Economies
+                
+                ax.set_title(f'{clean_name}', fontweight='bold', fontsize=10, pad=12)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+                ax.tick_params(axis='both', which='major', labelsize=8)
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                ax.grid(True, alpha=0.3)
+                
+                plot_count += 1
+        
+        # Hide unused subplots
+        for i in range(plot_count, 4):
+            axes[i].set_visible(False)
+        
+        fig_dist.suptitle('Overall Capital Flows Distribution by Group (Crisis-Excluded)', 
+                         fontweight='bold', fontsize=12)
+        fig_dist.tight_layout()
+        st.pyplot(fig_dist)
+        
+        # Time Series by Group (Crisis-Excluded)
+        st.subheader("📈 Time Series by Group (Crisis-Excluded)")
+        
+        # Create date column (EXACT CS1 implementation)
+        overall_data_ts = overall_data_crisis.copy()
+        overall_data_ts['DATE'] = pd.to_datetime(overall_data_ts['YEAR'].astype(str) + '-Q' + overall_data_ts['QUARTER'].astype(str))
+        
+        fig_ts, axes = plt.subplots(2, 2, figsize=(15, 10))
+        axes = axes.flatten()
+        
+        colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+        
+        plot_count = 0
+        for clean_name, col_name in indicators_mapping_crisis.items():
+            if col_name in overall_data_crisis.columns and plot_count < 4:
+                ax = axes[plot_count]
+                
+                # Add shaded regions for excluded crisis periods (EXACT CS1)
+                ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
+                          alpha=0.15, color='red', label='GFC (2008-2010)')
+                ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
+                          alpha=0.15, color='orange', label='COVID-19 (2020-2022)')
+                
+                # Plot Iceland data with line breaks at data gaps (EXACT CS1)
+                iceland_data = overall_data_ts[overall_data_ts['GROUP'] == 'Iceland'].sort_values('DATE')
+                if len(iceland_data) > 0:
+                    # Detect gaps in the time series and split into segments
+                    iceland_segments = []
+                    current_segment = []
+                    
+                    dates = iceland_data['DATE'].tolist()
+                    for i, (_, row) in enumerate(iceland_data.iterrows()):
+                        current_segment.append(row)
+                        
+                        # Check if there's a gap to the next date (more than 1 year)
+                        if i < len(dates) - 1:
+                            current_date = dates[i]
+                            next_date = dates[i + 1]
+                            time_gap = (next_date - current_date).days
+                            
+                            # If gap is more than 400 days, end current segment
+                            if time_gap > 400:
+                                iceland_segments.append(pd.DataFrame(current_segment))
+                                current_segment = []
+                    
+                    # Add the final segment
+                    if current_segment:
+                        iceland_segments.append(pd.DataFrame(current_segment))
+                    
+                    # Plot each segment separately to create line breaks
+                    for j, segment in enumerate(iceland_segments):
+                        if len(segment) > 0:
+                            label = 'Iceland' if j == 0 else None
+                            ax.plot(segment['DATE'], segment[col_name], 
+                                   color=colors['Iceland'], label=label, linewidth=2, alpha=0.8)
+                
+                # Plot Small Open Economies with line breaks at data gaps (EXACT CS1)
+                soe_data = overall_data_ts[overall_data_ts['GROUP'] == 'Small Open Economies']
+                if len(soe_data) > 0:
+                    soe_avg = soe_data.groupby('DATE')[col_name].mean().reset_index()
+                    
+                    # Detect gaps and split into segments
+                    soe_segments = []
+                    current_segment = []
+                    
+                    dates = soe_avg['DATE'].tolist()
+                    for i, (_, row) in enumerate(soe_avg.iterrows()):
+                        current_segment.append(row)
+                        
+                        if i < len(dates) - 1:
+                            current_date = dates[i]
+                            next_date = dates[i + 1]
+                            time_gap = (next_date - current_date).days
+                            
+                            if time_gap > 400:
+                                soe_segments.append(pd.DataFrame(current_segment))
+                                current_segment = []
+                    
+                    if current_segment:
+                        soe_segments.append(pd.DataFrame(current_segment))
+                    
+                    # Plot each segment separately
+                    for j, segment in enumerate(soe_segments):
+                        if len(segment) > 0:
+                            label = 'Small Open Economies' if j == 0 else None
+                            ax.plot(segment['DATE'], segment[col_name], 
+                                   color=colors['Small Open Economies'], label=label, linewidth=2, alpha=0.8)
+                
+                ax.set_title(f'{clean_name}', fontweight='bold', fontsize=10, pad=12)
+                ax.set_xlabel('Time', fontsize=9)
+                ax.set_ylabel('% of GDP (annualized)', fontsize=9)
+                ax.tick_params(axis='both', which='major', labelsize=8)
+                ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+                ax.grid(True, alpha=0.3)
+                ax.legend(fontsize=8)
+                
+                plot_count += 1
+        
+        # Hide unused subplots
+        for i in range(plot_count, 4):
+            axes[i].set_visible(False)
+        
+        fig_ts.suptitle('Overall Capital Flows Time Series by Group (Crisis-Excluded)', 
+                       fontweight='bold', fontsize=12)
+        fig_ts.tight_layout()
+        st.pyplot(fig_ts)
         
         # Key insights for crisis-excluded
         st.subheader("🔍 Key Insights (Crisis-Excluded)")
@@ -1231,12 +1508,12 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax1.set_title('Panel A: Distribution of Means (Crisis-Excluded)\\nComparing Iceland and Small Open Economies', 
+    ax1.set_title('Panel A: Distribution of Means (Crisis-Excluded)', 
                   fontweight='bold', fontsize=10, pad=12)
     ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax1.tick_params(axis='both', which='major', labelsize=8)
     ax1.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\\nSmall Open Economies Avg: {mean_soe.mean():.2f}%', 
+    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\nSmall Open Economies Avg: {mean_soe.mean():.2f}%', 
             transform=ax1.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -1249,14 +1526,14 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
-    ax2.set_title('Panel B: Distribution of Volatility (Crisis-Excluded)\\nComparing Iceland and Small Open Economies', 
+    ax2.set_title('Panel B: Distribution of Volatility (Crisis-Excluded)', 
                   fontweight='bold', fontsize=10, pad=12)
     ax2.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
     ax2.tick_params(axis='both', which='major', labelsize=8)
     ax2.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
     
     volatility_ratio = std_iceland.mean() / std_soe.mean() if std_soe.mean() != 0 else float('inf')
-    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\\nSmall Open Economies Avg: {std_soe.mean():.2f}%\\nRatio: {volatility_ratio:.2f}x', 
+    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
             transform=ax2.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -1291,7 +1568,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         ax2_ind.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
         ax2_ind.tick_params(axis='both', which='major', labelsize=8)
         ax2_ind.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\\nSmall Open Economies Avg: {std_soe.mean():.2f}%\\nRatio: {volatility_ratio:.2f}x', 
+        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
                 transform=ax2_ind.transAxes, verticalalignment='top', fontsize=8,
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
         fig2_ind.tight_layout()
@@ -1352,8 +1629,8 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
             box.set_alpha(0.6)
     
-    ax3.set_title('Panel C: Distribution of Means - Iceland vs Individual SOEs (Crisis-Excluded)\n(Ordered by Descending Median Value)', 
-                  fontweight='bold', fontsize=10, pad=10)
+    ax3.set_title('Panel C: Means - Iceland vs Individual SOEs (Crisis-Excluded)', 
+                  fontweight='bold', fontsize=10, pad=15)
     ax3.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax3.tick_params(axis='x', rotation=45, labelsize=8)
     ax3.tick_params(axis='y', labelsize=8)
@@ -1389,8 +1666,8 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
             box.set_alpha(0.6)
     
-    ax4.set_title('Panel D: Distribution of Volatility - Iceland vs Individual SOEs (Crisis-Excluded)\n(Ordered by Descending Median Value)', 
-                  fontweight='bold', fontsize=10, pad=10)
+    ax4.set_title('Panel D: Volatility - Iceland vs Individual SOEs (Crisis-Excluded)', 
+                  fontweight='bold', fontsize=10, pad=15)
     ax4.set_ylabel('Std Dev (% of GDP, annualized)', fontsize=9)
     ax4.tick_params(axis='x', rotation=45, labelsize=8)
     ax4.tick_params(axis='y', labelsize=8)
@@ -1418,66 +1695,174 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         key=f"download_1b_cs3_crisis_{context}"
     )
     
-    # 2. Hypothesis Test Results (Crisis-Excluded)
-    st.header("2. Hypothesis Test Results (Crisis-Excluded)")
+    # 2. Comprehensive Statistical Summary Table (Crisis-Excluded)
+    st.header("2️⃣ Comprehensive Statistical Summary Table (Crisis-Excluded)")
     
-    if test_results is not None and len(test_results) > 0:
-        # Calculate summary statistics
-        total_indicators = len(test_results)
-        iceland_higher_count = test_results['Iceland_Higher_Volatility'].sum()
-        sig_5pct_count = test_results['Significant_5pct'].sum()
-        sig_1pct_count = test_results['Significant_1pct'].sum()
+    st.markdown("**All Indicators - Iceland vs Small Open Economies Statistics (Crisis-Excluded)**")
+    
+    # Create a clean table with one row per indicator (both groups side-by-side)
+    sorted_indicators = sort_indicators_by_type(analysis_indicators)
+    table_data = []
+    for indicator in sorted_indicators:
+        clean_name = indicator.replace('_PGDP', '')
+        nickname = get_nickname(clean_name)
+        indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
         
-        # Summary metrics in columns
-        col1, col2, col3, col4 = st.columns(4)
+        # Get stats for both groups (adapted for CS3)
+        iceland_stats = indicator_stats[indicator_stats['Group'] == 'Iceland'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Iceland']) > 0 else None
+        soe_stats = indicator_stats[indicator_stats['Group'] == 'Small Open Economies'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Small Open Economies']) > 0 else None
         
-        with col1:
-            st.metric("Total Indicators", total_indicators)
-        with col2:
-            st.metric("Iceland More Volatile", f"{iceland_higher_count}/{total_indicators}")
-        with col3:
-            st.metric("Significant at 5%", f"{sig_5pct_count}/{total_indicators}")
-        with col4:
-            st.metric("Significant at 1%", f"{sig_1pct_count}/{total_indicators}")
+        if iceland_stats is not None and soe_stats is not None:
+            table_data.append({
+                'Indicator': nickname,
+                'Iceland Mean': f"{iceland_stats['Mean']:.2f}",
+                'Iceland Std Dev': f"{iceland_stats['Std_Dev']:.2f}",
+                'Iceland CV%': f"{iceland_stats['CV_Percent']:.1f}",
+                'SOE Mean': f"{soe_stats['Mean']:.2f}",
+                'SOE Std Dev': f"{soe_stats['Std_Dev']:.2f}",
+                'SOE CV%': f"{soe_stats['CV_Percent']:.1f}",
+                'CV Ratio (Ice/SOE)': f"{iceland_stats['CV_Percent']/soe_stats['CV_Percent']:.2f}" if soe_stats['CV_Percent'] != 0 else "∞"
+            })
+    
+    # Create DataFrame for processing
+    summary_df = pd.DataFrame(table_data)
+    
+    # Create custom HTML table with strict column width control
+    st.markdown("""
+    <style>
+    .section2-table {
+        width: 100% !important;
+        border-collapse: collapse !important;
+        table-layout: fixed !important;
+        font-size: 8px !important;
+        font-family: Arial, sans-serif !important;
+    }
+    .section2-table th, .section2-table td {
+        border: 1px solid #ddd !important;
+        padding: 2px !important;
+        text-align: center !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+        white-space: nowrap !important;
+    }
+    .section2-table th {
+        background-color: #f0f0f0 !important;
+        font-weight: bold !important;
+        font-size: 9px !important;
+    }
+    .section2-table th:first-child,
+    .section2-table td:first-child {
+        text-align: left !important;
+        width: 25% !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Create HTML table
+    html_table = '<table class="section2-table">'
+    html_table += '<thead><tr>'
+    for col in summary_df.columns:
+        html_table += f'<th>{col}</th>'
+    html_table += '</tr></thead><tbody>'
+    
+    for _, row in summary_df.iterrows():
+        html_table += '<tr>'
+        for col in summary_df.columns:
+            html_table += f'<td>{row[col]}</td>'
+        html_table += '</tr>'
+    
+    html_table += '</tbody></table>'
+    st.markdown(html_table, unsafe_allow_html=True)
+    
+    st.info(f"**Summary (Crisis-Excluded):** Statistics for all {len(analysis_indicators)} capital flow indicators excluding crisis periods. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
+    
+    # 3. Hypothesis Testing Results (Crisis-Excluded)
+    st.header("3️⃣ Hypothesis Testing Results (Crisis-Excluded)")
+    
+    st.markdown("**F-Tests for Variance Equality Between Iceland and Small Open Economies (Crisis-Excluded)** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
+    
+    # Create a clean static table for hypothesis tests
+    display_results = test_results.copy()
+    display_results['F_Statistic'] = display_results['F_Statistic'].round(3)
+    display_results['P_Value'] = display_results['P_Value'].round(4)
+    display_results['Iceland_Std'] = display_results['Iceland_Std'].round(3)
+    display_results['SOE_Std'] = display_results['SOE_Std'].round(3)
+    
+    # Add significance indicators
+    display_results['Significance'] = display_results.apply(
+        lambda row: '***' if row['Significant_1pct'] else ('**' if row['Significant_5pct'] else ''), axis=1
+    )
+    
+    # Create clean indicator names using nicknames
+    display_results['Clean_Indicator'] = display_results['Indicator'].apply(get_nickname)
         
-        # Display results table
-        st.markdown("**📊 Detailed Test Results (Crisis-Excluded)**")
-        
-        # Format the results table for display
-        display_results = test_results.copy()
-        display_results['F_Statistic'] = display_results['F_Statistic'].round(3)
-        display_results['P_Value'] = display_results['P_Value'].round(4)
-        display_results['Iceland_Std'] = display_results['Iceland_Std'].round(3)
-        display_results['SOE_Std'] = display_results['SOE_Std'].round(3)
-        
-        # Add significance indicators
-        display_results['Significance'] = display_results.apply(
-            lambda row: '***' if row['Significant_1pct'] else ('**' if row['Significant_5pct'] else ''), axis=1
-        )
-        
-        # Create clean indicator names using nicknames
-        display_results['Clean_Indicator'] = display_results['Indicator'].apply(get_nickname)
-        
-        # Select columns for display
-        table_columns = ['Clean_Indicator', 'Iceland_Std', 'SOE_Std', 'F_Statistic', 'P_Value', 'Significance']
-        
-        st.dataframe(
-            display_results[table_columns].rename(columns={
-                'Clean_Indicator': 'Indicator',
-                'Iceland_Std': 'Iceland Std Dev',
-                'SOE_Std': 'SOE Std Dev',
-                'F_Statistic': 'F-Statistic',
-                'P_Value': 'P-Value',
-                'Significance': 'Sig.'
-            }),
-            use_container_width=True
-        )
-        
-        # Download test results
-        csv_buffer = io.StringIO()
-        test_results.to_csv(csv_buffer, index=False)
-        
-        st.download_button(
+    # Select columns for display
+    table_columns = ['Clean_Indicator', 'Iceland_Std', 'SOE_Std', 'F_Statistic', 'P_Value', 'Significance']
+    
+    # Create custom HTML table for hypothesis test results
+    st.markdown("""
+    <style>
+    .hypothesis-results-table {
+        width: 100% !important;
+            border-collapse: collapse !important;
+            table-layout: fixed !important;
+            font-size: 9px !important;
+            font-family: Arial, sans-serif !important;
+        }
+        .hypothesis-results-table th, .hypothesis-results-table td {
+            border: 1px solid #ddd !important;
+            padding: 3px !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            text-overflow: ellipsis !important;
+            white-space: nowrap !important;
+        }
+        .hypothesis-results-table th {
+            background-color: #e6f3ff !important;
+            font-weight: bold !important;
+            font-size: 10px !important;
+        }
+        .hypothesis-results-table th:first-child, .hypothesis-results-table td:first-child {
+            width: 250px !important;
+            max-width: 250px !important;
+            text-align: left !important;
+            font-weight: bold !important;
+        }
+        .hypothesis-results-table th:not(:first-child), .hypothesis-results-table td:not(:first-child) {
+            width: 80px !important;
+            max-width: 80px !important;
+        }
+        .hypothesis-results-table tr:nth-child(even) {
+            background-color: #f9f9f9 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+    
+    # Generate HTML table content
+    html_table = '<table class="hypothesis-results-table">'
+    html_table += '<thead><tr>'
+    html_table += '<th>Indicator</th><th>Iceland Std Dev</th><th>SOE Std Dev</th>'
+    html_table += '<th>F-Statistic</th><th>P-Value</th><th>Sig.</th>'
+    html_table += '</tr></thead><tbody>'
+    
+    for _, row in display_results.iterrows():
+        html_table += '<tr>'
+        html_table += f'<td>{row["Clean_Indicator"]}</td>'
+        html_table += f'<td>{row["Iceland_Std"]:.3f}</td>'
+        html_table += f'<td>{row["SOE_Std"]:.3f}</td>'
+        html_table += f'<td>{row["F_Statistic"]:.3f}</td>'
+        html_table += f'<td>{row["P_Value"]:.4f}</td>'
+        html_table += f'<td>{row["Significance"]}</td>'
+        html_table += '</tr>'
+    
+    html_table += '</tbody></table>'
+    st.markdown(html_table, unsafe_allow_html=True)
+    
+    # Download test results
+    csv_buffer = io.StringIO()
+    test_results.to_csv(csv_buffer, index=False)
+    
+    st.download_button(
             label="📥 Download Test Results (CSV)",
             data=csv_buffer.getvalue(),
             file_name=f"cs3_test_results_crisis_excluded.csv",
@@ -1485,15 +1870,10 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             key=f"download_tests_cs3_crisis_{context}"
         )
     
-    # Disaggregated Analysis (Sections 1-6) - Complete implementation
     st.markdown("---")
-    st.header("🔍 Disaggregated Analysis (Sections 1-6) - Crisis-Excluded")
-    st.markdown("*Detailed analysis by individual capital flow indicators (Crisis-Excluded)*")
     
-    # 2. Comprehensive Statistical Summary Table (Crisis-Excluded)
-    st.header("2. Comprehensive Statistical Summary Table (Crisis-Excluded)")
-    
-    st.markdown("**All Indicators - Iceland vs Small Open Economies Statistics (Crisis-Excluded)**")
+    # 4. Time Series Analysis (Crisis-Excluded)
+    st.header("4️⃣ Time Series Analysis (Crisis-Excluded)")
     
     # Create a clean table with one row per indicator (both groups side-by-side)
     sorted_indicators = sort_indicators_by_type(analysis_indicators)
@@ -1543,7 +1923,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     st.info(f"**Summary (Crisis-Excluded):** Statistics for all {len(analysis_indicators)} capital flow indicators excluding crisis periods. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
     
     # 3. Hypothesis Testing Results (Crisis-Excluded)
-    st.header("3. Hypothesis Testing Results (Crisis-Excluded)")
+    st.header("3️⃣ Hypothesis Testing Results (Crisis-Excluded)")
     
     st.markdown("**F-Tests for Variance Equality (Crisis-Excluded Analysis)** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
@@ -1629,8 +2009,135 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     
     st.success(f"**Conclusion (Crisis-Excluded):** {conclusion} other small open economies across capital flow indicators (excluding crisis periods).")
     
-    # 4. Key Findings Summary (Crisis-Excluded)
-    st.header("4. Key Findings Summary (Crisis-Excluded)")
+    st.markdown("---")
+    
+    # 4. Time Series Analysis (Crisis-Excluded)
+    st.header("4️⃣ Time Series Analysis (Crisis-Excluded)")
+    
+    # Create date column for crisis-excluded data
+    final_data_copy = final_data.copy()
+    final_data_copy['Date'] = pd.to_datetime(
+        final_data_copy['YEAR'].astype(str) + 'Q' + final_data_copy['QUARTER'].astype(str)
+    )
+    
+    # Show ALL indicators, sorted properly (EXACT CS1)
+    selected_indicators = sort_indicators_by_type(analysis_indicators)
+    
+    # Create grid layout for time series - 2x2 grid per set (EXACT CS1)
+    n_indicators = len(selected_indicators)
+    
+    # Process indicators in groups of 4 for 2x2 grids (EXACT CS1)
+    for group_idx in range(0, n_indicators, 4):
+        group_indicators = selected_indicators[group_idx:min(group_idx+4, n_indicators)]
+        n_in_group = len(group_indicators)
+        
+        # Create 2x2 subplot for this group
+        fig_ts, axes = plt.subplots(2, 2, figsize=(15, 8))
+        axes = axes.flatten()
+        
+        for idx, indicator in enumerate(group_indicators):
+            ax = axes[idx]
+            
+            clean_name = indicator.replace('_PGDP', '')
+            nickname = get_nickname(clean_name)
+            
+            # Add shaded regions for excluded crisis periods FIRST (EXACT CS1)
+            ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
+                      alpha=0.15, color='red', label='GFC (2008-2010)' if idx == 0 else '')
+            ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
+                      alpha=0.15, color='orange', label='COVID-19 (2020-2022)' if idx == 0 else '')
+            
+            # Plot data with line breaks at gaps (EXACT CS1 implementation)
+            colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+            
+            # Plot Iceland data with line breaks
+            iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland'].sort_values('Date')
+            if len(iceland_data) > 0:
+                # Detect gaps and split into segments
+                iceland_segments = []
+                current_segment = []
+                
+                dates = iceland_data['Date'].tolist()
+                for i, (_, row) in enumerate(iceland_data.iterrows()):
+                    current_segment.append(row)
+                    
+                    if i < len(dates) - 1:
+                        current_date = dates[i]
+                        next_date = dates[i + 1]
+                        time_gap = (next_date - current_date).days
+                        
+                        if time_gap > 400:  # Gap indicating crisis period
+                            iceland_segments.append(pd.DataFrame(current_segment))
+                            current_segment = []
+                
+                if current_segment:
+                    iceland_segments.append(pd.DataFrame(current_segment))
+                
+                # Plot each segment separately
+                for j, segment in enumerate(iceland_segments):
+                    if len(segment) > 0:
+                        label = 'Iceland' if j == 0 else None
+                        ax.plot(segment['Date'], segment[indicator], 
+                               color=colors['Iceland'], label=label, linewidth=2, alpha=0.8)
+            
+            # Plot Small Open Economies data with line breaks
+            soe_data = final_data_copy[final_data_copy['GROUP'] == 'Small Open Economies']
+            if len(soe_data) > 0:
+                soe_avg = soe_data.groupby('Date')[indicator].mean().reset_index()
+                soe_avg = soe_avg.sort_values('Date')
+                
+                # Detect gaps and split into segments
+                soe_segments = []
+                current_segment = []
+                
+                dates = soe_avg['Date'].tolist()
+                for i, (_, row) in enumerate(soe_avg.iterrows()):
+                    current_segment.append(row)
+                    
+                    if i < len(dates) - 1:
+                        current_date = dates[i]
+                        next_date = dates[i + 1]
+                        time_gap = (next_date - current_date).days
+                        
+                        if time_gap > 400:
+                            soe_segments.append(pd.DataFrame(current_segment))
+                            current_segment = []
+                
+                if current_segment:
+                    soe_segments.append(pd.DataFrame(current_segment))
+                
+                # Plot each segment separately
+                for j, segment in enumerate(soe_segments):
+                    if len(segment) > 0:
+                        label = 'Small Open Economies' if j == 0 else None
+                        ax.plot(segment['Date'], segment[indicator], 
+                               color=colors['Small Open Economies'], label=label, linewidth=2, alpha=0.8)
+            
+            ax.set_title(f'{nickname}', fontweight='bold', fontsize=9, pad=12)
+            ax.set_xlabel('Time', fontsize=8)
+            ax.set_ylabel('% of GDP', fontsize=8)
+            ax.tick_params(axis='both', which='major', labelsize=7)
+            ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
+            ax.grid(True, alpha=0.3)
+            
+            if idx == 0:  # Only show legend on first plot
+                ax.legend(fontsize=7, loc='upper right')
+        
+        # Hide unused subplots in this group (EXACT CS1)
+        for i in range(n_in_group, 4):
+            axes[i].set_visible(False)
+        
+        fig_ts.suptitle(f'Capital Flow Time Series - Group {group_idx//4 + 1} (Crisis-Excluded)', 
+                       fontweight='bold', fontsize=12)
+        fig_ts.tight_layout()
+        st.pyplot(fig_ts)
+    
+    st.info("**Note:** Red shaded areas indicate crisis periods (2008-2010 GFC, 2020-2022 COVID-19) that are excluded from the crisis-excluded analysis. Time series shows patterns during normal market conditions.")
+    
+    st.markdown("---")
+    
+    # 5. Key Findings Summary (Crisis-Excluded)
+    st.header("5️⃣ Key Findings Summary (Crisis-Excluded)")
     
     col1, col2 = st.columns(2)
     
@@ -1654,7 +2161,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     
     # Download section (Crisis-Excluded)
     st.markdown("---")
-    st.header("5. Download Results (Crisis-Excluded)")
+    st.header("6️⃣ Download Results (Crisis-Excluded)")
     
     col1, col2, col3, col4 = st.columns(4)
     
