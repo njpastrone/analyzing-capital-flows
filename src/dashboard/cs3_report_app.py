@@ -235,7 +235,7 @@ def case_study_3_main(context="standalone"):
         st.stop()
     
     # Data overview
-    st.success("✅ CS3 data loaded successfully!")
+    st.success("✅ Data loaded successfully!")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -479,7 +479,7 @@ def case_study_3_main(context="standalone"):
     test_results = perform_volatility_tests(final_data, analysis_indicators)
     
     # 1. Summary Statistics and Boxplots
-    st.header("1️⃣ Summary Statistics and Boxplots")
+    st.header("1. Summary Statistics and Boxplots")
     
     # Create side-by-side boxplots for compact layout (matching CS1)
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
@@ -572,7 +572,7 @@ def case_study_3_main(context="standalone"):
         )
     
     # 2. Hypothesis Test Results
-    st.header("2️⃣ Hypothesis Test Results")
+    st.header("2. Hypothesis Test Results")
     
     if test_results is not None and len(test_results) > 0:
         # Calculate summary statistics
@@ -684,6 +684,8 @@ def case_study_3_main(context="standalone"):
         mime="text/csv",
         key=f"download_tests_cs3_full_{context}"
     )
+    
+    st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than Small Open Economies on average")
     
     # 1b. Individual Country Comparisons
     st.subheader("1b. Individual Country Comparisons: Iceland vs Each Small Open Economy")
@@ -904,7 +906,7 @@ def case_study_3_main(context="standalone"):
     st.info(f"**Summary:** Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
     
     # 3. Hypothesis Testing Results
-    st.header("3️⃣ Hypothesis Testing Results")
+    st.header("3. Hypothesis Testing Results")
     
     st.markdown("**F-Tests for Variance Equality Between Iceland and Small Open Economies** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
@@ -1045,7 +1047,7 @@ def case_study_3_main(context="standalone"):
     st.markdown("---")
     
     # 4. Time Series Visualization
-    st.header("4️⃣ Time Series Analysis")
+    st.header("4. Time Series Analysis")
     
     # Create date column
     final_data_copy = final_data.copy()
@@ -1131,7 +1133,7 @@ def case_study_3_main(context="standalone"):
     st.markdown("---")
     
     # 5. Key Findings Summary
-    st.header("5️⃣ Key Findings Summary")
+    st.header("5. Key Findings Summary")
     
     col1, col2 = st.columns(2)
     
@@ -1155,7 +1157,7 @@ def case_study_3_main(context="standalone"):
     
     # Download section
     st.markdown("---")
-    st.header("6️⃣ Download Results")
+    st.header("6. Download Results")
     
     col1, col2, col3, col4 = st.columns(4)
     
@@ -1213,7 +1215,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         st.stop()
     
     # Data overview
-    st.success("✅ CS3 crisis-excluded data loaded successfully!")
+    st.success(f"✅ Crisis-excluded data loaded successfully! ({metadata['study_version']})")
     
     col1, col2, col3, col4 = st.columns(4)
     with col1:
@@ -1586,6 +1588,8 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             key=f"download_stddev_cs3_crisis_{context}"
         )
     
+    st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than Small Open Economies on average (excluding crisis periods)")
+    
     # 1b. Individual Country Comparisons (Crisis-Excluded)
     st.subheader("1b. Individual Country Comparisons: Iceland vs Each Small Open Economy (Crisis-Excluded)")
     
@@ -1696,7 +1700,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     )
     
     # 2. Comprehensive Statistical Summary Table (Crisis-Excluded)
-    st.header("2️⃣ Comprehensive Statistical Summary Table (Crisis-Excluded)")
+    st.header("2. Comprehensive Statistical Summary Table (Crisis-Excluded)")
     
     st.markdown("**All Indicators - Iceland vs Small Open Economies Statistics (Crisis-Excluded)**")
     
@@ -1774,10 +1778,10 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     html_table += '</tbody></table>'
     st.markdown(html_table, unsafe_allow_html=True)
     
-    st.info(f"**Summary (Crisis-Excluded):** Statistics for all {len(analysis_indicators)} capital flow indicators excluding crisis periods. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
+    st.info(f"**Summary (Crisis-Excluded):** Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
     
     # 3. Hypothesis Testing Results (Crisis-Excluded)
-    st.header("3️⃣ Hypothesis Testing Results (Crisis-Excluded)")
+    st.header("3. Hypothesis Testing Results (Crisis-Excluded)")
     
     st.markdown("**F-Tests for Variance Equality Between Iceland and Small Open Economies (Crisis-Excluded)** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
@@ -1873,7 +1877,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     st.markdown("---")
     
     # 4. Time Series Analysis (Crisis-Excluded)
-    st.header("4️⃣ Time Series Analysis (Crisis-Excluded)")
+    st.header("4. Time Series Analysis (Crisis-Excluded)")
     
     # Create date column for crisis-excluded data
     final_data_copy = final_data.copy()
@@ -2010,7 +2014,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
         sig_1pct_count = 0
     
     # 5. Key Findings Summary (Crisis-Excluded)
-    st.header("5️⃣ Key Findings Summary (Crisis-Excluded)")
+    st.header("5. Key Findings Summary (Crisis-Excluded)")
     
     col1, col2 = st.columns(2)
     
@@ -2034,7 +2038,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     
     # Download section (Crisis-Excluded)
     st.markdown("---")
-    st.header("6️⃣ Download Results (Crisis-Excluded)")
+    st.header("6. Download Results (Crisis-Excluded)")
     
     col1, col2, col3, col4 = st.columns(4)
     

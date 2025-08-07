@@ -997,6 +997,8 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
     
     st.markdown(f"**{selected_display_country} - Pre-Euro vs Post-Euro Statistics{' (Crisis-Excluded)' if not include_crisis_years else ''}**")
     
+    st.info(f"**Summary:** Statistics for all {len(analysis_indicators)} capital flow indicators. CV% = Coefficient of Variation (Std Dev / |Mean| × 100). Higher CV% indicates greater volatility relative to mean.")
+    
     # Create side-by-side comparison table
     table_data = []
     for indicator in sorted_indicators:
@@ -2089,7 +2091,12 @@ def main():
     **Countries:** Estonia (2011), Latvia (2014), Lithuania (2015)
     """)
     
-    # Study version selector
+    # Main Analysis Section Header (matching CS1 template)
+    st.markdown("---")
+    st.header("📊 Full Time Period Analysis")
+    st.markdown("*Complete temporal analysis using all available data or crisis-excluded periods*")
+    
+    # Study version selector  
     st.markdown("---")
     st.subheader("📊 Study Configuration")
     
@@ -2225,7 +2232,10 @@ def main():
     - **Post-Euro Period:** {post_period[0]} to {post_period[1]} (includes adoption year {country_info['adoption_year']})
     """)
     
-    # Detailed analysis sections are handled by the optimized functions below
+    # Detailed analysis sections - call the comprehensive analysis
+    st.markdown("---")
+    st.subheader("🔍 Indicator-level Analysis") 
+    case_study_2_detailed_analysis(selected_country, selected_display_country, include_crisis_years, session_id)
     
 if __name__ == "__main__":
     main()
