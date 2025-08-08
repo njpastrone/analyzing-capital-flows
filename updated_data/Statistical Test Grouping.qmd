@@ -48,25 +48,15 @@ clean_cap_flows |>
 
 ### Create Groupings for Statistical Tests
 
-#### Establish Groups
+#### Establish Country Groups
 
 ```{r}
-clean_cap_flows |> 
-  distinct(COUNTRY)
-```
+eurozone_countries <- c("Portugal","Ireland","Finland","Netherlands, The",
+                        "Belgium","Italy","Spain","Austria","France")
+soe_countries <- c("Brunei Darussalam","Bahamas, The","Bermuda","Seychelles",
+                   "Aruba, Kingdom of the Netherlands","Mauritius","Malta")
+baltics_countries <- c("Estonia, Republic of","Latvia, Republic of","Lithuania, Republic of")
 
-#### Country Groups (for reference)
-
-```{r}
-eurozone <- c("Austria", "Belgium", "Finland", "France", "Germany", "Ireland", "Italy", "Netherlands, The", "Portugal", "Spain")
-soe_comparators <- c(
-    "Brunei Darussalam","Bahamas, The",				
-    "Bermuda",				
-    "Seychelles",				
-    "Aruba, Kingdom of the Netherlands",			
-    "Mauritius",			
-    "Malta")
-baltics <- c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of")
 ```
 
 #### Net Direct Investment
@@ -75,15 +65,16 @@ baltics <- c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic
 clean_cap_flows |> 
   select(COUNTRY, YEAR, QUARTER, UNIT, net_direct_investment_pgdp) |> 
   pivot_wider(names_from = COUNTRY, values_from = net_direct_investment_pgdp) |> 
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), 0))) |> 
-  rowwise() |> 
+  rowwise() |>
   mutate(
-    eurozone_sum = sum(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    eurozone_avg = mean(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    soe_sum = sum(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    soe_avg = mean(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    baltics_sum = sum(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of"))),
-    baltics_avg = mean(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of")))    
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
   ) |> 
   ungroup() |> 
   select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_direct_investment_full
@@ -110,16 +101,17 @@ net_direct_investment_full |>
 clean_cap_flows |> 
   select(COUNTRY, YEAR, QUARTER, UNIT, net_portfolio_investment_pgdp) |> 
   pivot_wider(names_from = COUNTRY, values_from = net_portfolio_investment_pgdp) |> 
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), 0))) |> 
-  rowwise() |> 
+  rowwise() |>
   mutate(
-    eurozone_sum = sum(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    eurozone_avg = mean(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    soe_sum = sum(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    soe_avg = mean(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    baltics_sum = sum(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of"))),
-    baltics_avg = mean(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of")))    
-  ) |> 
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |>
   ungroup() |> 
   select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_portfolio_investment_full
 ```
@@ -140,16 +132,17 @@ net_portfolio_investment_full |>
 clean_cap_flows |> 
   select(COUNTRY, YEAR, QUARTER, UNIT, net_other_investment_pgdp) |> 
   pivot_wider(names_from = COUNTRY, values_from = net_other_investment_pgdp) |> 
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), 0))) |> 
-  rowwise() |> 
+  rowwise() |>
   mutate(
-    eurozone_sum = sum(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    eurozone_avg = mean(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    soe_sum = sum(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    soe_avg = mean(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    baltics_sum = sum(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of"))),
-    baltics_avg = mean(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of")))    
-  ) |> 
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |>
   ungroup() |> 
   select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_other_investment_full
 ```
@@ -170,16 +163,17 @@ net_other_investment_full |>
 clean_cap_flows |> 
   select(COUNTRY, YEAR, QUARTER, UNIT, net_capital_flows_pgdp) |> 
   pivot_wider(names_from = COUNTRY, values_from = net_capital_flows_pgdp) |> 
-  mutate(across(where(is.numeric), ~ replace(., is.na(.), 0))) |> 
-  rowwise() |> 
+  rowwise() |>
   mutate(
-    eurozone_sum = sum(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    eurozone_avg = mean(c_across(c(Portugal, Ireland, Finland, `Netherlands, The`, Belgium, Italy, Spain, Austria, France))),
-    soe_sum = sum(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    soe_avg = mean(c_across(c("Brunei Darussalam","Bahamas, The", "Bermuda", "Seychelles", "Aruba, Kingdom of the Netherlands", "Mauritius", "Malta"))),
-    baltics_sum = sum(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of"))),
-    baltics_avg = mean(c_across(c("Estonia, Republic of", "Latvia, Republic of", "Lithuania, Republic of")))    
-  ) |> 
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |>
   ungroup() |> 
   select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_capital_flows_full
 ```
