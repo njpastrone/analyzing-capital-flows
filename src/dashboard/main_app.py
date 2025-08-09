@@ -3842,12 +3842,14 @@ def show_case_study_2_lithuania_restructured():
     show_lithuania_indicator_analysis(include_crisis_years=False)
 
 def show_case_study_4_restructured():
-    """Display Case Study 4 - Comprehensive Statistical Analysis integrated into main dashboard"""
+    """Display Case Study 4 - Comprehensive Statistical Analysis with new indicator-specific format"""
     st.info("📊 **Case Study 4: Comprehensive Statistical Analysis - Iceland vs Multiple Comparator Groups**")
+    st.markdown("**New Format:** Indicator-specific sections with integrated Full Period and Crisis-Excluded results")
     st.markdown("**Analysis Framework:** F-tests, AR(4) models, and RMSE prediction using systematic statistical methodologies.")
     
-    # Call the main CS4 application 
-    case_study_4_main()
+    # Call the new integrated CS4 analysis function
+    from cs4_report_app import run_cs4_integrated_analysis
+    run_cs4_integrated_analysis()
 
 # Country-specific analysis functions
 def show_estonia_overall_analysis(include_crisis_years=True):

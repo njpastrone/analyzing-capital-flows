@@ -144,195 +144,362 @@ def display_methodology_section():
             """)
 
 
-def run_cs4_analysis(include_crisis_years: bool = True):
-    """Run CS4 analysis and display results"""
+def run_cs4_integrated_analysis():
+    """Run CS4 analysis and display results organized by indicator with integrated Full/Crisis-Excluded results"""
     
     # Initialize analysis framework
     framework = CS4AnalysisFramework()
     
-    # Run analysis with loading indicator
-    with st.spinner(f"Running comprehensive statistical analysis ({'Full Period' if include_crisis_years else 'Crisis-Excluded'})..."):
-        results = framework.run_comprehensive_analysis(include_crisis_years)
+    # Run both analyses with loading indicator
+    with st.spinner("Running comprehensive statistical analysis for both Full Period and Crisis-Excluded..."):
+        full_results = framework.run_comprehensive_analysis(include_crisis_years=True)
+        crisis_results = framework.run_comprehensive_analysis(include_crisis_years=False)
     
-    if not results or 'summary_tables' not in results:
+    if not full_results or 'summary_tables' not in full_results or not crisis_results or 'summary_tables' not in crisis_results:
         st.error("❌ Analysis failed. Please check data availability.")
         return
-    
-    # Extract summary tables
-    tables = results['summary_tables']
     
     # Display header metrics
     col1, col2, col3, col4 = st.columns(4)
     
     with col1:
-        st.metric("Indicators Analyzed", len(results['metadata']['indicators_analyzed']))
+        st.metric("Indicators Analyzed", len(full_results['metadata']['indicators_analyzed']))
     with col2:
-        st.metric("Comparator Groups", len(results['metadata']['comparator_groups']))
+        st.metric("Comparator Groups", len(full_results['metadata']['comparator_groups']))
     with col3:
-        n_obs = 105 if include_crisis_years else 81
-        st.metric("Observations", n_obs)
+        st.metric("Full Period Observations", "105")
     with col4:
-        time_range = "1999-2025" if include_crisis_years else "Excl. 2008-10, 2020-22"
-        st.metric("Time Period", time_range)
+        st.metric("Crisis-Excluded Observations", "81")
     
-    # Table 1: Standard Deviations with F-test Significance
+    # Get indicators
+    indicators = full_results['metadata']['indicators_analyzed']
+    
+    # Process and display each indicator
+    for indicator in indicators:
+        display_indicator_section(indicator, full_results, crisis_results)
+    
+    # Summary insights and comprehensive export
+    display_summary_insights_and_export(full_results, crisis_results)
+
+
+def display_indicator_section(indicator, full_results, crisis_results):
+    """Display comprehensive analysis section for a specific indicator"""
+    
     st.markdown("---")
-    st.header("📊 Table 1: Standard Deviations & F-Test Results")
+    st.header(f"📊 {indicator}")
+    st.markdown(f"**Comprehensive statistical analysis for {indicator} flows**")
     
-    std_table = tables['standard_deviations_ftest']
+    # 1. Standard Deviations & F-Test Results
+    st.subheader("🎯 Standard Deviations & F-Test Results")
     
-    # Format for better display
-    styled_std = std_table.style.set_properties(**{
-        'text-align': 'center',
-        'font-size': '12px'
-    }).set_table_styles([
-        {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold')]},
-        {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]}
-    ])
+    std_table = create_integrated_table(
+        indicator, 
+        full_results['summary_tables']['standard_deviations_ftest'], 
+        crisis_results['summary_tables']['standard_deviations_ftest'],
+        'std'
+    )
     
-    st.dataframe(styled_std, use_container_width=True)
+    display_styled_table(std_table, 'std')
     
-    # Add interpretation
     st.info("""
     **Interpretation:** Values show standard deviations (volatility). Stars indicate statistically significant 
     differences from Iceland using F-tests. More stars = stronger evidence of volatility differences.
     """)
     
-    # Download button for Table 1
-    csv1 = std_table.to_csv(index=False)
+    # Download button for std table
+    csv_std = std_table.to_csv(index=True)
     st.download_button(
-        label="📥 Download Standard Deviations Table (CSV)",
-        data=csv1,
-        file_name=f"cs4_std_deviations_{'full' if include_crisis_years else 'crisis_excluded'}.csv",
+        label=f"📥 Download {indicator} - Standard Deviations (CSV)",
+        data=csv_std,
+        file_name=f"cs4_{indicator.replace(' ', '_').lower()}_std_deviations.csv",
         mime="text/csv"
     )
     
-    # Table 2: Half-Life from AR(4) Analysis
-    st.markdown("---")
-    st.header("⏱️ Table 2: Half-Life from AR(4) Models")
+    # Placeholder for data visualizations
+    with st.expander("📈 Data Visualizations (Coming Soon)", expanded=False):
+        st.markdown("""
+        **Planned Visualizations:**
+        - Time series plots comparing Full vs Crisis-Excluded periods
+        - Volatility comparison charts across groups
+        - Statistical significance heatmaps
+        """)
     
-    halflife_table = tables['half_life_ar4']
+    # 2. Half-Life from AR(4) Analysis
+    st.subheader("⏱️ Half-Life from AR(4) Models")
     
-    # Color-code half-life values
-    def color_halflife(val):
-        if val == 'N/A':
-            return 'color: gray'
-        try:
-            v = int(val)
-            if v <= 1:
-                return 'background-color: #d4edda; color: #155724'  # Green for fast reversion
-            elif v <= 3:
-                return 'background-color: #fff3cd; color: #856404'  # Yellow for moderate
-            else:
-                return 'background-color: #f8d7da; color: #721c24'  # Red for slow
-        except:
-            return ''
+    halflife_table = create_integrated_table(
+        indicator,
+        full_results['summary_tables']['half_life_ar4'],
+        crisis_results['summary_tables']['half_life_ar4'], 
+        'halflife'
+    )
     
-    styled_hl = halflife_table.style.applymap(color_halflife, subset=halflife_table.columns[1:])
-    st.dataframe(styled_hl, use_container_width=True)
+    display_styled_table(halflife_table, 'halflife')
     
     st.info("""
     **Interpretation:** Half-life indicates persistence of shocks (in quarters). Lower values (green) indicate 
     faster mean reversion. Most financial flows show 1-3 quarter half-lives, consistent with market efficiency.
     """)
     
-    # Download button for Table 2
-    csv2 = halflife_table.to_csv(index=False)
+    # Download button for half-life table
+    csv_halflife = halflife_table.to_csv(index=True)
     st.download_button(
-        label="📥 Download Half-Life Table (CSV)",
-        data=csv2,
-        file_name=f"cs4_halflife_{'full' if include_crisis_years else 'crisis_excluded'}.csv",
+        label=f"📥 Download {indicator} - Half-Life (CSV)",
+        data=csv_halflife,
+        file_name=f"cs4_{indicator.replace(' ', '_').lower()}_halflife.csv",
         mime="text/csv"
     )
     
-    # Table 3: RMSE Prediction Accuracy
-    st.markdown("---")
-    st.header("📈 Table 3: RMSE Prediction Accuracy")
+    # Placeholder for data visualizations
+    with st.expander("📊 Impulse Response Visualizations (Coming Soon)", expanded=False):
+        st.markdown("""
+        **Planned Visualizations:**
+        - AR(4) impulse response function plots
+        - Half-life comparison charts
+        - Model diagnostic plots
+        """)
     
-    rmse_table = tables['rmse_prediction']
+    # 3. RMSE Prediction Accuracy
+    st.subheader("📈 RMSE Prediction Accuracy")
     
-    # Format RMSE values
-    def format_rmse(val):
-        if val == 'N/A':
-            return val
-        try:
-            return f"{float(val):.2f}"
-        except:
-            return val
+    rmse_table = create_integrated_table(
+        indicator,
+        full_results['summary_tables']['rmse_prediction'],
+        crisis_results['summary_tables']['rmse_prediction'],
+        'rmse'
+    )
     
-    rmse_display = rmse_table.copy()
-    for col in rmse_display.columns[1:]:
-        rmse_display[col] = rmse_display[col].apply(format_rmse)
-    
-    st.dataframe(rmse_display, use_container_width=True)
+    display_styled_table(rmse_table, 'rmse')
     
     st.info("""
     **Interpretation:** RMSE measures prediction error for 4-quarter ahead forecasts. Lower values indicate 
     better predictability. Compare across groups to assess relative forecast difficulty.
     """)
     
-    # Download button for Table 3
-    csv3 = rmse_table.to_csv(index=False)
+    # Download button for RMSE table
+    csv_rmse = rmse_table.to_csv(index=True)
     st.download_button(
-        label="📥 Download RMSE Table (CSV)",
-        data=csv3,
-        file_name=f"cs4_rmse_{'full' if include_crisis_years else 'crisis_excluded'}.csv",
+        label=f"📥 Download {indicator} - RMSE (CSV)",
+        data=csv_rmse,
+        file_name=f"cs4_{indicator.replace(' ', '_').lower()}_rmse.csv",
         mime="text/csv"
     )
     
-    # Summary insights
+    # Placeholder for data visualizations
+    with st.expander("🎯 Prediction Accuracy Visualizations (Coming Soon)", expanded=False):
+        st.markdown("""
+        **Planned Visualizations:**
+        - Prediction accuracy comparison charts
+        - Forecast vs actual plots
+        - Model performance metrics
+        """)
+
+
+def create_integrated_table(indicator, full_table, crisis_table, table_type):
+    """Create integrated table with Full Period and Crisis-Excluded rows"""
+    
+    # Find the row for this indicator in both tables
+    full_row = full_table[full_table['Indicator'] == indicator].iloc[0] if len(full_table[full_table['Indicator'] == indicator]) > 0 else None
+    crisis_row = crisis_table[crisis_table['Indicator'] == indicator].iloc[0] if len(crisis_table[crisis_table['Indicator'] == indicator]) > 0 else None
+    
+    if full_row is None or crisis_row is None:
+        st.error(f"Data not found for {indicator}")
+        return pd.DataFrame()
+    
+    # Get column names (excluding 'Indicator')
+    columns = [col for col in full_table.columns if col != 'Indicator']
+    
+    # Create integrated table
+    data = {
+        'Time Period': ['Full Time Period', 'Crisis-Excluded']
+    }
+    
+    # Add data for each column
+    for col in columns:
+        data[col] = [full_row[col], crisis_row[col]]
+    
+    integrated_df = pd.DataFrame(data)
+    integrated_df.set_index('Time Period', inplace=True)
+    
+    return integrated_df
+
+
+def display_styled_table(df, table_type):
+    """Display table with appropriate styling based on type"""
+    
+    if table_type == 'std':
+        # Standard deviations with F-test significance
+        styled_table = df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '12px'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold')]},
+            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]}
+        ])
+        
+    elif table_type == 'halflife':
+        # Color-code half-life values
+        def color_halflife(val):
+            if val == 'N/A':
+                return 'color: gray'
+            try:
+                v = int(val)
+                if v <= 1:
+                    return 'background-color: #d4edda; color: #155724'  # Green for fast reversion
+                elif v <= 3:
+                    return 'background-color: #fff3cd; color: #856404'  # Yellow for moderate
+                else:
+                    return 'background-color: #f8d7da; color: #721c24'  # Red for slow
+            except:
+                return ''
+        
+        styled_table = df.style.applymap(color_halflife, subset=df.columns)
+        
+    elif table_type == 'rmse':
+        # Format RMSE values
+        def format_rmse(val):
+            if val == 'N/A':
+                return val
+            try:
+                return f"{float(val):.2f}"
+            except:
+                return val
+        
+        formatted_df = df.copy()
+        for col in formatted_df.columns:
+            formatted_df[col] = formatted_df[col].apply(format_rmse)
+        
+        styled_table = formatted_df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '12px'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold')]},
+            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]}
+        ])
+    
+    else:
+        styled_table = df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '12px'
+        })
+    
+    st.dataframe(styled_table, use_container_width=True)
+
+
+def display_summary_insights_and_export(full_results, crisis_results):
+    """Display summary insights and comprehensive export functionality"""
+    
     st.markdown("---")
-    st.header("🔍 Key Insights")
+    st.header("🔍 Summary Insights & Comprehensive Export")
     
     col1, col2 = st.columns(2)
     
     with col1:
         st.markdown("""
-        ### Volatility Patterns (F-Tests)
-        - Iceland shows significantly different volatility from most comparator groups
-        - Strongest differences with aggregated measures (sum indicators)
-        - More similar to individual country averages (avg indicators)
+        ### 📊 Key Findings Across Indicators
+        - **Volatility Patterns:** Iceland shows systematically different volatility compared to most comparator groups
+        - **F-Test Results:** Strongest statistical differences observed with aggregated measures (sum indicators)  
+        - **Crisis Impact:** Crisis exclusion generally reduces volatility measures across all groups
+        - **Consistency:** Patterns remain consistent across different capital flow types
         """)
     
     with col2:
         st.markdown("""
-        ### Persistence & Predictability
-        - Half-lives predominantly 1 quarter → Low persistence
-        - Consistent with efficient market hypothesis
-        - RMSE varies by indicator and aggregation method
+        ### ⏱️ Temporal Dynamics
+        - **Half-Life Patterns:** Most indicators show 1-2 quarter half-lives, consistent with efficient markets
+        - **Persistence:** Low persistence suggests rapid adjustment to equilibrium
+        - **Predictability:** RMSE varies significantly across indicators and groups
+        - **Model Performance:** AR(4) models generally provide reasonable fit for most series
         """)
     
-    # Export all tables as single Excel file
-    st.markdown("---")
-    st.header("📁 Export All Results")
+    # Comprehensive Excel Export
+    st.subheader("📁 Complete Analysis Export")
+    st.markdown("Download all results in a comprehensive Excel workbook with separate sheets for each indicator and analysis type.")
     
-    # Create Excel writer object
+    # Create comprehensive Excel export
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        std_table.to_excel(writer, sheet_name='Standard Deviations', index=False)
-        halflife_table.to_excel(writer, sheet_name='Half-Life', index=False)
-        rmse_table.to_excel(writer, sheet_name='RMSE', index=False)
+        
+        # Get indicators
+        indicators = full_results['metadata']['indicators_analyzed']
+        
+        for indicator in indicators:
+            # Create integrated tables for each indicator
+            std_table = create_integrated_table(
+                indicator,
+                full_results['summary_tables']['standard_deviations_ftest'],
+                crisis_results['summary_tables']['standard_deviations_ftest'],
+                'std'
+            )
+            
+            halflife_table = create_integrated_table(
+                indicator,
+                full_results['summary_tables']['half_life_ar4'],
+                crisis_results['summary_tables']['half_life_ar4'],
+                'halflife'
+            )
+            
+            rmse_table = create_integrated_table(
+                indicator,
+                full_results['summary_tables']['rmse_prediction'],
+                crisis_results['summary_tables']['rmse_prediction'],
+                'rmse'
+            )
+            
+            # Clean indicator name for sheet names
+            clean_name = indicator.replace(' ', '_').replace('(', '').replace(')', '')
+            
+            # Export to Excel with different sheets per indicator
+            if not std_table.empty:
+                std_table.to_excel(writer, sheet_name=f'{clean_name[:25]}_Std', index=True)
+            if not halflife_table.empty:
+                halflife_table.to_excel(writer, sheet_name=f'{clean_name[:20]}_HalfLife', index=True)
+            if not rmse_table.empty:
+                rmse_table.to_excel(writer, sheet_name=f'{clean_name[:25]}_RMSE', index=True)
         
         # Add metadata sheet
         metadata_df = pd.DataFrame({
-            'Parameter': ['Analysis Type', 'Include Crisis Years', 'Time Range', 'Observations'],
+            'Parameter': [
+                'Analysis Type', 'Full Period Observations', 'Crisis-Excluded Observations',
+                'Time Range (Full)', 'Time Range (Crisis-Excluded)', 'Indicators Analyzed',
+                'Comparator Groups', 'Statistical Methods', 'Export Date'
+            ],
             'Value': [
-                'Full Period' if include_crisis_years else 'Crisis-Excluded',
-                'Yes' if include_crisis_years else 'No',
-                '1999-2025' if include_crisis_years else 'Excl. 2008-10, 2020-22',
-                '105' if include_crisis_years else '81'
+                'Integrated Full Period and Crisis-Excluded Analysis',
+                '105', '81',
+                '1999 Q1 - 2025 Q1', 'Excluding 2008-2010 (GFC) and 2020-2022 (COVID-19)',
+                ', '.join(indicators),
+                ', '.join(full_results['metadata']['comparator_groups']),
+                'F-tests, AR(4) models, RMSE prediction',
+                pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
             ]
         })
-        metadata_df.to_excel(writer, sheet_name='Metadata', index=False)
+        metadata_df.to_excel(writer, sheet_name='Analysis_Metadata', index=False)
     
     excel_data = output.getvalue()
     
     st.download_button(
-        label="📥 Download Complete Excel Report",
+        label="📥 Download Complete CS4 Analysis (Excel)",
         data=excel_data,
-        file_name=f"cs4_complete_analysis_{'full' if include_crisis_years else 'crisis_excluded'}.xlsx",
+        file_name=f"cs4_comprehensive_analysis_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
+    
+    # Analysis summary statistics
+    with st.expander("📈 Analysis Summary Statistics", expanded=False):
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            st.metric("Total Indicators", len(indicators))
+            st.metric("Total Comparisons", len(indicators) * len(full_results['metadata']['comparator_groups']))
+        
+        with col2:
+            st.metric("Full Period Observations", "105") 
+            st.metric("Crisis-Excluded Observations", "81")
+        
+        with col3:
+            st.metric("Statistical Tests per Comparison", "3")
+            st.metric("Total Statistical Results", len(indicators) * len(full_results['metadata']['comparator_groups']) * 3 * 2)
 
 
 def main():
@@ -345,23 +512,16 @@ def main():
     statistical analysis comparing Iceland with multiple comparator groups.
     """)
     
-    # Sidebar configuration
-    st.sidebar.title("⚙️ Analysis Configuration")
+    # Sidebar information (removed toggle interface)
+    st.sidebar.title("⚙️ Analysis Overview")
     
-    # Time period selection
-    analysis_type = st.sidebar.radio(
-        "Select Time Period:",
-        ["Full Time Period", "Crisis-Excluded"],
-        help="Full Period includes all data (1999-2025). Crisis-Excluded removes GFC (2008-2010) and COVID-19 (2020-2022)."
-    )
-    
-    include_crisis_years = (analysis_type == "Full Time Period")
-    
-    # Display period info
-    if include_crisis_years:
-        st.sidebar.info("📅 **Full Period:** 1999-2025 (105 observations)")
-    else:
-        st.sidebar.warning("🚫 **Crisis-Excluded:** Excludes 2008-2010 (GFC) and 2020-2022 (COVID-19) - 81 observations")
+    # Analysis info  
+    st.sidebar.info("📊 **Integrated Analysis:** Both Full Period and Crisis-Excluded results displayed together")
+    st.sidebar.markdown("""
+    **Time Periods:**
+    - **Full Period:** 1999-2025 (105 observations)
+    - **Crisis-Excluded:** Excludes 2008-2010 (GFC) and 2020-2022 (COVID-19) - 81 observations
+    """)
     
     # Comparator groups info
     st.sidebar.markdown("---")
@@ -385,8 +545,8 @@ def main():
     tab1, tab2, tab3 = st.tabs(["📊 Statistical Analysis", "📚 Methodology", "📖 About"])
     
     with tab1:
-        # Run analysis based on selection
-        run_cs4_analysis(include_crisis_years)
+        # Run integrated analysis (no toggle needed)
+        run_cs4_integrated_analysis()
     
     with tab2:
         st.header("📚 Detailed Methodology")
