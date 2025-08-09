@@ -18,6 +18,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 # Import case study modules
 from simple_report_app import main as case_study_1_main
 from case_study_2_euro_adoption import main as case_study_2_main
+from cs4_report_app import main as case_study_4_main
 
 def main():
     """Main multi-tab application for capital flows research"""
@@ -35,7 +36,7 @@ def main():
     st.markdown("### Comprehensive Analysis of International Capital Flow Volatility")
     
     # Create tabs
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs([
         "📋 Project Overview",
         "⚙️ Data Processing Pipeline", 
         "🇮🇸 Case Study 1 – Iceland vs Eurozone",
@@ -43,6 +44,7 @@ def main():
         "🇱🇻 Case Study 2 – Latvia", 
         "🇱🇹 Case Study 2 – Lithuania",
         "🇮🇸 Case Study 3 – Iceland & Small Open Economies",
+        "📊 Case Study 4 – Statistical Analysis",
         "📊 Comparative Analysis",
         "📖 Methodology & Data"
     ])
@@ -69,9 +71,12 @@ def main():
         show_case_study_3_restructured()
     
     with tab8:
-        show_comparative_analysis_placeholder()
+        show_case_study_4_restructured()
     
     with tab9:
+        show_comparative_analysis_placeholder()
+    
+    with tab10:
         show_methodology_and_data()
 
 def show_project_overview():
@@ -111,19 +116,27 @@ def show_project_overview():
         **Key Finding:** Mixed evidence for volatility reduction, country-specific patterns emerge
         """)
         
-        st.subheader("🌏 Case Study 3: Emerging Markets Comparison (2000-2025)")
+        st.subheader("🇮🇸 Case Study 3: Iceland & Small Open Economies (1999-2025)")
         st.markdown("""
-        **Status:** 📋 Planned  
-        **Focus:** Capital flow patterns across different emerging market economies  
-        **Methodology:** Panel data analysis with institutional variables  
-        **Expected Completion:** Q3 2024
+        **Status:** ✅ Complete  
+        **Focus:** Comparative analysis of Iceland vs multiple small open economy groups  
+        **Methodology:** Multi-group volatility comparison with statistical significance testing  
+        **Key Finding:** Iceland patterns vary significantly across different comparator groups
+        """)
+        
+        st.subheader("📊 Case Study 4: Comprehensive Statistical Analysis (1999-2025)")
+        st.markdown("""
+        **Status:** ✅ Complete  
+        **Focus:** Advanced statistical modeling of capital flow dynamics across multiple groups  
+        **Methodology:** F-tests, AR(4) models, impulse response analysis, and RMSE prediction  
+        **Key Finding:** Systematic volatility differences with varying persistence patterns across groups
         """)
     
     with col2:
         st.header("Project Metrics")
         
         # Metrics
-        st.metric("Case Studies", "3", "2 completed")
+        st.metric("Case Studies", "4", "4 completed")
         st.metric("Countries Analyzed", "28+", "Iceland, Eurozone, Baltics")
         st.metric("Time Period", "1999-2025", "26 years")
         st.metric("Data Points", "75,000+", "High frequency")
@@ -3827,6 +3840,14 @@ def show_case_study_2_lithuania_restructured():
     # Indicator-Level Analysis - Crisis Excluded
     st.subheader("🔍 Indicator-Level Analysis") 
     show_lithuania_indicator_analysis(include_crisis_years=False)
+
+def show_case_study_4_restructured():
+    """Display Case Study 4 - Comprehensive Statistical Analysis integrated into main dashboard"""
+    st.info("📊 **Case Study 4: Comprehensive Statistical Analysis - Iceland vs Multiple Comparator Groups**")
+    st.markdown("**Analysis Framework:** F-tests, AR(4) models, and RMSE prediction using systematic statistical methodologies.")
+    
+    # Call the main CS4 application 
+    case_study_4_main()
 
 # Country-specific analysis functions
 def show_estonia_overall_analysis(include_crisis_years=True):
