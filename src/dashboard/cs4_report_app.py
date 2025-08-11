@@ -22,18 +22,84 @@ from statsmodels.tsa.stattools import acf
 sys.path.append(str(Path(__file__).parent.parent))
 from core.cs4_statistical_analysis import CS4AnalysisFramework
 
+# Configure matplotlib for professional PDF export (from commit 8181df5)
+warnings.filterwarnings('ignore')
+plt.style.use('default')
+plt.rcParams.update({
+    'font.size': 12,
+    'font.family': 'serif',
+    'axes.linewidth': 1.2,
+    'axes.spines.top': False,
+    'axes.spines.right': False,
+    'axes.grid': True,
+    'grid.alpha': 0.3,
+    'figure.facecolor': 'white',
+    'axes.facecolor': 'white',
+    'figure.dpi': 300,
+    'savefig.dpi': 300,
+    'savefig.bbox': 'tight',
+    'figure.max_open_warning': 0
+})
+
+def get_pdf_optimized_figsize(chart_type, base_width=10, base_height=6):
+    """
+    Calculate PDF-optimized figure size based on standard US letter dimensions
+    From commit 8181df5: Dynamic sizing for bulletproof PDF compatibility
+    
+    Args:
+        chart_type: 'boxplot', 'grid', 'timeseries'
+        base_width: Base width in inches  
+        base_height: Base height in inches
+    
+    Returns:
+        Tuple of (width, height) optimized for PDF export
+    """
+    # US Letter: 8.5" x 11" with 0.75" margins = 7" usable width
+    max_pdf_width = 7.0
+    max_pdf_height = 9.0  # Leave room for headers/text
+    
+    if chart_type == 'boxplot':
+        # Compact horizontal layout
+        width = min(base_width, max_pdf_width)
+        height = min(base_height * 0.8, max_pdf_height * 0.4)
+        return (width, height)
+    
+    elif chart_type == 'grid':
+        # 3x3 grid needs special handling
+        width = min(base_width * 0.9, max_pdf_width)
+        height = min(base_height * 0.85, max_pdf_height * 0.7)
+        return (width, height)
+    
+    elif chart_type == 'timeseries':
+        # Wide but not too tall
+        width = min(base_width, max_pdf_width)
+        height = min(base_height * 0.75, max_pdf_height * 0.45)
+        return (width, height)
+    
+    else:
+        # Default constraint
+        width = min(base_width, max_pdf_width)
+        height = min(base_height, max_pdf_height * 0.5)
+        return (width, height)
+
 # Configure page
 st.set_page_config(
     page_title="CS4: Statistical Analysis",
     page_icon="📊",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# Professional styling
+# Professional styling with PDF export optimization
 st.markdown("""
 <style>
-    /* Professional table styling */
+    /* PDF Export Optimized Body and Layout */
+    body {
+        font-family: Arial, sans-serif !important;
+        margin: 40px !important;
+        line-height: 1.6 !important;
+    }
+    
+    /* Professional table styling (both dataframe and HTML) */
     .dataframe {
         font-size: 12px !important;
         font-family: 'Arial', sans-serif !important;
@@ -50,6 +116,149 @@ st.markdown("""
     }
     .dataframe tbody tr:nth-child(even) {
         background-color: #f9f9f9 !important;
+    }
+    
+    /* HTML Table styling for PDF export */
+    .cs4-master-table {
+        border-collapse: collapse;
+        width: 100%;
+        margin: 15px 0;
+        font-family: Arial, sans-serif !important;
+        font-size: 11px;
+        page-break-inside: avoid;
+    }
+    .cs4-master-table th {
+        background-color: #e6f3ff;
+        font-weight: bold;
+        border: 1px solid #ddd;
+        padding: 6px 8px;
+        text-align: center;
+    }
+    .cs4-master-table td {
+        border: 1px solid #ddd;
+        padding: 4px 6px;
+        text-align: center;
+    }
+    .cs4-master-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    
+    /* Table column width constraints for PDF export */
+    .cs4-master-table th:first-child, .cs4-master-table td:first-child {
+        width: 220px !important;
+        max-width: 220px !important;
+        text-align: left !important;
+        font-weight: bold !important;
+    }
+    .cs4-master-table th:not(:first-child), .cs4-master-table td:not(:first-child) {
+        width: 70px !important;
+        max-width: 70px !important;
+    }
+    
+    /* Streamlit app container constraints for PDF */
+    .main .block-container {
+        max-width: none !important;
+        padding: 1rem 2rem !important;
+    }
+    
+    /* Image and chart constraints */
+    img {
+        max-width: 100% !important;
+        height: auto !important;
+        page-break-inside: avoid !important;
+    }
+    
+    /* Creative Hard Margin Constraints for Bulletproof PDF Export */
+    .main .block-container {
+        max-width: 8.5in !important;  /* Standard US letter width */
+        margin: 0 auto !important;
+    }
+    
+    .chart-container { 
+        max-width: 100% !important;
+        overflow: hidden !important;
+        text-align: center !important;
+        margin: 20px 0 !important;
+    }
+    
+    /* Dynamic chart sizing constraints */
+    .pyplot-container {
+        max-width: 7.5in !important;  /* Leave margin for PDF */
+        margin: 0 auto !important;
+    }
+    
+    /* Print Media Queries for PDF Export (enhanced from commit 8181df5) */
+    @media print {
+        body { 
+            font-family: serif !important;
+            margin: 40px !important; 
+            line-height: 1.6 !important;
+            color: black !important;
+        }
+        .stApp { 
+            margin: 40px !important; 
+            max-width: 8.5in !important;
+        }
+        .main .block-container {
+            max-width: none !important;
+            padding: 0 !important;
+        }
+        
+        /* Hard chart constraints for PDF */
+        .chart-container { 
+            max-width: 100% !important;
+            page-break-inside: avoid !important;
+        }
+        .pyplot-container {
+            max-width: 7.5in !important;
+            margin: 0 auto !important;
+        }
+        
+        /* Table print optimizations (from commit 8181df5) */
+        .cs4-master-table { 
+            page-break-inside: avoid !important;
+            font-size: 7px !important;  /* Smaller for PDF */
+            margin: 10px 0 !important;
+        }
+        .cs4-master-table th:first-child, .cs4-master-table td:first-child {
+            width: 140px !important;
+            max-width: 140px !important;
+        }
+        .cs4-master-table th:not(:first-child), .cs4-master-table td:not(:first-child) {
+            width: 50px !important;
+            max-width: 50px !important;
+        }
+        
+        /* Header optimizations */
+        h1, h2, h3 { 
+            page-break-after: avoid !important; 
+            margin-bottom: 10px !important;
+        }
+        
+        /* Image and chart print optimizations */
+        img { 
+            max-width: 7.5in !important;
+            height: auto !important;
+            page-break-inside: avoid !important;
+            display: block !important;
+            margin: 10px auto !important;
+        }
+        
+        /* Remove Streamlit UI elements in print (from commit 8181df5) */
+        .stDeployButton { display: none !important; }
+        .stDecoration { display: none !important; }
+        .stToolbar { display: none !important; }
+        header[data-testid="stHeader"] { display: none !important; }
+        .stSidebar { display: none !important; }
+        
+        /* Optimize spacing for print */
+        .element-container { margin-bottom: 8px !important; }
+        div[data-testid="column"] { page-break-inside: avoid !important; }
+        .stTabs { page-break-inside: avoid !important; }
+        
+        /* Force clean page breaks */
+        .stExpander { page-break-inside: avoid !important; }
+        section[data-testid="stSidebar"] { display: none !important; }
     }
     
     /* Headers styling */
@@ -160,8 +369,9 @@ def create_comprehensive_boxplots_chart(full_results, crisis_results, period_nam
     # Sort groups by standard deviation (descending - highest to lowest volatility)
     sorted_groups = sorted(group_std_dev.keys(), key=lambda x: group_std_dev[x], reverse=True)
     
-    # Create figure
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    # Create figure with dynamic PDF-optimized sizing
+    figsize = get_pdf_optimized_figsize('boxplot', 10, 4)
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
     
     # Prepare data for boxplots in sorted order
     boxplot_data = []
@@ -215,8 +425,9 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
     groups = ['Iceland', 'eurozone_sum', 'eurozone_avg', 'soe_sum', 'soe_avg', 'baltics_sum', 'baltics_avg']
     group_labels = ['Iceland', 'Eurozone Sum', 'Eurozone Avg', 'SOE Sum', 'SOE Avg', 'Baltics Sum', 'Baltics Avg']
     
-    # Create figure with 3x3 grid (7 used, 2 empty) with significantly increased height for optimal spacing
-    fig, axes = plt.subplots(3, 3, figsize=(16, 16))
+    # Create figure with 3x3 grid (7 used, 2 empty) - Dynamic PDF optimized size
+    figsize = get_pdf_optimized_figsize('grid', 10, 8)
+    fig, axes = plt.subplots(3, 3, figsize=figsize)
     axes = axes.flatten()
     
     plot_count = 0
@@ -276,7 +487,8 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
                 fontweight='bold', fontsize=16, y=0.95)
     
     # SIGNIFICANTLY increased spacing to prevent any text overlap
-    plt.subplots_adjust(hspace=0.7, wspace=0.35, top=0.88, bottom=0.05)
+    plt.subplots_adjust(top=0.90, bottom=0.08, left=0.08, right=0.95, 
+                       hspace=0.6, wspace=0.3)
     
     return fig
 
@@ -304,8 +516,9 @@ def create_comprehensive_timeseries_chart(aggregation_type):
         group_labels = ['Iceland', 'Eurozone Sum', 'SOE Sum', 'Baltics Sum']
         colors = ['#e74c3c', '#2980b9', '#e67e22', '#16a085']
     
-    # Create figure
-    fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+    # Create figure with dynamic PDF-optimized sizing
+    figsize = get_pdf_optimized_figsize('timeseries', 10, 5)
+    fig, ax = plt.subplots(1, 1, figsize=figsize)
     
     # Add shaded regions for crisis periods FIRST (behind data)
     ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
@@ -388,6 +601,39 @@ def display_methodology_section():
 def run_cs4_integrated_analysis():
     """Run CS4 analysis and display results organized by indicator with integrated Full/Crisis-Excluded results"""
     
+    # Analysis Overview Section
+    st.header("⚙️ Analysis Overview")
+    
+    st.info("📊 **Integrated Analysis:** Both Full Period and Crisis-Excluded results displayed together")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("""
+        **Time Periods:**
+        - **Full Period:** 1999-2025 (105 observations)
+        - **Crisis-Excluded:** Excludes 2008-2010 (GFC) and 2020-2022 (COVID-19) - 81 observations
+        """)
+    
+    with col2:
+        st.markdown("""
+        **🌍 Comparator Groups:**
+        - **Eurozone:** Sum & Average aggregations
+        - **Small Open Economies (SOE):** Sum & Average
+        - **Baltics:** Sum & Average aggregations
+        """)
+    
+    with col3:
+        st.markdown("""
+        **📊 Indicators Analyzed:**
+        - Net Direct Investment
+        - Net Portfolio Investment
+        - Net Other Investment
+        - Net Capital Flows (Total)
+        """)
+    
+    st.markdown("---")
+    
     # Initialize analysis framework
     framework = CS4AnalysisFramework()
     
@@ -417,15 +663,6 @@ def run_cs4_integrated_analysis():
     
     # Comprehensive Analysis Overview - Master Tables
     display_comprehensive_analysis_overview(full_results, crisis_results)
-    
-    # Transition to detailed analysis
-    st.markdown("---")
-    st.header("🔍 Detailed Indicator-Level Analysis")
-    st.markdown("**Individual analysis sections for each capital flow indicator with integrated Full/Crisis-Excluded results.**")
-    
-    # Process and display each indicator
-    for indicator in indicators:
-        display_indicator_section(indicator, full_results, crisis_results)
     
     # Summary insights and comprehensive export
     display_summary_insights_and_export(full_results, crisis_results)
@@ -485,7 +722,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         
         # Download button for Chart 1
         buf1 = io.BytesIO()
-        chart1.savefig(buf1, format='png', dpi=150, bbox_inches='tight')
+        chart1.savefig(buf1, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf1.seek(0)
         st.download_button(
             label="📥 Download Full Period Boxplots (PNG)",
@@ -506,7 +743,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         
         # Download button for Chart 2
         buf2 = io.BytesIO()
-        chart2.savefig(buf2, format='png', dpi=150, bbox_inches='tight')
+        chart2.savefig(buf2, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf2.seek(0)
         st.download_button(
             label="📥 Download Crisis-Excluded Boxplots (PNG)",
@@ -554,7 +791,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         
         # Download button for Chart 3
         buf3 = io.BytesIO()
-        chart3.savefig(buf3, format='png', dpi=150, bbox_inches='tight')
+        chart3.savefig(buf3, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf3.seek(0)
         st.download_button(
             label="📥 Download Full Period ACF Charts (PNG)",
@@ -575,7 +812,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         
         # Download button for Chart 4
         buf4 = io.BytesIO()
-        chart4.savefig(buf4, format='png', dpi=150, bbox_inches='tight')
+        chart4.savefig(buf4, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf4.seek(0)
         st.download_button(
             label="📥 Download Crisis-Excluded ACF Charts (PNG)",
@@ -623,7 +860,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         
         # Download button for Chart 5
         buf5 = io.BytesIO()
-        chart5.savefig(buf5, format='png', dpi=150, bbox_inches='tight')
+        chart5.savefig(buf5, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf5.seek(0)
         st.download_button(
             label="📥 Download Time-Series Averages Chart (PNG)",
@@ -644,7 +881,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         
         # Download button for Chart 6
         buf6 = io.BytesIO()
-        chart6.savefig(buf6, format='png', dpi=150, bbox_inches='tight')
+        chart6.savefig(buf6, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf6.seek(0)
         st.download_button(
             label="📥 Download Time-Series Sums Chart (PNG)",
@@ -734,373 +971,107 @@ def create_master_table(indicators, full_table, crisis_table, table_type):
 
 
 def display_master_table(df, table_type):
-    """Display master table with appropriate styling"""
+    """Display master table with appropriate styling using HTML for PDF export compatibility"""
     
-    if table_type == 'std':
-        # Standard deviations with F-test significance and volatility direction color coding
-        def color_std_volatility(val, iceland_val):
-            """Color code based on volatility direction and significance"""
-            if pd.isna(val) or val == 'N/A':
-                return ''
+    def get_std_cell_style(val, iceland_val):
+        """Get inline CSS style for standard deviation cells based on significance and volatility direction"""
+        if pd.isna(val) or val == 'N/A' or val == iceland_val:
+            return ''
+        
+        val_str = str(val)
+        # Check for significance stars
+        has_three_stars = '***' in val_str
+        has_two_stars = '**' in val_str and not has_three_stars
+        has_one_star = '*' in val_str and not has_two_stars and not has_three_stars
+        
+        if not (has_one_star or has_two_stars or has_three_stars):
+            return ''  # No significant difference - keep default background
+        
+        # Extract numeric value (remove stars)
+        try:
+            numeric_val = float(val_str.replace('*', ''))
+            iceland_numeric = float(str(iceland_val).replace('*', ''))
             
-            val_str = str(val)
-            # Check for significance stars
-            has_three_stars = '***' in val_str
-            has_two_stars = '**' in val_str and not has_three_stars
-            has_one_star = '*' in val_str and not has_two_stars and not has_three_stars
-            
-            if not (has_one_star or has_two_stars or has_three_stars):
-                return ''  # No significant difference - keep default background
-            
-            # Extract numeric value (remove stars)
-            try:
-                numeric_val = float(val_str.replace('*', ''))
-                iceland_numeric = float(str(iceland_val).replace('*', ''))
-                
-                if iceland_numeric > numeric_val:
-                    # Iceland is MORE volatile (higher std dev) - use light red/pink
-                    if has_three_stars:
-                        return 'background-color: #ffcccc; color: #990000; font-weight: bold'  # Darker red for p<0.01
-                    elif has_two_stars:
-                        return 'background-color: #ffdddd; color: #cc0000; font-weight: bold'  # Medium red for p<0.05
-                    else:
-                        return 'background-color: #ffeeee; color: #cc3333'  # Light red for p<0.10
+            if iceland_numeric > numeric_val:
+                # Iceland is MORE volatile (higher std dev) - use light red/pink
+                if has_three_stars:
+                    return 'background-color: #ffcccc; color: #990000; font-weight: bold'
+                elif has_two_stars:
+                    return 'background-color: #ffdddd; color: #cc0000; font-weight: bold'
                 else:
-                    # Iceland is LESS volatile (lower std dev) - use light green
-                    if has_three_stars:
-                        return 'background-color: #ccffcc; color: #006600; font-weight: bold'  # Darker green for p<0.01
-                    elif has_two_stars:
-                        return 'background-color: #ddffdd; color: #009900; font-weight: bold'  # Medium green for p<0.05
-                    else:
-                        return 'background-color: #eeffee; color: #00cc00'  # Light green for p<0.10
-            except:
-                return ''
-        
-        # Apply color coding to all columns except Iceland
-        styled_table = df.style.apply(
-            lambda row: ['' if col == 'Iceland' else color_std_volatility(row[col], row['Iceland']) for col in row.index],
-            axis=1
-        ).set_properties(**{
-            'text-align': 'center',
-            'font-size': '11px'
-        }).set_table_styles([
-            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('font-size', '11px')]},
-            {'selector': 'td', 'props': [('padding', '4px 6px')]}
-        ])
-        
-    elif table_type == 'halflife':
-        # Color-code half-life values for master table
-        def color_halflife_master(val):
-            if val == 'N/A':
-                return 'color: gray'
-            try:
-                v = int(val)
-                if v <= 1:
-                    return 'background-color: #d4edda; color: #155724; font-weight: bold'  # Green for fast reversion
-                elif v <= 3:
-                    return 'background-color: #fff3cd; color: #856404; font-weight: bold'  # Yellow for moderate
+                    return 'background-color: #ffeeee; color: #cc3333'
+            else:
+                # Iceland is LESS volatile (lower std dev) - use light green
+                if has_three_stars:
+                    return 'background-color: #ccffcc; color: #006600; font-weight: bold'
+                elif has_two_stars:
+                    return 'background-color: #ddffdd; color: #009900; font-weight: bold'
                 else:
-                    return 'background-color: #f8d7da; color: #721c24; font-weight: bold'  # Red for slow
-            except:
-                return ''
+                    return 'background-color: #eeffee; color: #00cc00'
+        except:
+            return ''
+    
+    def get_halflife_cell_style(val):
+        """Get inline CSS style for half-life cells"""
+        if val == 'N/A':
+            return 'color: gray'
+        try:
+            v = int(val)
+            if v <= 1:
+                return 'background-color: #d4edda; color: #155724; font-weight: bold'  # Green for fast reversion
+            elif v <= 3:
+                return 'background-color: #fff3cd; color: #856404; font-weight: bold'  # Yellow for moderate
+            else:
+                return 'background-color: #f8d7da; color: #721c24; font-weight: bold'  # Red for slow
+        except:
+            return ''
+    
+    def format_rmse_value(val):
+        """Format RMSE values"""
+        if val == 'N/A':
+            return val
+        try:
+            return f"{float(val):.2f}"
+        except:
+            return val
+    
+    # Generate HTML table
+    html_table = '<table class="cs4-master-table">'
+    
+    # Table header
+    html_table += '<thead><tr>'
+    html_table += '<th>Indicator/Period</th>'
+    for col in df.columns:
+        html_table += f'<th>{col}</th>'
+    html_table += '</tr></thead><tbody>'
+    
+    # Table body
+    for idx, row in df.iterrows():
+        html_table += '<tr>'
+        html_table += f'<td style="text-align: left; font-weight: bold;">{idx}</td>'
         
-        styled_table = df.style.applymap(color_halflife_master, subset=df.columns).set_properties(**{
-            'text-align': 'center',
-            'font-size': '11px'
-        }).set_table_styles([
-            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('font-size', '11px')]},
-            {'selector': 'td', 'props': [('padding', '4px 6px')]}
-        ])
-        
-    elif table_type == 'rmse':
-        # Format RMSE values for master table
-        def format_rmse_master(val):
-            if val == 'N/A':
-                return val
-            try:
-                return f"{float(val):.2f}"
-            except:
-                return val
-        
-        formatted_df = df.copy()
-        for col in formatted_df.columns:
-            formatted_df[col] = formatted_df[col].apply(format_rmse_master)
-        
-        styled_table = formatted_df.style.set_properties(**{
-            'text-align': 'center',
-            'font-size': '11px'
-        }).set_table_styles([
-            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('font-size', '11px')]},
-            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]},
-            {'selector': 'td', 'props': [('padding', '4px 6px')]}
-        ])
-    
-    else:
-        styled_table = df.style.set_properties(**{
-            'text-align': 'center',
-            'font-size': '11px'
-        })
-    
-    st.dataframe(styled_table, use_container_width=True)
-
-
-def display_indicator_section(indicator, full_results, crisis_results):
-    """Display comprehensive analysis section for a specific indicator"""
-    
-    st.markdown("---")
-    st.header(f"📊 {indicator}")
-    st.markdown(f"**Comprehensive statistical analysis for {indicator} flows**")
-    
-    # 1. Standard Deviations & F-Test Results
-    st.subheader("🎯 Standard Deviations & F-Test Results")
-    
-    std_table = create_integrated_table(
-        indicator, 
-        full_results['summary_tables']['standard_deviations_ftest'], 
-        crisis_results['summary_tables']['standard_deviations_ftest'],
-        'std'
-    )
-    
-    display_styled_table(std_table, 'std')
-    
-    st.info("""
-    **Interpretation:** Values show standard deviations (volatility). Stars indicate statistically significant 
-    differences from Iceland using F-tests. More stars = stronger evidence of volatility differences.
-    
-    **Color Coding:**
-    - 🔴 **Red/Pink Background**: Iceland is MORE volatile than comparator (higher standard deviation)
-    - 🟢 **Green Background**: Iceland is LESS volatile than comparator (lower standard deviation)
-    - ⚪ **No Color**: No statistically significant difference
-    """)
-    
-    # Download button for std table
-    csv_std = std_table.to_csv(index=True)
-    st.download_button(
-        label=f"📥 Download {indicator} - Standard Deviations (CSV)",
-        data=csv_std,
-        file_name=f"cs4_{indicator.replace(' ', '_').lower()}_std_deviations.csv",
-        mime="text/csv"
-    )
-    
-    # Data Visualizations Placeholder - Distribution Analysis
-    with st.expander("📈 Distribution Comparison Analysis", expanded=False):
-        st.info("📊 **Distribution Analysis Coming Soon**")
-        st.markdown("""
-        This section will feature:
-        - Box plots comparing distributions across Full Period vs Crisis-Excluded
-        - Visual representation of volatility differences
-        - Color-coded significance indicators
-        - Interactive comparison tools
-        """)
-    
-    # 2. Half-Life from AR(4) Analysis
-    st.subheader("⏱️ Half-Life from AR(4) Models")
-    
-    halflife_table = create_integrated_table(
-        indicator,
-        full_results['summary_tables']['half_life_ar4'],
-        crisis_results['summary_tables']['half_life_ar4'], 
-        'halflife'
-    )
-    
-    display_styled_table(halflife_table, 'halflife')
-    
-    st.info("""
-    **Interpretation:** Half-life indicates persistence of shocks (in quarters). Lower values (green) indicate 
-    faster mean reversion. Most financial flows show 1-3 quarter half-lives, consistent with market efficiency.
-    """)
-    
-    # Download button for half-life table
-    csv_halflife = halflife_table.to_csv(index=True)
-    st.download_button(
-        label=f"📥 Download {indicator} - Half-Life (CSV)",
-        data=csv_halflife,
-        file_name=f"cs4_{indicator.replace(' ', '_').lower()}_halflife.csv",
-        mime="text/csv"
-    )
-    
-    # Data Visualizations Placeholder - Impulse Response Analysis  
-    with st.expander("📊 AR(4) Impulse Response Analysis", expanded=False):
-        st.info("⏱️ **Impulse Response Analysis Coming Soon**")
-        st.markdown("""
-        This section will feature:
-        - AR(4) impulse response function plots
-        - Half-life visualization with decay curves
-        - Comparison of shock persistence across periods
-        - Interactive parameter exploration
-        """)
-    
-    # 3. RMSE Prediction Accuracy
-    st.subheader("📈 RMSE Prediction Accuracy")
-    
-    rmse_table = create_integrated_table(
-        indicator,
-        full_results['summary_tables']['rmse_prediction'],
-        crisis_results['summary_tables']['rmse_prediction'],
-        'rmse'
-    )
-    
-    display_styled_table(rmse_table, 'rmse')
-    
-    st.info("""
-    **Interpretation:** RMSE measures prediction error for 4-quarter ahead forecasts. Lower values indicate 
-    better predictability. Compare across groups to assess relative forecast difficulty.
-    """)
-    
-    # Download button for RMSE table
-    csv_rmse = rmse_table.to_csv(index=True)
-    st.download_button(
-        label=f"📥 Download {indicator} - RMSE (CSV)",
-        data=csv_rmse,
-        file_name=f"cs4_{indicator.replace(' ', '_').lower()}_rmse.csv",
-        mime="text/csv"
-    )
-    
-    # Data Visualizations Placeholder - RMSE Prediction Analysis
-    with st.expander("🎯 RMSE Prediction Accuracy Analysis", expanded=False):
-        st.info("📈 **Prediction Accuracy Analysis Coming Soon**")
-        st.markdown("""
-        This section will feature:
-        - Bar charts comparing RMSE across groups
-        - Prediction accuracy visualization
-        - Model performance comparisons
-        - Forecasting quality indicators
-        """)
-
-
-def create_integrated_table(indicator, full_table, crisis_table, table_type):
-    """Create integrated table with Full Period and Crisis-Excluded rows"""
-    
-    # Find the row for this indicator in both tables
-    full_row = full_table[full_table['Indicator'] == indicator].iloc[0] if len(full_table[full_table['Indicator'] == indicator]) > 0 else None
-    crisis_row = crisis_table[crisis_table['Indicator'] == indicator].iloc[0] if len(crisis_table[crisis_table['Indicator'] == indicator]) > 0 else None
-    
-    if full_row is None or crisis_row is None:
-        st.error(f"Data not found for {indicator}")
-        return pd.DataFrame()
-    
-    # Get column names (excluding 'Indicator')
-    columns = [col for col in full_table.columns if col != 'Indicator']
-    
-    # Create integrated table
-    data = {
-        'Time Period': ['Full Time Period', 'Crisis-Excluded']
-    }
-    
-    # Add data for each column
-    for col in columns:
-        data[col] = [full_row[col], crisis_row[col]]
-    
-    integrated_df = pd.DataFrame(data)
-    integrated_df.set_index('Time Period', inplace=True)
-    
-    return integrated_df
-
-
-def display_styled_table(df, table_type):
-    """Display table with appropriate styling based on type"""
-    
-    if table_type == 'std':
-        # Standard deviations with F-test significance and volatility direction color coding
-        def color_std_volatility_individual(val, iceland_val):
-            """Color code based on volatility direction and significance for individual tables"""
-            if pd.isna(val) or val == 'N/A':
-                return ''
+        for col in df.columns:
+            val = row[col]
+            cell_style = ''
+            display_val = val
             
-            val_str = str(val)
-            # Check for significance stars
-            has_three_stars = '***' in val_str
-            has_two_stars = '**' in val_str and not has_three_stars
-            has_one_star = '*' in val_str and not has_two_stars and not has_three_stars
+            if table_type == 'std':
+                if col != 'Iceland':  # Don't color Iceland column
+                    cell_style = get_std_cell_style(val, row['Iceland'])
+            elif table_type == 'halflife':
+                cell_style = get_halflife_cell_style(val)
+            elif table_type == 'rmse':
+                display_val = format_rmse_value(val)
             
-            if not (has_one_star or has_two_stars or has_three_stars):
-                return ''  # No significant difference - keep default background
-            
-            # Extract numeric value (remove stars)
-            try:
-                numeric_val = float(val_str.replace('*', ''))
-                iceland_numeric = float(str(iceland_val).replace('*', ''))
-                
-                if iceland_numeric > numeric_val:
-                    # Iceland is MORE volatile (higher std dev) - use light red/pink
-                    if has_three_stars:
-                        return 'background-color: #ffcccc; color: #990000; font-weight: bold'  # Darker red for p<0.01
-                    elif has_two_stars:
-                        return 'background-color: #ffdddd; color: #cc0000; font-weight: bold'  # Medium red for p<0.05
-                    else:
-                        return 'background-color: #ffeeee; color: #cc3333'  # Light red for p<0.10
-                else:
-                    # Iceland is LESS volatile (lower std dev) - use light green
-                    if has_three_stars:
-                        return 'background-color: #ccffcc; color: #006600; font-weight: bold'  # Darker green for p<0.01
-                    elif has_two_stars:
-                        return 'background-color: #ddffdd; color: #009900; font-weight: bold'  # Medium green for p<0.05
-                    else:
-                        return 'background-color: #eeffee; color: #00cc00'  # Light green for p<0.10
-            except:
-                return ''
+            style_attr = f' style="{cell_style}"' if cell_style else ''
+            html_table += f'<td{style_attr}>{display_val}</td>'
         
-        # Apply color coding to all columns except Iceland
-        styled_table = df.style.apply(
-            lambda row: ['' if col == 'Iceland' else color_std_volatility_individual(row[col], row['Iceland']) for col in row.index],
-            axis=1
-        ).set_properties(**{
-            'text-align': 'center',
-            'font-size': '12px'
-        }).set_table_styles([
-            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold')]},
-            {'selector': 'td', 'props': [('padding', '4px 6px')]}
-        ])
-        
-    elif table_type == 'halflife':
-        # Color-code half-life values
-        def color_halflife(val):
-            if val == 'N/A':
-                return 'color: gray'
-            try:
-                v = int(val)
-                if v <= 1:
-                    return 'background-color: #d4edda; color: #155724'  # Green for fast reversion
-                elif v <= 3:
-                    return 'background-color: #fff3cd; color: #856404'  # Yellow for moderate
-                else:
-                    return 'background-color: #f8d7da; color: #721c24'  # Red for slow
-            except:
-                return ''
-        
-        styled_table = df.style.applymap(color_halflife, subset=df.columns)
-        
-    elif table_type == 'rmse':
-        # Format RMSE values
-        def format_rmse(val):
-            if val == 'N/A':
-                return val
-            try:
-                return f"{float(val):.2f}"
-            except:
-                return val
-        
-        formatted_df = df.copy()
-        for col in formatted_df.columns:
-            formatted_df[col] = formatted_df[col].apply(format_rmse)
-        
-        styled_table = formatted_df.style.set_properties(**{
-            'text-align': 'center',
-            'font-size': '12px'
-        }).set_table_styles([
-            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold')]},
-            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]}
-        ])
+        html_table += '</tr>'
     
-    else:
-        styled_table = df.style.set_properties(**{
-            'text-align': 'center',
-            'font-size': '12px'
-        })
+    html_table += '</tbody></table>'
     
-    st.dataframe(styled_table, use_container_width=True)
-
-
+    # Display the HTML table
+    st.markdown(html_table, unsafe_allow_html=True)
 
 
 def display_summary_insights_and_export(full_results, crisis_results):
@@ -1128,6 +1099,47 @@ def display_summary_insights_and_export(full_results, crisis_results):
         - **Predictability:** RMSE varies significantly across indicators and groups
         - **Model Performance:** AR(4) models generally provide reasonable fit for most series
         """)
+
+
+def create_integrated_table(indicator, full_table, crisis_table, table_type):
+    """Create integrated table for a single indicator with both Full Period and Crisis-Excluded data"""
+    
+    # Find rows for this indicator in both tables
+    full_row = full_table[full_table['Indicator'] == indicator]
+    crisis_row = crisis_table[crisis_table['Indicator'] == indicator]
+    
+    if len(full_row) == 0 or len(crisis_row) == 0:
+        # Create empty DataFrame if data not found
+        return pd.DataFrame({'Error': [f'Data not found for {indicator}']})
+        
+    # Get the first (and should be only) row for each
+    full_data = full_row.iloc[0]
+    crisis_data = crisis_row.iloc[0]
+    
+    # Get column names (excluding 'Indicator')
+    columns = [col for col in full_table.columns if col != 'Indicator']
+    
+    # Create integrated data
+    integrated_data = []
+    
+    # Create Full Period row
+    full_period_row = {'Period': 'Full Time Period'}
+    for col in columns:
+        full_period_row[col] = full_data[col]
+    integrated_data.append(full_period_row)
+    
+    # Create Crisis-Excluded row  
+    crisis_excluded_row = {'Period': 'Crisis-Excluded'}
+    for col in columns:
+        crisis_excluded_row[col] = crisis_data[col]
+    integrated_data.append(crisis_excluded_row)
+    
+    # Create DataFrame
+    integrated_df = pd.DataFrame(integrated_data)
+    integrated_df.set_index('Period', inplace=True)
+    
+    return integrated_df
+    
     
     # Comprehensive Excel Export
     st.subheader("📁 Complete Analysis Export")
@@ -1229,34 +1241,8 @@ def main():
     statistical analysis comparing Iceland with multiple comparator groups.
     """)
     
-    # Sidebar information (removed toggle interface)
-    st.sidebar.title("⚙️ Analysis Overview")
-    
-    # Analysis info  
-    st.sidebar.info("📊 **Integrated Analysis:** Both Full Period and Crisis-Excluded results displayed together")
-    st.sidebar.markdown("""
-    **Time Periods:**
-    - **Full Period:** 1999-2025 (105 observations)
-    - **Crisis-Excluded:** Excludes 2008-2010 (GFC) and 2020-2022 (COVID-19) - 81 observations
-    """)
-    
-    # Comparator groups info
-    st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🌍 Comparator Groups")
-    st.sidebar.markdown("""
-    - **Eurozone:** Sum & Average aggregations
-    - **Small Open Economies (SOE):** Sum & Average
-    - **Baltics:** Sum & Average aggregations
-    """)
-    
-    # Indicators info
-    st.sidebar.markdown("### 📊 Indicators Analyzed")
-    st.sidebar.markdown("""
-    - Net Direct Investment
-    - Net Portfolio Investment
-    - Net Other Investment
-    - Net Capital Flows (Total)
-    """)
+    # PDF export tip (from commit 8181df5)
+    st.info("💡 **PDF Export Tip:** You can print this page to PDF using your browser's print function for a professional document with proper margins and optimized layout.")
     
     # Main content tabs
     tab1, tab2, tab3 = st.tabs(["📊 Statistical Analysis", "📚 Methodology", "📖 About"])
