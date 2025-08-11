@@ -174,12 +174,261 @@ def run_cs4_integrated_analysis():
     # Get indicators
     indicators = full_results['metadata']['indicators_analyzed']
     
+    # Comprehensive Analysis Overview - Master Tables
+    display_comprehensive_analysis_overview(full_results, crisis_results)
+    
+    # Transition to detailed analysis
+    st.markdown("---")
+    st.header("🔍 Detailed Indicator-Level Analysis")
+    st.markdown("**Individual analysis sections for each capital flow indicator with integrated Full/Crisis-Excluded results.**")
+    
     # Process and display each indicator
     for indicator in indicators:
         display_indicator_section(indicator, full_results, crisis_results)
     
     # Summary insights and comprehensive export
     display_summary_insights_and_export(full_results, crisis_results)
+
+
+def display_comprehensive_analysis_overview(full_results, crisis_results):
+    """Display comprehensive analysis overview with three master tables"""
+    
+    st.header("📊 Comprehensive Analysis Overview")
+    st.markdown("""
+    **Complete statistical results across all capital flow indicators.** Three master tables provide 
+    integrated Full Period and Crisis-Excluded analysis for variance equality, persistence, and predictability.
+    """)
+    
+    # Get indicators for processing
+    indicators = full_results['metadata']['indicators_analyzed']
+    
+    # Table 1: Master Standard Deviations & F-test Results
+    st.subheader("🎯 Table 1: Standard Deviation & F-test Results (All Indicators)")
+    
+    master_std_table = create_master_table(
+        indicators, 
+        full_results['summary_tables']['standard_deviations_ftest'],
+        crisis_results['summary_tables']['standard_deviations_ftest'],
+        'std'
+    )
+    
+    display_master_table(master_std_table, 'std')
+    
+    st.info("""
+    **Interpretation:** Standard deviations measure volatility levels. Stars indicate F-test significance 
+    for variance differences from Iceland: *** p<0.01, ** p<0.05, * p<0.10.
+    """)
+    
+    # Download button for master std table
+    csv_master_std = master_std_table.to_csv(index=True)
+    st.download_button(
+        label="📥 Download Master Standard Deviations Table (CSV)",
+        data=csv_master_std,
+        file_name="cs4_master_standard_deviations.csv",
+        mime="text/csv"
+    )
+    
+    # Table 2: Master Half-life Results
+    st.markdown("---")
+    st.subheader("⏱️ Table 2: Half-life Results (All Indicators)")
+    
+    master_halflife_table = create_master_table(
+        indicators,
+        full_results['summary_tables']['half_life_ar4'],
+        crisis_results['summary_tables']['half_life_ar4'],
+        'halflife'
+    )
+    
+    display_master_table(master_halflife_table, 'halflife')
+    
+    st.info("""
+    **Interpretation:** Half-life indicates shock persistence in quarters. Lower values (green) show faster 
+    mean reversion. Values of 1-3 quarters are typical for efficient financial markets.
+    """)
+    
+    # Download button for master half-life table
+    csv_master_halflife = master_halflife_table.to_csv(index=True)
+    st.download_button(
+        label="📥 Download Master Half-life Table (CSV)",
+        data=csv_master_halflife,
+        file_name="cs4_master_halflife_results.csv",
+        mime="text/csv"
+    )
+    
+    # Table 3: Master RMSE Results
+    st.markdown("---")
+    st.subheader("📈 Table 3: RMSE Prediction Results (All Indicators)")
+    
+    master_rmse_table = create_master_table(
+        indicators,
+        full_results['summary_tables']['rmse_prediction'],
+        crisis_results['summary_tables']['rmse_prediction'],
+        'rmse'
+    )
+    
+    display_master_table(master_rmse_table, 'rmse')
+    
+    st.info("""
+    **Interpretation:** RMSE measures 4-quarter ahead prediction accuracy. Lower values indicate better 
+    forecastability. Compare across groups to assess relative prediction difficulty.
+    """)
+    
+    # Download button for master RMSE table
+    csv_master_rmse = master_rmse_table.to_csv(index=True)
+    st.download_button(
+        label="📥 Download Master RMSE Table (CSV)",
+        data=csv_master_rmse,
+        file_name="cs4_master_rmse_results.csv",
+        mime="text/csv"
+    )
+    
+    # Master tables export
+    st.markdown("---")
+    st.subheader("📁 Master Tables Export")
+    
+    # Create Excel export for all master tables
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        master_std_table.to_excel(writer, sheet_name='Master_Standard_Deviations', index=True)
+        master_halflife_table.to_excel(writer, sheet_name='Master_Half_Life', index=True)
+        master_rmse_table.to_excel(writer, sheet_name='Master_RMSE', index=True)
+        
+        # Add master metadata
+        master_metadata = pd.DataFrame({
+            'Parameter': [
+                'Table Structure', 'Rows per Indicator', 'Total Indicators', 'Total Rows',
+                'Analysis Periods', 'Statistical Methods', 'Export Date'
+            ],
+            'Value': [
+                '8 rows × 7 columns (2 periods × 4 indicators)',
+                '2 (Full Period + Crisis-Excluded)', '4', '8',
+                'Full Period (1999-2025) and Crisis-Excluded', 
+                'F-tests, AR(4) models, RMSE prediction',
+                pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+            ]
+        })
+        master_metadata.to_excel(writer, sheet_name='Master_Tables_Metadata', index=False)
+    
+    excel_data = output.getvalue()
+    
+    st.download_button(
+        label="📥 Download All Master Tables (Excel)",
+        data=excel_data,
+        file_name=f"cs4_master_tables_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+def create_master_table(indicators, full_table, crisis_table, table_type):
+    """Create master table with all indicators in 8-row format (2 rows per indicator × 4 indicators)"""
+    
+    # Initialize master data structure
+    master_data = []
+    
+    # Get column names (excluding 'Indicator')
+    columns = [col for col in full_table.columns if col != 'Indicator']
+    
+    # Process each indicator
+    for indicator in indicators:
+        # Find rows for this indicator in both tables
+        full_row = full_table[full_table['Indicator'] == indicator]
+        crisis_row = crisis_table[crisis_table['Indicator'] == indicator]
+        
+        if len(full_row) == 0 or len(crisis_row) == 0:
+            st.warning(f"Data not found for {indicator} in master table creation")
+            continue
+            
+        # Get the first (and should be only) row for each
+        full_data = full_row.iloc[0]
+        crisis_data = crisis_row.iloc[0]
+        
+        # Create Full Period row
+        full_period_row = {'Indicator/Period': f"{indicator} (Full Time Period)"}
+        for col in columns:
+            full_period_row[col] = full_data[col]
+        master_data.append(full_period_row)
+        
+        # Create Crisis-Excluded row  
+        crisis_excluded_row = {'Indicator/Period': f"{indicator} (Crisis-Excluded)"}
+        for col in columns:
+            crisis_excluded_row[col] = crisis_data[col]
+        master_data.append(crisis_excluded_row)
+    
+    # Create DataFrame
+    master_df = pd.DataFrame(master_data)
+    master_df.set_index('Indicator/Period', inplace=True)
+    
+    return master_df
+
+
+def display_master_table(df, table_type):
+    """Display master table with appropriate styling"""
+    
+    if table_type == 'std':
+        # Standard deviations with F-test significance
+        styled_table = df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '11px'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('font-size', '11px')]},
+            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]},
+            {'selector': 'td', 'props': [('padding', '4px 6px')]}
+        ])
+        
+    elif table_type == 'halflife':
+        # Color-code half-life values for master table
+        def color_halflife_master(val):
+            if val == 'N/A':
+                return 'color: gray'
+            try:
+                v = int(val)
+                if v <= 1:
+                    return 'background-color: #d4edda; color: #155724; font-weight: bold'  # Green for fast reversion
+                elif v <= 3:
+                    return 'background-color: #fff3cd; color: #856404; font-weight: bold'  # Yellow for moderate
+                else:
+                    return 'background-color: #f8d7da; color: #721c24; font-weight: bold'  # Red for slow
+            except:
+                return ''
+        
+        styled_table = df.style.applymap(color_halflife_master, subset=df.columns).set_properties(**{
+            'text-align': 'center',
+            'font-size': '11px'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('font-size', '11px')]},
+            {'selector': 'td', 'props': [('padding', '4px 6px')]}
+        ])
+        
+    elif table_type == 'rmse':
+        # Format RMSE values for master table
+        def format_rmse_master(val):
+            if val == 'N/A':
+                return val
+            try:
+                return f"{float(val):.2f}"
+            except:
+                return val
+        
+        formatted_df = df.copy()
+        for col in formatted_df.columns:
+            formatted_df[col] = formatted_df[col].apply(format_rmse_master)
+        
+        styled_table = formatted_df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '11px'
+        }).set_table_styles([
+            {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('font-size', '11px')]},
+            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]},
+            {'selector': 'td', 'props': [('padding', '4px 6px')]}
+        ])
+    
+    else:
+        styled_table = df.style.set_properties(**{
+            'text-align': 'center',
+            'font-size': '11px'
+        })
+    
+    st.dataframe(styled_table, use_container_width=True)
 
 
 def display_indicator_section(indicator, full_results, crisis_results):
