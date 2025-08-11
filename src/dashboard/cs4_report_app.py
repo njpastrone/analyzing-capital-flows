@@ -217,6 +217,11 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
     st.info("""
     **Interpretation:** Standard deviations measure volatility levels. Stars indicate F-test significance 
     for variance differences from Iceland: *** p<0.01, ** p<0.05, * p<0.10.
+    
+    **Color Coding:**
+    - 🔴 **Red/Pink Background**: Iceland is MORE volatile than comparator (higher standard deviation)
+    - 🟢 **Green Background**: Iceland is LESS volatile than comparator (lower standard deviation)  
+    - ⚪ **No Color**: No statistically significant difference
     """)
     
     # Download button for master std table
@@ -365,13 +370,54 @@ def display_master_table(df, table_type):
     """Display master table with appropriate styling"""
     
     if table_type == 'std':
-        # Standard deviations with F-test significance
-        styled_table = df.style.set_properties(**{
+        # Standard deviations with F-test significance and volatility direction color coding
+        def color_std_volatility(val, iceland_val):
+            """Color code based on volatility direction and significance"""
+            if pd.isna(val) or val == 'N/A':
+                return ''
+            
+            val_str = str(val)
+            # Check for significance stars
+            has_three_stars = '***' in val_str
+            has_two_stars = '**' in val_str and not has_three_stars
+            has_one_star = '*' in val_str and not has_two_stars and not has_three_stars
+            
+            if not (has_one_star or has_two_stars or has_three_stars):
+                return ''  # No significant difference - keep default background
+            
+            # Extract numeric value (remove stars)
+            try:
+                numeric_val = float(val_str.replace('*', ''))
+                iceland_numeric = float(str(iceland_val).replace('*', ''))
+                
+                if iceland_numeric > numeric_val:
+                    # Iceland is MORE volatile (higher std dev) - use light red/pink
+                    if has_three_stars:
+                        return 'background-color: #ffcccc; color: #990000; font-weight: bold'  # Darker red for p<0.01
+                    elif has_two_stars:
+                        return 'background-color: #ffdddd; color: #cc0000; font-weight: bold'  # Medium red for p<0.05
+                    else:
+                        return 'background-color: #ffeeee; color: #cc3333'  # Light red for p<0.10
+                else:
+                    # Iceland is LESS volatile (lower std dev) - use light green
+                    if has_three_stars:
+                        return 'background-color: #ccffcc; color: #006600; font-weight: bold'  # Darker green for p<0.01
+                    elif has_two_stars:
+                        return 'background-color: #ddffdd; color: #009900; font-weight: bold'  # Medium green for p<0.05
+                    else:
+                        return 'background-color: #eeffee; color: #00cc00'  # Light green for p<0.10
+            except:
+                return ''
+        
+        # Apply color coding to all columns except Iceland
+        styled_table = df.style.apply(
+            lambda row: ['' if col == 'Iceland' else color_std_volatility(row[col], row['Iceland']) for col in row.index],
+            axis=1
+        ).set_properties(**{
             'text-align': 'center',
             'font-size': '11px'
         }).set_table_styles([
             {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold'), ('font-size', '11px')]},
-            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]},
             {'selector': 'td', 'props': [('padding', '4px 6px')]}
         ])
         
@@ -453,6 +499,11 @@ def display_indicator_section(indicator, full_results, crisis_results):
     st.info("""
     **Interpretation:** Values show standard deviations (volatility). Stars indicate statistically significant 
     differences from Iceland using F-tests. More stars = stronger evidence of volatility differences.
+    
+    **Color Coding:**
+    - 🔴 **Red/Pink Background**: Iceland is MORE volatile than comparator (higher standard deviation)
+    - 🟢 **Green Background**: Iceland is LESS volatile than comparator (lower standard deviation)
+    - ⚪ **No Color**: No statistically significant difference
     """)
     
     # Download button for std table
@@ -577,13 +628,55 @@ def display_styled_table(df, table_type):
     """Display table with appropriate styling based on type"""
     
     if table_type == 'std':
-        # Standard deviations with F-test significance
-        styled_table = df.style.set_properties(**{
+        # Standard deviations with F-test significance and volatility direction color coding
+        def color_std_volatility_individual(val, iceland_val):
+            """Color code based on volatility direction and significance for individual tables"""
+            if pd.isna(val) or val == 'N/A':
+                return ''
+            
+            val_str = str(val)
+            # Check for significance stars
+            has_three_stars = '***' in val_str
+            has_two_stars = '**' in val_str and not has_three_stars
+            has_one_star = '*' in val_str and not has_two_stars and not has_three_stars
+            
+            if not (has_one_star or has_two_stars or has_three_stars):
+                return ''  # No significant difference - keep default background
+            
+            # Extract numeric value (remove stars)
+            try:
+                numeric_val = float(val_str.replace('*', ''))
+                iceland_numeric = float(str(iceland_val).replace('*', ''))
+                
+                if iceland_numeric > numeric_val:
+                    # Iceland is MORE volatile (higher std dev) - use light red/pink
+                    if has_three_stars:
+                        return 'background-color: #ffcccc; color: #990000; font-weight: bold'  # Darker red for p<0.01
+                    elif has_two_stars:
+                        return 'background-color: #ffdddd; color: #cc0000; font-weight: bold'  # Medium red for p<0.05
+                    else:
+                        return 'background-color: #ffeeee; color: #cc3333'  # Light red for p<0.10
+                else:
+                    # Iceland is LESS volatile (lower std dev) - use light green
+                    if has_three_stars:
+                        return 'background-color: #ccffcc; color: #006600; font-weight: bold'  # Darker green for p<0.01
+                    elif has_two_stars:
+                        return 'background-color: #ddffdd; color: #009900; font-weight: bold'  # Medium green for p<0.05
+                    else:
+                        return 'background-color: #eeffee; color: #00cc00'  # Light green for p<0.10
+            except:
+                return ''
+        
+        # Apply color coding to all columns except Iceland
+        styled_table = df.style.apply(
+            lambda row: ['' if col == 'Iceland' else color_std_volatility_individual(row[col], row['Iceland']) for col in row.index],
+            axis=1
+        ).set_properties(**{
             'text-align': 'center',
             'font-size': '12px'
         }).set_table_styles([
             {'selector': 'th', 'props': [('background-color', '#e6f3ff'), ('font-weight', 'bold')]},
-            {'selector': 'tr:nth-of-type(even)', 'props': [('background-color', '#f9f9f9')]}
+            {'selector': 'td', 'props': [('padding', '4px 6px')]}
         ])
         
     elif table_type == 'halflife':
