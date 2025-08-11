@@ -8,13 +8,15 @@ Implements F-tests, AR(4) models, and RMSE calculations with clean table present
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 from pathlib import Path
 import sys
-import warnings
 import io
 import base64
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.patches as mpatches
+import warnings
+from statsmodels.tsa.stattools import acf
 
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
@@ -104,6 +106,245 @@ def create_download_link(df: pd.DataFrame, filename: str, link_text: str) -> str
     csv = df.to_csv(index=True)
     b64 = base64.b64encode(csv.encode()).decode()
     return f'<a href="data:file/csv;base64,{b64}" download="{filename}">{link_text}</a>'
+
+
+def create_comprehensive_boxplots_chart(full_results, crisis_results, period_name):
+    """Create comprehensive boxplots for all 7 groups using Net Capital Flows, ordered by standard deviation"""
+    
+    # Load data for Net Capital Flows
+    from core.cs4_statistical_analysis import CS4DataLoader
+    loader = CS4DataLoader()
+    
+    include_crisis = (period_name == "Full Period")
+    data = loader.load_indicator_data("Net Capital Flows", include_crisis_years=include_crisis)
+    
+    if data is None:
+        st.warning(f"Unable to load data for {period_name} boxplots")
+        return None
+    
+    # Define groups and labels
+    groups = ['Iceland', 'eurozone_sum', 'eurozone_avg', 'soe_sum', 'soe_avg', 'baltics_sum', 'baltics_avg']
+    group_labels_map = {
+        'Iceland': 'Iceland',
+        'eurozone_sum': 'Eurozone\nSum',
+        'eurozone_avg': 'Eurozone\nAvg',
+        'soe_sum': 'SOE\nSum',
+        'soe_avg': 'SOE\nAvg',
+        'baltics_sum': 'Baltics\nSum',
+        'baltics_avg': 'Baltics\nAvg'
+    }
+    
+    # Colors map - Iceland distinct, others grouped  
+    colors_map = {
+        'Iceland': '#e74c3c',
+        'eurozone_sum': '#3498db',
+        'eurozone_avg': '#85c1e9',
+        'soe_sum': '#f39c12',
+        'soe_avg': '#f8c471',
+        'baltics_sum': '#1abc9c',
+        'baltics_avg': '#7dcea0'
+    }
+    
+    # Calculate standard deviations and sort groups by std dev (descending)
+    group_std_dev = {}
+    for group in groups:
+        if group in data.columns:
+            group_data = data[group].dropna()
+            if len(group_data) > 0:
+                group_std_dev[group] = np.std(group_data, ddof=1)
+    
+    if not group_std_dev:
+        st.warning("No valid data for boxplots")
+        return None
+    
+    # Sort groups by standard deviation (descending - highest to lowest volatility)
+    sorted_groups = sorted(group_std_dev.keys(), key=lambda x: group_std_dev[x], reverse=True)
+    
+    # Create figure
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+    
+    # Prepare data for boxplots in sorted order
+    boxplot_data = []
+    sorted_labels = []
+    sorted_colors = []
+    
+    for group in sorted_groups:
+        group_data = data[group].dropna()
+        boxplot_data.append(group_data.values)
+        sorted_labels.append(group_labels_map[group])
+        sorted_colors.append(colors_map[group])
+    
+    # Create boxplots
+    bp = ax.boxplot(boxplot_data, labels=sorted_labels, patch_artist=True, 
+                    showfliers=True, flierprops=dict(marker='o', markersize=4, alpha=0.6))
+    
+    # Color the boxes
+    for box, color in zip(bp['boxes'], sorted_colors):
+        box.set_facecolor(color)
+        box.set_alpha(0.7)
+    
+    # Styling
+    ax.set_title(f'Net Capital Flows Distribution - {period_name} (Ordered by Volatility)', 
+                fontweight='bold', fontsize=14, pad=20)
+    ax.set_ylabel('Net Capital Flows (% of GDP)', fontsize=12)
+    ax.grid(True, alpha=0.3, axis='y')
+    ax.tick_params(axis='x', rotation=0)
+    
+    # Add reference line at zero
+    ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=0.8)
+    
+    plt.tight_layout()
+    return fig
+
+
+def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
+    """Create ACF (Autocorrelation Function) charts grid for all 7 groups (clean version with enhanced spacing)"""
+    
+    # Load data for Net Capital Flows
+    from core.cs4_statistical_analysis import CS4DataLoader
+    loader = CS4DataLoader()
+    
+    include_crisis = (period_name == "Full Period")
+    data = loader.load_indicator_data("Net Capital Flows", include_crisis_years=include_crisis)
+    
+    if data is None:
+        st.warning(f"Unable to load data for {period_name} ACF charts")
+        return None
+    
+    # Define groups and labels
+    groups = ['Iceland', 'eurozone_sum', 'eurozone_avg', 'soe_sum', 'soe_avg', 'baltics_sum', 'baltics_avg']
+    group_labels = ['Iceland', 'Eurozone Sum', 'Eurozone Avg', 'SOE Sum', 'SOE Avg', 'Baltics Sum', 'Baltics Avg']
+    
+    # Create figure with 3x3 grid (7 used, 2 empty) with significantly increased height for optimal spacing
+    fig, axes = plt.subplots(3, 3, figsize=(16, 16))
+    axes = axes.flatten()
+    
+    plot_count = 0
+    for i, (group, label) in enumerate(zip(groups, group_labels)):
+        if group in data.columns and plot_count < 7:
+            ax = axes[plot_count]
+            series = data[group].dropna()
+            
+            if len(series) > 10:  # Need sufficient data for ACF
+                with warnings.catch_warnings():
+                    warnings.simplefilter("ignore")
+                    
+                    # Calculate ACF
+                    try:
+                        lags = min(20, len(series) // 4)  # Up to 20 lags or 1/4 of data
+                        # Calculate ACF without confidence intervals for cleaner look
+                        acf_vals = acf(series, nlags=lags, fft=True)
+                        
+                        # Plot ACF - clean bars only, no confidence bands
+                        x_lags = range(len(acf_vals))
+                        ax.bar(x_lags, acf_vals, alpha=0.8, color='#2c3e50', edgecolor='black', linewidth=0.5)
+                        
+                        # Enhanced styling with quarterly time unit specification
+                        ax.set_title(f'{label}', fontweight='bold', fontsize=12, pad=20)
+                        ax.set_xlabel('Lags (Quarters)', fontsize=10, fontweight='medium')
+                        ax.set_ylabel('ACF', fontsize=10, fontweight='medium')
+                        ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.5)
+                        ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, linewidth=1)
+                        ax.tick_params(axis='both', labelsize=9)
+                        
+                        # Set reasonable y-axis limits
+                        ax.set_ylim(-1.1, 1.1)
+                        
+                        # Add subtle x-axis ticks for better readability
+                        if len(x_lags) > 10:
+                            ax.set_xticks(range(0, len(x_lags), 5))  # Show every 5th lag for clarity
+                        
+                    except Exception as e:
+                        ax.text(0.5, 0.5, f'ACF calculation\nfailed for {label}', 
+                               ha='center', va='center', transform=ax.transAxes, fontsize=11)
+                        ax.set_title(f'{label}', fontweight='bold', fontsize=12, pad=20)
+                        ax.set_xlabel('Lags (Quarters)', fontsize=10)
+            else:
+                ax.text(0.5, 0.5, f'Insufficient data\nfor {label}', 
+                       ha='center', va='center', transform=ax.transAxes, fontsize=11)
+                ax.set_title(f'{label}', fontweight='bold', fontsize=12, pad=20)
+                ax.set_xlabel('Lags (Quarters)', fontsize=10)
+                
+            plot_count += 1
+    
+    # Hide unused subplots
+    for i in range(plot_count, 9):
+        axes[i].axis('off')
+    
+    # Enhanced title with quarterly specification
+    plt.suptitle(f'Autocorrelation Functions - Net Capital Flows ({period_name})\nQuarterly Data: Each lag = 3 months', 
+                fontweight='bold', fontsize=16, y=0.95)
+    
+    # SIGNIFICANTLY increased spacing to prevent any text overlap
+    plt.subplots_adjust(hspace=0.7, wspace=0.35, top=0.88, bottom=0.05)
+    
+    return fig
+
+
+def create_comprehensive_timeseries_chart(aggregation_type):
+    """Create comprehensive time-series chart with crisis marking"""
+    
+    # Load data for Net Capital Flows (always include crisis for time series)
+    from core.cs4_statistical_analysis import CS4DataLoader
+    loader = CS4DataLoader()
+    
+    data = loader.load_indicator_data("Net Capital Flows", include_crisis_years=True)
+    
+    if data is None:
+        st.warning(f"Unable to load data for {aggregation_type} time series")
+        return None
+    
+    # Define groups based on aggregation type
+    if aggregation_type == "Averages":
+        groups = ['Iceland', 'eurozone_avg', 'soe_avg', 'baltics_avg']
+        group_labels = ['Iceland', 'Eurozone Average', 'SOE Average', 'Baltics Average']
+        colors = ['#e74c3c', '#3498db', '#f39c12', '#1abc9c']
+    else:  # Sums
+        groups = ['Iceland', 'eurozone_sum', 'soe_sum', 'baltics_sum']
+        group_labels = ['Iceland', 'Eurozone Sum', 'SOE Sum', 'Baltics Sum']
+        colors = ['#e74c3c', '#2980b9', '#e67e22', '#16a085']
+    
+    # Create figure
+    fig, ax = plt.subplots(1, 1, figsize=(14, 8))
+    
+    # Add shaded regions for crisis periods FIRST (behind data)
+    ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
+              alpha=0.15, color='red', label='GFC (2008-2010)')
+    ax.axvspan(pd.Timestamp('2020-01-01'), pd.Timestamp('2022-12-31'), 
+              alpha=0.15, color='orange', label='COVID-19 (2020-2022)')
+    
+    # Convert index to datetime if needed
+    if hasattr(data, 'YEAR') and hasattr(data, 'QUARTER'):
+        data['DATE'] = pd.to_datetime(data['YEAR'].astype(str) + '-' + 
+                                    ((data['QUARTER'] - 1) * 3 + 1).astype(str) + '-01')
+        data = data.set_index('DATE')
+    
+    # Plot data lines
+    lines_plotted = []
+    for group, label, color in zip(groups, group_labels, colors):
+        if group in data.columns:
+            series = data[group].dropna()
+            if len(series) > 0:
+                line = ax.plot(series.index, series.values, label=label, 
+                             color=color, linewidth=2, alpha=0.8)
+                lines_plotted.append(line[0])
+    
+    # Styling
+    ax.set_title(f'Net Capital Flows Over Time - {aggregation_type} Comparison', 
+                fontweight='bold', fontsize=14, pad=20)
+    ax.set_xlabel('Year', fontsize=12)
+    ax.set_ylabel('Net Capital Flows (% of GDP)', fontsize=12)
+    ax.grid(True, alpha=0.3)
+    ax.axhline(y=0, color='black', linestyle='-', alpha=0.4, linewidth=1)
+    
+    # Legend
+    ax.legend(loc='upper right', frameon=True, fancybox=True, shadow=True)
+    
+    # Format x-axis
+    ax.tick_params(axis='x', rotation=45)
+    
+    plt.tight_layout()
+    return fig
 
 
 def display_methodology_section():
@@ -233,6 +474,48 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         mime="text/csv"
     )
     
+    # Chart 1: Side-by-side boxplots (Full Period)
+    st.markdown("---")
+    st.subheader("📊 Chart 1: Distribution Analysis - Full Period")
+    st.markdown("**Visual representation of volatility patterns across all comparator groups for Net Capital Flows**")
+    
+    chart1 = create_comprehensive_boxplots_chart(full_results, crisis_results, "Full Period")
+    if chart1:
+        st.pyplot(chart1)
+        
+        # Download button for Chart 1
+        buf1 = io.BytesIO()
+        chart1.savefig(buf1, format='png', dpi=150, bbox_inches='tight')
+        buf1.seek(0)
+        st.download_button(
+            label="📥 Download Full Period Boxplots (PNG)",
+            data=buf1,
+            file_name="cs4_comprehensive_boxplots_full_period.png",
+            mime="image/png"
+        )
+        plt.close(chart1)
+    
+    # Chart 2: Side-by-side boxplots (Crisis-Excluded)
+    st.markdown("---")
+    st.subheader("📊 Chart 2: Distribution Analysis - Crisis-Excluded")
+    st.markdown("**Comparison showing volatility patterns with financial crisis periods removed**")
+    
+    chart2 = create_comprehensive_boxplots_chart(full_results, crisis_results, "Crisis-Excluded")
+    if chart2:
+        st.pyplot(chart2)
+        
+        # Download button for Chart 2
+        buf2 = io.BytesIO()
+        chart2.savefig(buf2, format='png', dpi=150, bbox_inches='tight')
+        buf2.seek(0)
+        st.download_button(
+            label="📥 Download Crisis-Excluded Boxplots (PNG)",
+            data=buf2,
+            file_name="cs4_comprehensive_boxplots_crisis_excluded.png",
+            mime="image/png"
+        )
+        plt.close(chart2)
+    
     # Table 2: Master Half-life Results
     st.markdown("---")
     st.subheader("⏱️ Table 2: Half-life Results (All Indicators)")
@@ -260,6 +543,48 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         mime="text/csv"
     )
     
+    # Chart 3: ACF charts grid (Full Period)
+    st.markdown("---")
+    st.subheader("📊 Chart 3: Autocorrelation Analysis - Full Period")
+    st.markdown("**Autocorrelation functions showing persistence patterns across all groups**")
+    
+    chart3 = create_comprehensive_acf_chart(full_results, crisis_results, "Full Period")
+    if chart3:
+        st.pyplot(chart3)
+        
+        # Download button for Chart 3
+        buf3 = io.BytesIO()
+        chart3.savefig(buf3, format='png', dpi=150, bbox_inches='tight')
+        buf3.seek(0)
+        st.download_button(
+            label="📥 Download Full Period ACF Charts (PNG)",
+            data=buf3,
+            file_name="cs4_comprehensive_acf_full_period.png",
+            mime="image/png"
+        )
+        plt.close(chart3)
+    
+    # Chart 4: ACF charts grid (Crisis-Excluded)
+    st.markdown("---")
+    st.subheader("📊 Chart 4: Autocorrelation Analysis - Crisis-Excluded")
+    st.markdown("**Persistence patterns with financial crisis periods removed**")
+    
+    chart4 = create_comprehensive_acf_chart(full_results, crisis_results, "Crisis-Excluded")
+    if chart4:
+        st.pyplot(chart4)
+        
+        # Download button for Chart 4
+        buf4 = io.BytesIO()
+        chart4.savefig(buf4, format='png', dpi=150, bbox_inches='tight')
+        buf4.seek(0)
+        st.download_button(
+            label="📥 Download Crisis-Excluded ACF Charts (PNG)",
+            data=buf4,
+            file_name="cs4_comprehensive_acf_crisis_excluded.png",
+            mime="image/png"
+        )
+        plt.close(chart4)
+    
     # Table 3: Master RMSE Results
     st.markdown("---")
     st.subheader("📈 Table 3: RMSE Prediction Results (All Indicators)")
@@ -286,6 +611,48 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         file_name="cs4_master_rmse_results.csv",
         mime="text/csv"
     )
+    
+    # Chart 5: Time-series (Iceland + Comparator averages with crisis marking)
+    st.markdown("---")
+    st.subheader("📊 Chart 5: Time-Series Analysis - Average Aggregation")
+    st.markdown("**Net Capital Flows over time comparing Iceland with average aggregations, with crisis periods marked**")
+    
+    chart5 = create_comprehensive_timeseries_chart("Averages")
+    if chart5:
+        st.pyplot(chart5)
+        
+        # Download button for Chart 5
+        buf5 = io.BytesIO()
+        chart5.savefig(buf5, format='png', dpi=150, bbox_inches='tight')
+        buf5.seek(0)
+        st.download_button(
+            label="📥 Download Time-Series Averages Chart (PNG)",
+            data=buf5,
+            file_name="cs4_comprehensive_timeseries_averages.png",
+            mime="image/png"
+        )
+        plt.close(chart5)
+    
+    # Chart 6: Time-series (Iceland + Comparator sums with crisis marking)
+    st.markdown("---")
+    st.subheader("📊 Chart 6: Time-Series Analysis - Sum Aggregation")
+    st.markdown("**Net Capital Flows over time comparing Iceland with sum aggregations, showing crisis impact**")
+    
+    chart6 = create_comprehensive_timeseries_chart("Sums")
+    if chart6:
+        st.pyplot(chart6)
+        
+        # Download button for Chart 6
+        buf6 = io.BytesIO()
+        chart6.savefig(buf6, format='png', dpi=150, bbox_inches='tight')
+        buf6.seek(0)
+        st.download_button(
+            label="📥 Download Time-Series Sums Chart (PNG)",
+            data=buf6,
+            file_name="cs4_comprehensive_timeseries_sums.png",
+            mime="image/png"
+        )
+        plt.close(chart6)
     
     # Master tables export
     st.markdown("---")
@@ -515,13 +882,15 @@ def display_indicator_section(indicator, full_results, crisis_results):
         mime="text/csv"
     )
     
-    # Placeholder for data visualizations
-    with st.expander("📈 Data Visualizations (Coming Soon)", expanded=False):
+    # Data Visualizations Placeholder - Distribution Analysis
+    with st.expander("📈 Distribution Comparison Analysis", expanded=False):
+        st.info("📊 **Distribution Analysis Coming Soon**")
         st.markdown("""
-        **Planned Visualizations:**
-        - Time series plots comparing Full vs Crisis-Excluded periods
-        - Volatility comparison charts across groups
-        - Statistical significance heatmaps
+        This section will feature:
+        - Box plots comparing distributions across Full Period vs Crisis-Excluded
+        - Visual representation of volatility differences
+        - Color-coded significance indicators
+        - Interactive comparison tools
         """)
     
     # 2. Half-Life from AR(4) Analysis
@@ -550,13 +919,15 @@ def display_indicator_section(indicator, full_results, crisis_results):
         mime="text/csv"
     )
     
-    # Placeholder for data visualizations
-    with st.expander("📊 Impulse Response Visualizations (Coming Soon)", expanded=False):
+    # Data Visualizations Placeholder - Impulse Response Analysis  
+    with st.expander("📊 AR(4) Impulse Response Analysis", expanded=False):
+        st.info("⏱️ **Impulse Response Analysis Coming Soon**")
         st.markdown("""
-        **Planned Visualizations:**
+        This section will feature:
         - AR(4) impulse response function plots
-        - Half-life comparison charts
-        - Model diagnostic plots
+        - Half-life visualization with decay curves
+        - Comparison of shock persistence across periods
+        - Interactive parameter exploration
         """)
     
     # 3. RMSE Prediction Accuracy
@@ -585,13 +956,15 @@ def display_indicator_section(indicator, full_results, crisis_results):
         mime="text/csv"
     )
     
-    # Placeholder for data visualizations
-    with st.expander("🎯 Prediction Accuracy Visualizations (Coming Soon)", expanded=False):
+    # Data Visualizations Placeholder - RMSE Prediction Analysis
+    with st.expander("🎯 RMSE Prediction Accuracy Analysis", expanded=False):
+        st.info("📈 **Prediction Accuracy Analysis Coming Soon**")
         st.markdown("""
-        **Planned Visualizations:**
-        - Prediction accuracy comparison charts
-        - Forecast vs actual plots
-        - Model performance metrics
+        This section will feature:
+        - Bar charts comparing RMSE across groups
+        - Prediction accuracy visualization
+        - Model performance comparisons
+        - Forecasting quality indicators
         """)
 
 
@@ -726,6 +1099,8 @@ def display_styled_table(df, table_type):
         })
     
     st.dataframe(styled_table, use_container_width=True)
+
+
 
 
 def display_summary_insights_and_export(full_results, crisis_results):
