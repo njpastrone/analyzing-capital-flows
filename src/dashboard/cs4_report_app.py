@@ -456,7 +456,13 @@ def create_comprehensive_acf_chart(indicator_name, period_name):
                         # Enhanced styling with quarterly time unit specification
                         ax.set_title(f'{label}', fontweight='bold', fontsize=9, pad=8)
                         ax.set_xlabel('Lags (Quarters)', fontsize=8, fontweight='medium')
-                        ax.set_ylabel('ACF', fontsize=8, fontweight='medium')
+                        
+                        # Show y-axis label only on leftmost chart for cleaner presentation
+                        if i == 0:  # leftmost chart only
+                            ax.set_ylabel('ACF', fontsize=8, fontweight='medium')
+                        else:  # remove y-axis labels from other charts
+                            ax.set_ylabel('')
+                            ax.tick_params(left=False, labelleft=False)
                         ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.5)
                         ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, linewidth=1)
                         ax.tick_params(axis='both', labelsize=7)
@@ -473,20 +479,34 @@ def create_comprehensive_acf_chart(indicator_name, period_name):
                                ha='center', va='center', transform=ax.transAxes, fontsize=9)
                         ax.set_title(f'{label}', fontweight='bold', fontsize=9, pad=8)
                         ax.set_xlabel('Lags (Quarters)', fontsize=8)
+                        
+                        # Consistent y-axis handling for error cases
+                        if i == 0:
+                            ax.set_ylabel('ACF', fontsize=8, fontweight='medium')
+                        else:
+                            ax.set_ylabel('')
+                            ax.tick_params(left=False, labelleft=False)
             else:
                 ax.text(0.5, 0.5, f'Insufficient data\nfor {label}', 
                        ha='center', va='center', transform=ax.transAxes, fontsize=9)
                 ax.set_title(f'{label}', fontweight='bold', fontsize=9, pad=8)
                 ax.set_xlabel('Lags (Quarters)', fontsize=8)
+                
+                # Consistent y-axis handling for insufficient data cases
+                if i == 0:
+                    ax.set_ylabel('ACF', fontsize=8, fontweight='medium')
+                else:
+                    ax.set_ylabel('')
+                    ax.tick_params(left=False, labelleft=False)
     
     # Enhanced title with indicator and period specification
     title_text = f'{indicator_name} - {period_name}'
     if period_name == "Crisis-Excluded":
         title_text += ' (Excludes 2008-2010, 2020-2022)'
-    plt.suptitle(title_text, fontweight='bold', fontsize=11, y=1.08)
+    plt.suptitle(title_text, fontweight='bold', fontsize=11, y=0.96)
     
-    # Conservative spacing for 1x4 layout
-    plt.subplots_adjust(top=0.80, bottom=0.15, left=0.06, right=0.98, wspace=0.25)
+    # Increased spacing between title and charts for better readability
+    plt.subplots_adjust(top=0.78, bottom=0.15, left=0.06, right=0.98, wspace=0.25)
     
     return fig
 
@@ -794,43 +814,129 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
     
     # Generate ACF charts for all indicators - Full Period first
     st.markdown("### Full Period Analysis")
+    full_period_charts = {}
     for idx, indicator in enumerate(indicators_for_acf, 1):
         chart = create_comprehensive_acf_chart(indicator, "Full Period")
         if chart:
             st.pyplot(chart)
-            
-            # Add download button
-            buf = io.BytesIO()
-            chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
-            buf.seek(0)
-            st.download_button(
-                label=f"📥 Download {indicator} Full Period ACF (PNG)",
-                data=buf,
-                file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_full.png",
-                mime="image/png",
-                key=f"acf_full_{idx}"
-            )
+            # Store chart for later download consolidation
+            full_period_charts[indicator] = chart
             plt.close(chart)
     
     # Generate ACF charts for all indicators - Crisis-Excluded
     st.markdown("### Crisis-Excluded Analysis")
+    crisis_excluded_charts = {}
     for idx, indicator in enumerate(indicators_for_acf, 5):  # Continue numbering from 5
         chart = create_comprehensive_acf_chart(indicator, "Crisis-Excluded")
         if chart:
             st.pyplot(chart)
-            
-            # Add download button
-            buf = io.BytesIO()
-            chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
-            buf.seek(0)
-            st.download_button(
-                label=f"📥 Download {indicator} Crisis-Excluded ACF (PNG)",
-                data=buf,
-                file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_no_crisis.png",
-                mime="image/png",
-                key=f"acf_crisis_{idx}"
-            )
+            # Store chart for later download consolidation
+            crisis_excluded_charts[indicator] = chart
             plt.close(chart)
+    
+    # Consolidated Download Buttons for ACF Plots
+    st.markdown("---")
+    st.markdown("### 📥 Download ACF Analysis Charts")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        # Create comprehensive download for Full Period ACF plots
+        if full_period_charts:
+            # Recreate charts for download (since they were closed after display)
+            full_period_files = {}
+            for indicator in indicators_for_acf:
+                chart = create_comprehensive_acf_chart(indicator, "Full Period")
+                if chart:
+                    buf = io.BytesIO()
+                    chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+                    buf.seek(0)
+                    full_period_files[indicator] = buf.getvalue()
+                    plt.close(chart)
+            
+            # Create download button for first chart (others will be available individually if needed)
+            if 'Net Direct Investment' in full_period_files:
+                st.download_button(
+                    label="📥 Download Full Period ACF Plots",
+                    data=full_period_files['Net Direct Investment'],
+                    file_name="cs4_acf_net_direct_investment_full.png",
+                    mime="image/png",
+                    key="download_full_period_acf",
+                    use_container_width=True,
+                    help="Downloads Net Direct Investment Full Period ACF plot. Use individual chart downloads for other indicators."
+                )
+    
+    with col2:
+        # Create comprehensive download for Crisis-Excluded ACF plots  
+        if crisis_excluded_charts:
+            # Recreate charts for download (since they were closed after display)
+            crisis_excluded_files = {}
+            for indicator in indicators_for_acf:
+                chart = create_comprehensive_acf_chart(indicator, "Crisis-Excluded")
+                if chart:
+                    buf = io.BytesIO()
+                    chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+                    buf.seek(0)
+                    crisis_excluded_files[indicator] = buf.getvalue()
+                    plt.close(chart)
+            
+            # Create download button for first chart
+            if 'Net Direct Investment' in crisis_excluded_files:
+                st.download_button(
+                    label="📥 Download Crisis-Excluded ACF Plots",
+                    data=crisis_excluded_files['Net Direct Investment'],
+                    file_name="cs4_acf_net_direct_investment_no_crisis.png",
+                    mime="image/png",
+                    key="download_crisis_excluded_acf",
+                    use_container_width=True,
+                    help="Downloads Net Direct Investment Crisis-Excluded ACF plot. Use individual chart downloads for other indicators."
+                )
+    
+    # Add expandable section for individual downloads
+    with st.expander("📂 Individual Chart Downloads", expanded=False):
+        st.markdown("**Download individual ACF charts for specific indicators:**")
+        
+        # Full Period individual downloads
+        st.markdown("**Full Period:**")
+        col1, col2, col3, col4 = st.columns(4)
+        for i, indicator in enumerate(indicators_for_acf):
+            chart = create_comprehensive_acf_chart(indicator, "Full Period")
+            if chart:
+                buf = io.BytesIO()
+                chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+                buf.seek(0)
+                
+                with [col1, col2, col3, col4][i]:
+                    st.download_button(
+                        label=f"{indicator.replace('Net ', '')}",
+                        data=buf,
+                        file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_full.png",
+                        mime="image/png",
+                        key=f"individual_full_{i}",
+                        use_container_width=True
+                    )
+                plt.close(chart)
+        
+        # Crisis-Excluded individual downloads
+        st.markdown("**Crisis-Excluded:**")
+        col1, col2, col3, col4 = st.columns(4)
+        for i, indicator in enumerate(indicators_for_acf):
+            chart = create_comprehensive_acf_chart(indicator, "Crisis-Excluded")
+            if chart:
+                buf = io.BytesIO()
+                chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+                buf.seek(0)
+                
+                with [col1, col2, col3, col4][i]:
+                    st.download_button(
+                        label=f"{indicator.replace('Net ', '')}",
+                        data=buf,
+                        file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_no_crisis.png",
+                        mime="image/png",
+                        key=f"individual_crisis_{i}",
+                        use_container_width=True
+                    )
+                plt.close(chart)
     
     # Table 3: Master RMSE Results
     st.markdown("---")
