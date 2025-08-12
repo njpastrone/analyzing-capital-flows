@@ -332,26 +332,26 @@ def create_comprehensive_boxplots_chart(full_results, crisis_results, period_nam
         return None
     
     # Define groups and labels
-    groups = ['Iceland', 'eurozone_sum', 'eurozone_avg', 'soe_sum', 'soe_avg', 'baltics_sum', 'baltics_avg']
+    groups = ['iceland_pgdp', 'eurozone_pgdp_weighted', 'eurozone_pgdp_simple', 'soe_pgdp_weighted', 'soe_pgdp_simple', 'baltics_pgdp_weighted', 'baltics_pgdp_simple']
     group_labels_map = {
-        'Iceland': 'Iceland',
-        'eurozone_sum': 'Eurozone\nSum',
-        'eurozone_avg': 'Eurozone\nAvg',
-        'soe_sum': 'SOE\nSum',
-        'soe_avg': 'SOE\nAvg',
-        'baltics_sum': 'Baltics\nSum',
-        'baltics_avg': 'Baltics\nAvg'
+        'iceland_pgdp': 'Iceland',
+        'eurozone_pgdp_weighted': 'Eurozone\nWeighted Avg',
+        'eurozone_pgdp_simple': 'Eurozone\nSimple Avg',
+        'soe_pgdp_weighted': 'SOE\nWeighted Avg',
+        'soe_pgdp_simple': 'SOE\nSimple Avg',
+        'baltics_pgdp_weighted': 'Baltics\nWeighted Avg',
+        'baltics_pgdp_simple': 'Baltics\nSimple Avg'
     }
     
     # Colors map - Iceland distinct, others grouped  
     colors_map = {
-        'Iceland': '#e74c3c',
-        'eurozone_sum': '#3498db',
-        'eurozone_avg': '#85c1e9',
-        'soe_sum': '#f39c12',
-        'soe_avg': '#f8c471',
-        'baltics_sum': '#1abc9c',
-        'baltics_avg': '#7dcea0'
+        'iceland_pgdp': '#e74c3c',
+        'eurozone_pgdp_weighted': '#3498db',
+        'eurozone_pgdp_simple': '#85c1e9',
+        'soe_pgdp_weighted': '#f39c12',
+        'soe_pgdp_simple': '#f8c471',
+        'baltics_pgdp_weighted': '#1abc9c',
+        'baltics_pgdp_simple': '#7dcea0'
     }
     
     # Calculate standard deviations and sort groups by std dev (descending)
@@ -422,8 +422,8 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
         return None
     
     # Define groups and labels
-    groups = ['Iceland', 'eurozone_sum', 'eurozone_avg', 'soe_sum', 'soe_avg', 'baltics_sum', 'baltics_avg']
-    group_labels = ['Iceland', 'Eurozone Sum', 'Eurozone Avg', 'SOE Sum', 'SOE Avg', 'Baltics Sum', 'Baltics Avg']
+    groups = ['iceland_pgdp', 'eurozone_pgdp_weighted', 'eurozone_pgdp_simple', 'soe_pgdp_weighted', 'soe_pgdp_simple', 'baltics_pgdp_weighted', 'baltics_pgdp_simple']
+    group_labels = ['Iceland', 'Eurozone Weighted Avg', 'Eurozone Simple Avg', 'SOE Weighted Avg', 'SOE Simple Avg', 'Baltics Weighted Avg', 'Baltics Simple Avg']
     
     # Create figure with 3x3 grid (7 used, 2 empty) - Dynamic PDF optimized size
     figsize = get_pdf_optimized_figsize('grid', 10, 8)
@@ -507,13 +507,13 @@ def create_comprehensive_timeseries_chart(aggregation_type):
         return None
     
     # Define groups based on aggregation type
-    if aggregation_type == "Averages":
-        groups = ['Iceland', 'eurozone_avg', 'soe_avg', 'baltics_avg']
-        group_labels = ['Iceland', 'Eurozone Average', 'SOE Average', 'Baltics Average']
+    if aggregation_type == "Simple Averages":
+        groups = ['iceland_pgdp', 'eurozone_pgdp_simple', 'soe_pgdp_simple', 'baltics_pgdp_simple']
+        group_labels = ['Iceland', 'Eurozone Simple Average', 'SOE Simple Average', 'Baltics Simple Average']
         colors = ['#e74c3c', '#3498db', '#f39c12', '#1abc9c']
-    else:  # Sums
-        groups = ['Iceland', 'eurozone_sum', 'soe_sum', 'baltics_sum']
-        group_labels = ['Iceland', 'Eurozone Sum', 'SOE Sum', 'Baltics Sum']
+    else:  # Weighted Averages
+        groups = ['iceland_pgdp', 'eurozone_pgdp_weighted', 'soe_pgdp_weighted', 'baltics_pgdp_weighted']
+        group_labels = ['Iceland', 'Eurozone Weighted Average', 'SOE Weighted Average', 'Baltics Weighted Average']
         colors = ['#e74c3c', '#2980b9', '#e67e22', '#16a085']
     
     # Create figure with dynamic PDF-optimized sizing
@@ -619,9 +619,9 @@ def run_cs4_integrated_analysis():
     with col2:
         st.markdown("""
         **🌍 Comparator Groups:**
-        - **Eurozone:** Sum & Average aggregations
-        - **Small Open Economies (SOE):** Sum & Average
-        - **Baltics:** Sum & Average aggregations
+        - **Eurozone:** Weighted & Simple averages (% of GDP)
+        - **Small Open Economies (SOE):** Weighted & Simple averages (% of GDP)
+        - **Baltics:** Weighted & Simple averages (% of GDP)
         """)
     
     with col3:
@@ -852,10 +852,10 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
     
     # Chart 5: Time-series (Iceland + Comparator averages with crisis marking)
     st.markdown("---")
-    st.subheader("📊 Chart 5: Time-Series Analysis - Average Aggregation")
-    st.markdown("**Net Capital Flows over time comparing Iceland with average aggregations, with crisis periods marked**")
+    st.subheader("📊 Chart 5: Time-Series Analysis - Simple Averages")
+    st.markdown("**Net Capital Flows over time comparing Iceland with simple (unweighted) averages across country groups, with crisis periods marked**")
     
-    chart5 = create_comprehensive_timeseries_chart("Averages")
+    chart5 = create_comprehensive_timeseries_chart("Simple Averages")
     if chart5:
         st.pyplot(chart5)
         
@@ -864,7 +864,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         chart5.savefig(buf5, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf5.seek(0)
         st.download_button(
-            label="📥 Download Time-Series Averages Chart (PNG)",
+            label="📥 Download Time-Series Simple Averages Chart (PNG)",
             data=buf5,
             file_name="cs4_comprehensive_timeseries_averages.png",
             mime="image/png"
@@ -873,10 +873,10 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
     
     # Chart 6: Time-series (Iceland + Comparator sums with crisis marking)
     st.markdown("---")
-    st.subheader("📊 Chart 6: Time-Series Analysis - Sum Aggregation")
-    st.markdown("**Net Capital Flows over time comparing Iceland with sum aggregations, showing crisis impact**")
+    st.subheader("📊 Chart 6: Time-Series Analysis - Weighted Averages")
+    st.markdown("**Net Capital Flows over time comparing Iceland with GDP-weighted averages across country groups, showing crisis impact**")
     
-    chart6 = create_comprehensive_timeseries_chart("Sums")
+    chart6 = create_comprehensive_timeseries_chart("Weighted Averages")
     if chart6:
         st.pyplot(chart6)
         
@@ -885,9 +885,9 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         chart6.savefig(buf6, format='png', dpi=300, bbox_inches='tight', facecolor='white')
         buf6.seek(0)
         st.download_button(
-            label="📥 Download Time-Series Sums Chart (PNG)",
+            label="📥 Download Time-Series Weighted Averages Chart (PNG)",
             data=buf6,
-            file_name="cs4_comprehensive_timeseries_sums.png",
+            file_name="cs4_comprehensive_timeseries_weighted_avg.png",
             mime="image/png"
         )
         plt.close(chart6)
@@ -1269,8 +1269,8 @@ def main():
             - **Coverage:** 1999 Q1 - 2025 Q1
             - **Units:** % of GDP (annualized)
             - **Aggregation Methods:**
-                - Sum: Total across group countries
-                - Average: Mean across group countries
+                - Weighted Average: GDP-weighted mean across group countries
+                - Simple Average: Unweighted mean across group countries
             """)
         
         with col2:

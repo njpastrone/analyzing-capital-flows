@@ -47,15 +47,15 @@ class CS4DataLoader:
             'Net Capital Flows': {'full': 'net_capital_flows_full.csv', 'no_crises': 'net_capital_flows_no_crises.csv'}
         }
         
-        # Define comparator groups
-        self.comparator_groups = ['eurozone_sum', 'eurozone_avg', 'soe_sum', 'soe_avg', 'baltics_sum', 'baltics_avg']
+        # Define comparator groups with new naming convention
+        self.comparator_groups = ['eurozone_pgdp_weighted', 'eurozone_pgdp_simple', 'soe_pgdp_weighted', 'soe_pgdp_simple', 'baltics_pgdp_weighted', 'baltics_pgdp_simple']
         self.group_labels = {
-            'eurozone_sum': 'Eurozone Sum',
-            'eurozone_avg': 'Eurozone Avg', 
-            'soe_sum': 'SOE Sum',
-            'soe_avg': 'SOE Avg',
-            'baltics_sum': 'Baltics Sum',
-            'baltics_avg': 'Baltics Avg'
+            'eurozone_pgdp_weighted': 'Eurozone Weighted Avg',
+            'eurozone_pgdp_simple': 'Eurozone Simple Avg', 
+            'soe_pgdp_weighted': 'SOE Weighted Avg',
+            'soe_pgdp_simple': 'SOE Simple Avg',
+            'baltics_pgdp_weighted': 'Baltics Weighted Avg',
+            'baltics_pgdp_simple': 'Baltics Simple Avg'
         }
     
     def load_indicator_data(self, indicator: str, include_crisis_years: bool = True) -> Optional[pd.DataFrame]:
@@ -86,7 +86,7 @@ class CS4DataLoader:
             df = pd.read_csv(file_path)
             
             # Validate required columns
-            required_cols = ['YEAR', 'QUARTER', 'UNIT', 'Iceland'] + self.comparator_groups
+            required_cols = ['YEAR', 'QUARTER', 'UNIT', 'iceland_pgdp'] + self.comparator_groups
             missing_cols = [col for col in required_cols if col not in df.columns]
             if missing_cols:
                 logger.error(f"Missing required columns: {missing_cols}")
@@ -432,7 +432,7 @@ class CS4AnalysisFramework:
             results['rmse_analysis'][indicator_name] = {}
             
             # Get Iceland data
-            iceland_series = df['Iceland']
+            iceland_series = df['iceland_pgdp']
             
             # Analyze each comparator group
             for group_col in self.data_loader.comparator_groups:
