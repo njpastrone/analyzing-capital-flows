@@ -901,41 +901,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         )
         plt.close(chart6)
     
-    # Master tables export
-    st.markdown("---")
-    st.subheader("📁 Master Tables Export")
-    
-    # Create Excel export for all master tables
-    output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        master_std_table.to_excel(writer, sheet_name='Master_Standard_Deviations', index=True)
-        master_halflife_table.to_excel(writer, sheet_name='Master_Half_Life', index=True)
-        master_rmse_table.to_excel(writer, sheet_name='Master_RMSE', index=True)
-        
-        # Add master metadata
-        master_metadata = pd.DataFrame({
-            'Parameter': [
-                'Table Structure', 'Rows per Indicator', 'Total Indicators', 'Total Rows',
-                'Analysis Periods', 'Statistical Methods', 'Export Date'
-            ],
-            'Value': [
-                '8 rows × 7 columns (2 periods × 4 indicators)',
-                '2 (Full Period + Crisis-Excluded)', '4', '8',
-                'Full Period (1999-2025) and Crisis-Excluded', 
-                'F-tests, AR(4) models, RMSE prediction',
-                pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
-            ]
-        })
-        master_metadata.to_excel(writer, sheet_name='Master_Tables_Metadata', index=False)
-    
-    excel_data = output.getvalue()
-    
-    st.download_button(
-        label="📥 Download All Master Tables (Excel)",
-        data=excel_data,
-        file_name=f"cs4_master_tables_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+    # Continue to Summary Insights section
 
 
 def create_master_table(indicators, full_table, crisis_table, table_type):
@@ -1102,21 +1068,91 @@ def display_summary_insights_and_export(full_results, crisis_results):
     
     with col1:
         st.markdown("""
-        ### 📊 Key Findings Across Indicators
-        - **Volatility Patterns:** Iceland shows systematically different volatility compared to most comparator groups
-        - **F-Test Results:** Strongest statistical differences observed with aggregated measures (sum indicators)  
-        - **Crisis Impact:** Crisis exclusion generally reduces volatility measures across all groups
-        - **Consistency:** Patterns remain consistent across different capital flow types
+        ### 📊 Key Findings Across All 4 Indicators
+        - **Comprehensive Analysis:** Covers Net Direct Investment, Net Portfolio Investment, Net Other Investment, and Net Capital Flows
+        - **Volatility Patterns:** Iceland shows systematically different volatility compared to weighted averages of comparator groups
+        - **F-Test Results:** Statistical significance varies across indicators, with strongest differences in aggregated capital flows
+        - **Crisis Impact:** Crisis exclusion (2008-2010, 2020-2022) reduces volatility measures across all groups and indicators
+        - **Methodological Consistency:** Weighted vs simple average comparisons reveal different patterns across indicator types
         """)
     
     with col2:
         st.markdown("""
-        ### ⏱️ Temporal Dynamics
-        - **Half-Life Patterns:** Most indicators show 1-2 quarter half-lives, consistent with efficient markets
-        - **Persistence:** Low persistence suggests rapid adjustment to equilibrium
-        - **Predictability:** RMSE varies significantly across indicators and groups
-        - **Model Performance:** AR(4) models generally provide reasonable fit for most series
+        ### ⏱️ Temporal Dynamics Across Indicators
+        - **Half-Life Analysis:** All 4 indicators show varying persistence patterns, with most exhibiting 1-3 quarter half-lives
+        - **ACF Patterns:** 8 comprehensive panels (4 indicators × 2 periods) reveal different autocorrelation structures
+        - **Prediction Accuracy:** RMSE varies significantly across indicators, with Direct Investment showing different patterns than Portfolio flows
+        - **Model Performance:** AR(4) models capture temporal dynamics effectively across Full and Crisis-Excluded periods
+        - **Crisis Effects:** Crisis exclusion improves model fit and reduces prediction errors for most capital flow types
         """)
+    
+    # Add Master Tables Export at the bottom of the page
+    st.markdown("---")
+    st.subheader("📁 Master Tables Export")
+    st.markdown("**Download comprehensive statistical results in Excel format with all 3 master tables and metadata.**")
+    
+    # Get the master tables from the main analysis
+    indicators = full_results['metadata']['indicators_analyzed']
+    
+    # Recreate master tables for export (since they were created in main function scope)
+    master_std_table = create_master_table(
+        indicators, 
+        full_results['summary_tables']['standard_deviations_ftest'],
+        crisis_results['summary_tables']['standard_deviations_ftest'],
+        'std'
+    )
+    
+    master_halflife_table = create_master_table(
+        indicators,
+        full_results['summary_tables']['half_life_ar4'],
+        crisis_results['summary_tables']['half_life_ar4'], 
+        'halflife'
+    )
+    
+    master_rmse_table = create_master_table(
+        indicators,
+        full_results['summary_tables']['rmse_prediction'],
+        crisis_results['summary_tables']['rmse_prediction'],
+        'rmse'
+    )
+    
+    # Create Excel export for all master tables
+    output = io.BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        master_std_table.to_excel(writer, sheet_name='Master_Standard_Deviations', index=True)
+        master_halflife_table.to_excel(writer, sheet_name='Master_Half_Life', index=True)
+        master_rmse_table.to_excel(writer, sheet_name='Master_RMSE', index=True)
+        
+        # Add master metadata
+        master_metadata = pd.DataFrame({
+            'Parameter': [
+                'Analysis Scope', 'Methodology', 'Total Indicators', 'Time Periods',
+                'Table Structure', 'Comparator Groups', 'Statistical Methods', 'Export Date'
+            ],
+            'Value': [
+                'Net Direct/Portfolio/Other Investment + Net Capital Flows',
+                'Weighted vs Simple averages of comparator groups',
+                '4 capital flow indicators', 'Full Period (1999-2025) & Crisis-Excluded',
+                '8 rows × 7 columns per table (4 indicators × 2 periods)',
+                'Eurozone, Small Open Economies (SOE), Baltic countries', 
+                'F-tests, AR(4) impulse response, RMSE prediction',
+                pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')
+            ]
+        })
+        master_metadata.to_excel(writer, sheet_name='Analysis_Metadata', index=False)
+    
+    excel_data = output.getvalue()
+    
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.download_button(
+            label="📥 Download All Master Tables (Excel)",
+            data=excel_data,
+            file_name=f"cs4_comprehensive_analysis_{pd.Timestamp.now().strftime('%Y%m%d')}.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
 
 
 def create_integrated_table(indicator, full_table, crisis_table, table_type):
