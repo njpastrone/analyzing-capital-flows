@@ -393,47 +393,50 @@ def create_comprehensive_boxplots_chart(full_results, crisis_results, period_nam
         box.set_facecolor(color)
         box.set_alpha(0.7)
     
-    # Styling
+    # Styling with rotated labels and adjusted font sizes
     ax.set_title(f'Net Capital Flows Distribution - {period_name} (Ordered by Volatility)', 
-                fontweight='bold', fontsize=14, pad=20)
+                fontweight='bold', fontsize=14, pad=30)  # Increased padding
     ax.set_ylabel('Net Capital Flows (% of GDP)', fontsize=12)
+    
+    # Rotate x-axis labels and reduce y-axis font size
+    plt.xticks(rotation=45, ha='right', fontsize=10)
+    plt.yticks(fontsize=8)
+    
     ax.grid(True, alpha=0.3, axis='y')
-    ax.tick_params(axis='x', rotation=0)
     
     # Add reference line at zero
     ax.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=0.8)
     
-    plt.tight_layout()
+    # Adjust spacing to prevent label cutoff with rotated labels
+    plt.subplots_adjust(top=0.88, bottom=0.15)
     return fig
 
 
-def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
-    """Create ACF (Autocorrelation Function) charts grid for all 7 groups (clean version with enhanced spacing)"""
+def create_comprehensive_acf_chart(indicator_name, period_name):
+    """Create ACF charts in 1x4 layout for weighted averages only"""
     
-    # Load data for Net Capital Flows
+    # Load data for specified indicator
     from core.cs4_statistical_analysis import CS4DataLoader
     loader = CS4DataLoader()
     
     include_crisis = (period_name == "Full Period")
-    data = loader.load_indicator_data("Net Capital Flows", include_crisis_years=include_crisis)
+    data = loader.load_indicator_data(indicator_name, include_crisis_years=include_crisis)
     
     if data is None:
-        st.warning(f"Unable to load data for {period_name} ACF charts")
+        st.warning(f"Unable to load {indicator_name} data for {period_name} ACF charts")
         return None
     
-    # Define groups and labels
-    groups = ['iceland_pgdp', 'eurozone_pgdp_weighted', 'eurozone_pgdp_simple', 'soe_pgdp_weighted', 'soe_pgdp_simple', 'baltics_pgdp_weighted', 'baltics_pgdp_simple']
-    group_labels = ['Iceland', 'Eurozone Weighted Avg', 'Eurozone Simple Avg', 'SOE Weighted Avg', 'SOE Simple Avg', 'Baltics Weighted Avg', 'Baltics Simple Avg']
+    # Use only weighted averages (excluding simple averages)
+    groups = ['iceland_pgdp', 'eurozone_pgdp_weighted', 'soe_pgdp_weighted', 'baltics_pgdp_weighted']
+    group_labels = ['Iceland', 'Eurozone Weighted Avg', 'SOE Weighted Avg', 'Baltics Weighted Avg']
     
-    # Create figure with 3x3 grid (7 used, 2 empty) - Dynamic PDF optimized size
-    figsize = get_pdf_optimized_figsize('grid', 10, 8)
-    fig, axes = plt.subplots(3, 3, figsize=figsize)
-    axes = axes.flatten()
+    # Create figure with 1x4 layout for cleaner presentation
+    figsize = (12, 3)  # Wide and short for 1x4 layout
+    fig, axes = plt.subplots(1, 4, figsize=figsize)
     
-    plot_count = 0
     for i, (group, label) in enumerate(zip(groups, group_labels)):
-        if group in data.columns and plot_count < 7:
-            ax = axes[plot_count]
+        if group in data.columns and i < 4:
+            ax = axes[i]
             series = data[group].dropna()
             
             if len(series) > 10:  # Need sufficient data for ACF
@@ -451,12 +454,12 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
                         ax.bar(x_lags, acf_vals, alpha=0.8, color='#2c3e50', edgecolor='black', linewidth=0.5)
                         
                         # Enhanced styling with quarterly time unit specification
-                        ax.set_title(f'{label}', fontweight='bold', fontsize=8, pad=10)
-                        ax.set_xlabel('Lags (Quarters)', fontsize=7, fontweight='medium')
-                        ax.set_ylabel('ACF', fontsize=7, fontweight='medium')
+                        ax.set_title(f'{label}', fontweight='bold', fontsize=9, pad=8)
+                        ax.set_xlabel('Lags (Quarters)', fontsize=8, fontweight='medium')
+                        ax.set_ylabel('ACF', fontsize=8, fontweight='medium')
                         ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.5)
                         ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, linewidth=1)
-                        ax.tick_params(axis='both', labelsize=6)
+                        ax.tick_params(axis='both', labelsize=7)
                         
                         # Set reasonable y-axis limits
                         ax.set_ylim(-1.1, 1.1)
@@ -467,28 +470,23 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
                         
                     except Exception as e:
                         ax.text(0.5, 0.5, f'ACF calculation\nfailed for {label}', 
-                               ha='center', va='center', transform=ax.transAxes, fontsize=11)
-                        ax.set_title(f'{label}', fontweight='bold', fontsize=8, pad=10)
-                        ax.set_xlabel('Lags (Quarters)', fontsize=7)
+                               ha='center', va='center', transform=ax.transAxes, fontsize=9)
+                        ax.set_title(f'{label}', fontweight='bold', fontsize=9, pad=8)
+                        ax.set_xlabel('Lags (Quarters)', fontsize=8)
             else:
                 ax.text(0.5, 0.5, f'Insufficient data\nfor {label}', 
-                       ha='center', va='center', transform=ax.transAxes, fontsize=8)
-                ax.set_title(f'{label}', fontweight='bold', fontsize=8, pad=10)
-                ax.set_xlabel('Lags (Quarters)', fontsize=7)
-                
-            plot_count += 1
+                       ha='center', va='center', transform=ax.transAxes, fontsize=9)
+                ax.set_title(f'{label}', fontweight='bold', fontsize=9, pad=8)
+                ax.set_xlabel('Lags (Quarters)', fontsize=8)
     
-    # Hide unused subplots
-    for i in range(plot_count, 9):
-        axes[i].axis('off')
+    # Enhanced title with indicator and period specification
+    title_text = f'{indicator_name} - {period_name}'
+    if period_name == "Crisis-Excluded":
+        title_text += ' (Excludes 2008-2010, 2020-2022)'
+    plt.suptitle(title_text, fontweight='bold', fontsize=11, y=1.08)
     
-    # Enhanced title with quarterly specification
-    plt.suptitle(f'Autocorrelation Functions - Net Capital Flows ({period_name})\nQuarterly Data: Each lag = 3 months', 
-                fontweight='bold', fontsize=10, y=0.95)
-    
-    # SIGNIFICANTLY increased spacing to prevent any text overlap
-    plt.subplots_adjust(top=0.85, bottom=0.08, left=0.08, right=0.95, 
-                       hspace=0.6, wspace=0.3)
+    # Conservative spacing for 1x4 layout
+    plt.subplots_adjust(top=0.80, bottom=0.15, left=0.06, right=0.98, wspace=0.25)
     
     return fig
 
@@ -781,47 +779,58 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         mime="text/csv"
     )
     
-    # Chart 3: ACF charts grid (Full Period)
+    # Charts 3-4: Comprehensive ACF Analysis - All Indicators
     st.markdown("---")
-    st.subheader("📊 Chart 3: Autocorrelation Analysis - Full Period")
-    st.markdown("**Autocorrelation functions showing persistence patterns across all groups**")
+    st.subheader("📊 Charts 3-4: Comprehensive Autocorrelation Analysis")
+    st.markdown("**ACF patterns across all indicators for both time periods (weighted averages only)**")
     
-    chart3 = create_comprehensive_acf_chart(full_results, crisis_results, "Full Period")
-    if chart3:
-        st.pyplot(chart3)
-        
-        # Download button for Chart 3
-        buf3 = io.BytesIO()
-        chart3.savefig(buf3, format='png', dpi=300, bbox_inches='tight', facecolor='white')
-        buf3.seek(0)
-        st.download_button(
-            label="📥 Download Full Period ACF Charts (PNG)",
-            data=buf3,
-            file_name="cs4_comprehensive_acf_full_period.png",
-            mime="image/png"
-        )
-        plt.close(chart3)
+    # Define all indicators for comprehensive analysis
+    indicators_for_acf = [
+        'Net Direct Investment',
+        'Net Portfolio Investment', 
+        'Net Other Investment',
+        'Net Capital Flows'
+    ]
     
-    # Chart 4: ACF charts grid (Crisis-Excluded)
-    st.markdown("---")
-    st.subheader("📊 Chart 4: Autocorrelation Analysis - Crisis-Excluded")
-    st.markdown("**Persistence patterns with financial crisis periods removed**")
+    # Generate ACF charts for all indicators - Full Period first
+    st.markdown("### Full Period Analysis")
+    for idx, indicator in enumerate(indicators_for_acf, 1):
+        chart = create_comprehensive_acf_chart(indicator, "Full Period")
+        if chart:
+            st.pyplot(chart)
+            
+            # Add download button
+            buf = io.BytesIO()
+            chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+            buf.seek(0)
+            st.download_button(
+                label=f"📥 Download {indicator} Full Period ACF (PNG)",
+                data=buf,
+                file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_full.png",
+                mime="image/png",
+                key=f"acf_full_{idx}"
+            )
+            plt.close(chart)
     
-    chart4 = create_comprehensive_acf_chart(full_results, crisis_results, "Crisis-Excluded")
-    if chart4:
-        st.pyplot(chart4)
-        
-        # Download button for Chart 4
-        buf4 = io.BytesIO()
-        chart4.savefig(buf4, format='png', dpi=300, bbox_inches='tight', facecolor='white')
-        buf4.seek(0)
-        st.download_button(
-            label="📥 Download Crisis-Excluded ACF Charts (PNG)",
-            data=buf4,
-            file_name="cs4_comprehensive_acf_crisis_excluded.png",
-            mime="image/png"
-        )
-        plt.close(chart4)
+    # Generate ACF charts for all indicators - Crisis-Excluded
+    st.markdown("### Crisis-Excluded Analysis")
+    for idx, indicator in enumerate(indicators_for_acf, 5):  # Continue numbering from 5
+        chart = create_comprehensive_acf_chart(indicator, "Crisis-Excluded")
+        if chart:
+            st.pyplot(chart)
+            
+            # Add download button
+            buf = io.BytesIO()
+            chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+            buf.seek(0)
+            st.download_button(
+                label=f"📥 Download {indicator} Crisis-Excluded ACF (PNG)",
+                data=buf,
+                file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_no_crisis.png",
+                mime="image/png",
+                key=f"acf_crisis_{idx}"
+            )
+            plt.close(chart)
     
     # Table 3: Master RMSE Results
     st.markdown("---")
@@ -930,7 +939,7 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
 
 
 def create_master_table(indicators, full_table, crisis_table, table_type):
-    """Create master table with all indicators in 8-row format (2 rows per indicator × 4 indicators)"""
+    """Create master table with Full-then-Crisis-Excluded ordering across all indicators"""
     
     # Initialize master data structure
     master_data = []
@@ -938,25 +947,33 @@ def create_master_table(indicators, full_table, crisis_table, table_type):
     # Get column names (excluding 'Indicator')
     columns = [col for col in full_table.columns if col != 'Indicator']
     
-    # Process each indicator
+    # First add all Full Period rows
     for indicator in indicators:
-        # Find rows for this indicator in both tables
         full_row = full_table[full_table['Indicator'] == indicator]
-        crisis_row = crisis_table[crisis_table['Indicator'] == indicator]
         
-        if len(full_row) == 0 or len(crisis_row) == 0:
-            st.warning(f"Data not found for {indicator} in master table creation")
+        if len(full_row) == 0:
+            st.warning(f"Full period data not found for {indicator} in master table creation")
             continue
             
-        # Get the first (and should be only) row for each
+        # Get the first (and should be only) row
         full_data = full_row.iloc[0]
-        crisis_data = crisis_row.iloc[0]
         
         # Create Full Period row
-        full_period_row = {'Indicator/Period': f"{indicator} (Full Time Period)"}
+        full_period_row = {'Indicator/Period': f"{indicator} (Full)"}
         for col in columns:
             full_period_row[col] = full_data[col]
         master_data.append(full_period_row)
+    
+    # Then add all Crisis-Excluded rows
+    for indicator in indicators:
+        crisis_row = crisis_table[crisis_table['Indicator'] == indicator]
+        
+        if len(crisis_row) == 0:
+            st.warning(f"Crisis-excluded data not found for {indicator} in master table creation")
+            continue
+            
+        # Get the first (and should be only) row
+        crisis_data = crisis_row.iloc[0]
         
         # Create Crisis-Excluded row  
         crisis_excluded_row = {'Indicator/Period': f"{indicator} (Crisis-Excluded)"}
