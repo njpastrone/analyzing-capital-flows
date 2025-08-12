@@ -451,12 +451,12 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
                         ax.bar(x_lags, acf_vals, alpha=0.8, color='#2c3e50', edgecolor='black', linewidth=0.5)
                         
                         # Enhanced styling with quarterly time unit specification
-                        ax.set_title(f'{label}', fontweight='bold', fontsize=12, pad=20)
-                        ax.set_xlabel('Lags (Quarters)', fontsize=10, fontweight='medium')
-                        ax.set_ylabel('ACF', fontsize=10, fontweight='medium')
+                        ax.set_title(f'{label}', fontweight='bold', fontsize=8, pad=10)
+                        ax.set_xlabel('Lags (Quarters)', fontsize=7, fontweight='medium')
+                        ax.set_ylabel('ACF', fontsize=7, fontweight='medium')
                         ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.5)
                         ax.axhline(y=0, color='black', linestyle='-', alpha=0.5, linewidth=1)
-                        ax.tick_params(axis='both', labelsize=9)
+                        ax.tick_params(axis='both', labelsize=6)
                         
                         # Set reasonable y-axis limits
                         ax.set_ylim(-1.1, 1.1)
@@ -468,13 +468,13 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
                     except Exception as e:
                         ax.text(0.5, 0.5, f'ACF calculation\nfailed for {label}', 
                                ha='center', va='center', transform=ax.transAxes, fontsize=11)
-                        ax.set_title(f'{label}', fontweight='bold', fontsize=12, pad=20)
-                        ax.set_xlabel('Lags (Quarters)', fontsize=10)
+                        ax.set_title(f'{label}', fontweight='bold', fontsize=8, pad=10)
+                        ax.set_xlabel('Lags (Quarters)', fontsize=7)
             else:
                 ax.text(0.5, 0.5, f'Insufficient data\nfor {label}', 
-                       ha='center', va='center', transform=ax.transAxes, fontsize=11)
-                ax.set_title(f'{label}', fontweight='bold', fontsize=12, pad=20)
-                ax.set_xlabel('Lags (Quarters)', fontsize=10)
+                       ha='center', va='center', transform=ax.transAxes, fontsize=8)
+                ax.set_title(f'{label}', fontweight='bold', fontsize=8, pad=10)
+                ax.set_xlabel('Lags (Quarters)', fontsize=7)
                 
             plot_count += 1
     
@@ -484,10 +484,10 @@ def create_comprehensive_acf_chart(full_results, crisis_results, period_name):
     
     # Enhanced title with quarterly specification
     plt.suptitle(f'Autocorrelation Functions - Net Capital Flows ({period_name})\nQuarterly Data: Each lag = 3 months', 
-                fontweight='bold', fontsize=16, y=0.95)
+                fontweight='bold', fontsize=10, y=0.95)
     
     # SIGNIFICANTLY increased spacing to prevent any text overlap
-    plt.subplots_adjust(top=0.90, bottom=0.08, left=0.08, right=0.95, 
+    plt.subplots_adjust(top=0.85, bottom=0.08, left=0.08, right=0.95, 
                        hspace=0.6, wspace=0.3)
     
     return fig
@@ -544,14 +544,15 @@ def create_comprehensive_timeseries_chart(aggregation_type):
     
     # Styling
     ax.set_title(f'Net Capital Flows Over Time - {aggregation_type} Comparison', 
-                fontweight='bold', fontsize=14, pad=20)
-    ax.set_xlabel('Year', fontsize=12)
-    ax.set_ylabel('Net Capital Flows (% of GDP)', fontsize=12)
+                fontweight='bold', fontsize=12, pad=15)
+    ax.set_xlabel('Year', fontsize=10)
+    ax.set_ylabel('Net Capital Flows (% of GDP)', fontsize=10)
     ax.grid(True, alpha=0.3)
     ax.axhline(y=0, color='black', linestyle='-', alpha=0.4, linewidth=1)
     
-    # Legend
-    ax.legend(loc='upper right', frameon=True, fancybox=True, shadow=True)
+    # Optimized legend placement and size
+    ax.legend(loc='lower left', fontsize=7, frameon=True, fancybox=False, shadow=False,
+              markerscale=0.6)
     
     # Format x-axis
     ax.tick_params(axis='x', rotation=45)

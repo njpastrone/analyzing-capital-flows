@@ -1,0 +1,287 @@
+---
+title: "Revised CS4 Modeling"
+format: html
+editor: visual
+---
+
+## Import Full DF
+
+```{r, message=F}
+library(tidyverse)
+library(readr)
+library(stringr)
+options(scipen = 999)
+```
+
+```{r}
+full_df_usd <- read_csv("Clean/comprehensive_df_USD.csv ")
+```
+```{r}
+full_df_usd |> 
+  head()
+```
+
+```{r}
+full_df_usd |> 
+  colnames()
+```
+
+
+### Create Net Flows Column, Rename All Flows, Select Relevant Columns
+```{r}
+full_df_usd |> 
+  mutate(
+    net_capital_flows_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities` + `Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities` + `Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities`
+  ) |> 
+  rename(
+    net_direct_investment_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities`,
+    net_portfolio_investment_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities`,
+    net_other_investment_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities`
+  ) |> 
+  select(COUNTRY, YEAR, QUARTER, UNIT, `Gross domestic product (GDP), Current prices, US dollar`, net_direct_investment_usd, net_portfolio_investment_usd, net_other_investment_usd, net_capital_flows_usd) -> clean_cap_flows_usd
+```
+
+```{r}
+clean_cap_flows_usd |> 
+  head()
+```
+
+### Create Groupings for Statistical Tests
+
+#### Establish Country Groups
+
+```{r}
+eurozone_countries <- c("Portugal","Ireland","Finland","Netherlands, The",
+                        "Belgium","Italy","Spain","Austria","France")
+soe_countries <- c("Brunei Darussalam","Bahamas, The","Bermuda","Seychelles",
+                   "Aruba, Kingdom of the Netherlands","Mauritius","Malta")
+baltics_countries <- c("Estonia, Republic of","Latvia, Republic of","Lithuania, Republic of")
+
+```
+
+#### GDP
+
+```{r}
+clean_cap_flows_usd |> 
+  select(COUNTRY, YEAR, QUARTER, UNIT, `Gross domestic product (GDP), Current prices, US dollar`) |> 
+  pivot_wider(names_from = COUNTRY, values_from = `Gross domestic product (GDP), Current prices, US dollar`) |> 
+  rowwise() |>
+  mutate(
+    
+    eurozone_gdp = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_gdp = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_gdp = sum(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |> 
+  ungroup() |> 
+  select(YEAR, QUARTER, UNIT, Iceland, eurozone_gdp, soe_gdp, baltics_gdp) |> 
+  rename(iceland_gdp = Iceland)-> gdp_usd
+```
+
+```{r}
+gdp_usd |> 
+  head()
+```
+
+#### Net Direct Investment
+
+```{r}
+clean_cap_flows_usd |> 
+  select(COUNTRY, YEAR, QUARTER, UNIT, net_direct_investment_usd) |> 
+  pivot_wider(names_from = COUNTRY, values_from = net_direct_investment_usd) |> 
+  rowwise() |>
+  mutate(
+    
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |> 
+  ungroup() |> 
+  select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_direct_investment_full
+```
+
+```{r}
+net_direct_investment_full |> 
+  head()
+```
+
+```{r}
+net_direct_investment_full |> 
+  filter(!YEAR %in% c(2008, 2009, 2010, 2020, 2021, 2022)) -> net_direct_investment_no_crises
+```
+
+```{r}
+ net_direct_investment_no_crises |> 
+  distinct(YEAR)
+```
+
+##### Normalize
+
+```{r}
+net_direct_investment_full |> 
+  left_join(gdp_usd, by = join_by(YEAR, QUARTER, UNIT)) |> 
+  mutate(
+    iceland_pgdp = ((Iceland * 4) / iceland_gdp)*100,
+    soe_pgdp = ((soe_sum * 4) / soe_gdp)*100
+    eurozone_pgdp = 
+    
+  )
+```
+
+### REVISE WEIGHTED AVG CODE HERE
+
+```{r}
+ANNUALIZE <- 4  # set to 1 if your flows/GDP are already annual(ized)
+
+net_direct_investment_full |>
+  left_join(gdp_usd, by = join_by(YEAR, QUARTER, UNIT)) |>
+  transmute(
+    YEAR, QUARTER, UNIT,
+    
+    # optional: keep Iceland too
+    iceland_pgdp_weighted  = if_else(iceland_gdp > 0, (Iceland * ANNUALIZE / iceland_gdp) * 100, NA_real_),
+
+    eurozone_pgdp_weighted = if_else(eurozone_gdp > 0, (eurozone_sum * ANNUALIZE / eurozone_gdp) * 100, NA_real_),
+    soe_pgdp_weighted      = if_else(soe_gdp      > 0, (soe_sum      * ANNUALIZE / soe_gdp)      * 100, NA_real_),
+    baltics_pgdp_weighted  = if_else(baltics_gdp  > 0, (baltics_sum  * ANNUALIZE / baltics_gdp)  * 100, NA_real_)
+  )
+```
+
+
+
+#### Net Portfolio Investment
+
+```{r}
+clean_cap_flows |> 
+  select(COUNTRY, YEAR, QUARTER, UNIT, net_portfolio_investment_usd) |> 
+  pivot_wider(names_from = COUNTRY, values_from = net_portfolio_investment_usd) |> 
+  rowwise() |>
+  mutate(
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |>
+  ungroup() |> 
+  select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_portfolio_investment_full
+```
+
+```{r}
+net_portfolio_investment_full |> 
+  head()
+```
+
+```{r}
+net_portfolio_investment_full |> 
+  filter(!YEAR %in% c(2008, 2009, 2010, 2020, 2021, 2022)) -> net_portfolio_investment_no_crises
+```
+
+#### Net Other Investment
+
+```{r}
+clean_cap_flows |> 
+  select(COUNTRY, YEAR, QUARTER, UNIT, net_other_investment_usd) |> 
+  pivot_wider(names_from = COUNTRY, values_from = net_other_investment_usd) |> 
+  rowwise() |>
+  mutate(
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |>
+  ungroup() |> 
+  select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_other_investment_full
+```
+
+```{r}
+net_other_investment_full |> 
+  head()
+```
+
+```{r}
+net_other_investment_full |> 
+  filter(!YEAR %in% c(2008, 2009, 2010, 2020, 2021, 2022)) -> net_other_investment_no_crises
+```
+
+#### Net Flows
+
+```{r}
+clean_cap_flows |> 
+  select(COUNTRY, YEAR, QUARTER, UNIT, net_capital_flows_usd) |> 
+  pivot_wider(names_from = COUNTRY, values_from = net_capital_flows_usd) |> 
+  rowwise() |>
+  mutate(
+    eurozone_sum = sum(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+    eurozone_avg = mean(c_across(all_of(eurozone_countries)), na.rm = TRUE),
+
+    soe_sum = sum(c_across(all_of(soe_countries)), na.rm = TRUE),
+    soe_avg = mean(c_across(all_of(soe_countries)), na.rm = TRUE),
+
+    baltics_sum = sum(c_across(all_of(baltics_countries)), na.rm = TRUE),
+    baltics_avg = mean(c_across(all_of(baltics_countries)), na.rm = TRUE)
+  ) |>
+  ungroup() |> 
+  select(YEAR, QUARTER, UNIT, Iceland, eurozone_sum, eurozone_avg, soe_sum, soe_avg, baltics_sum, baltics_avg) -> net_capital_flows_full
+```
+
+```{r}
+net_capital_flows_full |> 
+  head()
+```
+
+```{r}
+net_capital_flows_full |> 
+  filter(!YEAR %in% c(2008, 2009, 2010, 2020, 2021, 2022)) -> net_capital_flows_no_crises
+```
+
+#### Write DFs
+
+```{r}
+write_csv(net_direct_investment_full, "Clean/CS4_Statistical_Modeling/net_direct_investment_full.csv")
+```
+
+```{r}
+write_csv(net_direct_investment_no_crises, "Clean/CS4_Statistical_Modeling/net_direct_investment_no_crises.csv")
+```
+
+```{r}
+write_csv(net_portfolio_investment_full, "Clean/CS4_Statistical_Modeling/net_portfolio_investment_full.csv")
+```
+
+```{r}
+write_csv(net_portfolio_investment_no_crises, "Clean/CS4_Statistical_Modeling/net_portfolio_investment_no_crises.csv")
+```
+
+```{r}
+write_csv(net_other_investment_full, "Clean/CS4_Statistical_Modeling/net_other_investment_full.csv")
+```
+
+```{r}
+write_csv(net_other_investment_no_crises, "Clean/CS4_Statistical_Modeling/net_other_investment_no_crises.csv")
+```
+
+```{r}
+write_csv(net_capital_flows_full, "Clean/CS4_Statistical_Modeling/net_capital_flows_full.csv")
+```
+
+```{r}
+write_csv(net_capital_flows_no_crises, "Clean/CS4_Statistical_Modeling/net_capital_flows_no_crises.csv")
+```
+
+
+
+
