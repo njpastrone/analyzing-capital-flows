@@ -1,0 +1,163 @@
+---
+title: "Cleaning Non-API Data"
+format: html
+editor: visual
+---
+
+```{r, message=F}
+library(readxl)
+library(tidyverse)
+```
+
+## Capital Controls (Financial Openness) Data
+
+```{r}
+capital_controls <- read_excel("capital_controls_indicator/2021-FKRSU-Update-12-08-2021.xlsx", 
+    sheet = "DATASET", na = c("n.a", "n.r", "d.n.e", ""))
+```
+
+```{r}
+capital_controls |> 
+  head()
+```
+
+```{r}
+capital_controls |> 
+  select(c("country", "year", "code_wdi", "code_ifs", "region", "incomegroup", "incomesubgroup", "ka", "kai", "kao")) |> head()
+```
+
+```{r}
+capital_controls |> 
+  select(
+    c("country", "year", "code_wdi", "code_ifs", "region",
+      "incomegroup", "incomesubgroup", "ka", "kai", "kao")) |>
+  rename(
+    "overall_restrictions_index" = ka,
+    "overall_inflow_restrictions_index" = kai,
+    "overall_outflow_restrictions_index" = kao,
+    "income_group" = incomegroup,
+    "income_sub_group" = incomesubgroup
+  ) -> capital_controls
+
+capital_controls |> 
+  head()
+```
+
+```{r}
+write_csv(capital_controls, file = "capital_controls_indicator/cleaned_capital_controls.csv")
+```
+
+## Exchange Rate Regime Data
+
+```{r, show=F, message=F}
+exchange_rate_regime_indicator <- read_excel("exchange_rate_regime/ERA_Classification_Monthly_1940-2019.xlsx", 
+    sheet = "Coarse", col_names = FALSE, 
+    skip = 4)
+```
+
+```{r}
+exchange_rate_regime_indicator |> 
+  head()
+```
+
+### Fix weird country naming issue
+
+```{r}
+combine_country_names <- function(row_a, row_b) {
+  # Convert actual NAs and string "NA" to ""
+  clean <- function(x) {
+    x <- as.character(x)
+    x[is.na(x) | x == "NA"] <- ""
+    trimws(x)
+  }
+  
+  row_a <- clean(row_a)
+  row_b <- clean(row_b)
+  
+  n <- length(row_a)
+  output <- character(n)
+  
+  for (i in seq_len(n)) {
+    part_a <- row_a[i]
+    part_b <- row_b[i]
+    
+    if (nzchar(part_a) && nzchar(part_b)) {
+      # Use same heuristic as before
+      if (grepl("\\b(and|of|the)$", tolower(part_a))) {
+        output[i] <- paste(part_b, part_a)
+      } else if (grepl("^(and|of|the)\\b", tolower(part_b))) {
+        output[i] <- paste(part_a, part_b)
+      } else {
+        output[i] <- paste(part_a, part_b)
+      }
+    } else if (nzchar(part_a)) {
+      output[i] <- part_a
+    } else if (nzchar(part_b)) {
+      output[i] <- part_b
+    } else {
+      output[i] <- ""
+    }
+  }
+  
+  return(output)
+}
+
+```
+
+```{r}
+row_a <- as.character(exchange_rate_regime_indicator[1, ])
+```
+
+```{r}
+row_b <- as.character(exchange_rate_regime_indicator[2, ])
+```
+
+```{r}
+clean_headers <- combine_country_names(row_a, row_b)
+```
+
+```{r}
+clean_headers[1:10]
+```
+
+```{r}
+colnames(exchange_rate_regime_indicator) <- clean_headers
+```
+
+```{r}
+exchange_rate_regime_indicator |> head()
+```
+
+```{r}
+new_exchange_rate_regime_indicator <- exchange_rate_regime_indicator[-c(1:3), ]
+```
+
+```{r}
+new_exchange_rate_regime_indicator |> head()
+```
+
+```{r}
+new_exchange_rate_regime_indicator <- new_exchange_rate_regime_indicator[, -1]
+```
+
+```{r}
+
+colnames(new_exchange_rate_regime_indicator)[1] <- "period"
+
+new_exchange_rate_regime_indicator |> 
+  mutate(
+    year = as.integer(sub("M.*", "", period)),
+    month = as.integer(sub(".*M", "", period))
+  ) |> 
+  select(year, month, everything()) |> 
+  select(-period) -> clean_exchange_rate_regime_indicator
+```
+
+```{r}
+clean_exchange_rate_regime_indicator |> 
+  head()
+```
+
+```{r}
+write_csv(clean_exchange_rate_regime_indicator, file = "exchange_rate_regime/cleaned_exchange_rate_regime_indicator.csv" )
+```
