@@ -1,5 +1,5 @@
 ---
-title: "Compiling IMF and Other Data"
+title: "Testing Correlation - Financial Openness and Capital Flow Variation"
 format: html
 editor: visual
 ---
@@ -296,11 +296,6 @@ make_scatter_with_caption(
   title  = "Country SD of Net Capital Flows vs. Restrictions Index",
   base_caption = "Outliers removed (1st & 99th percentile)."
 )
-```
-
-```{r}
-country_sd_flows_cap_controls_no_outliers |> 
-  distinct(iso3c)
 ```
 
 

@@ -1,0 +1,310 @@
+---
+title: "Testing Correlation (no underdeveloped economies) - Financial Openness and Capital Flow Variation"
+format: html
+editor: visual
+---
+
+#### Financial Openness and Net Flows data
+
+### Load libraries
+
+```{r, message=F}
+library(tidyverse)
+library(readr)
+library(stringr)
+options(scipen = 999)
+```
+
+### IMF Data
+
+##### Loading
+
+```{r}
+net_flows_data_USD <- read_csv("Clean/net_flows_data_USD.csv")
+```
+
+```{r}
+net_flows_data_USD |> head()
+```
+
+##### GDP Standardization and Cleaning
+
+```{r}
+gdp_data_USD <- read_csv("Clean/gdp_data_USD.csv")
+```
+
+```{r}
+gdp_data_USD |> 
+  head()
+```
+
+```{r}
+# Set thresholds
+gdp_threshold       <- 2e10   # e.g., $20B USD
+gdp_threshold_year  <- 1999   # reference year to evaluate country GDP
+
+# Countries that meet the GDP threshold in the reference year
+keep_countries <- gdp_data_USD |>
+  filter(TIME_PERIOD == gdp_threshold_year) |>
+  filter(!is.na(`Gross domestic product (GDP), Current prices, US dollar`)) |>
+  filter(`Gross domestic product (GDP), Current prices, US dollar` >= gdp_threshold) |>
+  distinct(COUNTRY) |>
+  pull(COUNTRY)
+
+# Re-run pipeline: keep full panel for qualifying countries
+net_flows_data_USD |>
+  filter(COUNTRY %in% keep_countries) |>
+  left_join(gdp_data_USD, by = c("COUNTRY", "YEAR" = "TIME_PERIOD")) |>
+  mutate(
+    net_capital_flows_usd =
+      `Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities` +
+      `Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities` +
+      `Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities`
+  ) |>
+  select(COUNTRY, YEAR, `Gross domestic product (GDP), Current prices, US dollar`, net_capital_flows_usd) |>
+  mutate(net_flows_pgdp = (net_capital_flows_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`) * 100) |>
+  select(-net_capital_flows_usd, -`Gross domestic product (GDP), Current prices, US dollar`) -> clean_net_flows_pgdp
+
+```
+
+```{r}
+clean_net_flows_pgdp |> head()
+```
+
+### Financial Openness Data
+
+##### Loading
+
+```{r}
+capital_controls <- read_csv("Other Data (Not IMF)/capital_controls_indicator/cleaned_capital_controls.csv")
+```
+
+```{r}
+capital_controls |> head()
+```
+
+##### Cleaning
+
+```{r}
+capital_controls |> 
+  select(country, year, overall_restrictions_index) |> 
+  rename(COUNTRY = country, YEAR = year) -> clean_capital_controls
+```
+
+```{r}
+clean_capital_controls |> 
+  head()
+```
+
+###### Clean Country Columns for Join
+
+```{r}
+clean_net_flows_pgdp |> 
+  dim()
+```
+
+```{r}
+clean_capital_controls |> 
+  dim()
+```
+
+###### Join Country Columns by ISO3c Codes
+
+```{r}
+library(dplyr)
+library(stringr)
+library(countrycode)
+
+normalize_country <- function(x) {
+  x |>
+    str_squish() |>
+    str_replace_all("[[:punct:]]", "") |>
+    str_to_title()
+}
+```
+
+```{r}
+clean_net_flows_pgdp |>
+  mutate(country_clean = normalize_country(COUNTRY),
+         iso3c = countrycode(country_clean, origin = "country.name", destination = "iso3c")) -> clean_net_flows_iso
+```
+
+```{r}
+clean_capital_controls |>
+  mutate(country_clean = normalize_country(COUNTRY),
+         iso3c = countrycode(country_clean, origin = "country.name", destination = "iso3c")) -> clean_capital_controls_iso
+```
+
+### Join data
+
+##### Create DF with Yearly SDs
+
+```{r}
+clean_net_flows_iso |> 
+  inner_join(clean_capital_controls_iso, by = c("iso3c", "YEAR")) |> 
+  select(!c("COUNTRY.x", "country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
+  select(iso3c, everything()) |> 
+  group_by(iso3c, YEAR) |> 
+  summarise(
+    yearly_sd_net_capital_flows_pgdp = sd(net_flows_pgdp, na.rm = TRUE),
+    mean_overall_restrictions_index = mean(overall_restrictions_index, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  drop_na() -> yearly_sd_flows_cap_controls
+```
+
+```{r}
+yearly_sd_flows_cap_controls |> head()
+```
+
+##### Create DF with Country Aggregate SDs
+
+```{r}
+clean_net_flows_iso |> 
+  inner_join(clean_capital_controls_iso, by = c("iso3c", "YEAR")) |> 
+  select(!c("COUNTRY.x", "country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
+  select(iso3c, everything()) |> 
+  group_by(iso3c) |> 
+  summarise(
+    country_sd_net_capital_flows_pgdp = sd(net_flows_pgdp, na.rm = TRUE),
+    mean_overall_restrictions_index = mean(overall_restrictions_index, na.rm = TRUE),
+    .groups = "drop"
+  ) |> 
+  drop_na() -> country_sd_flows_cap_controls
+```
+
+```{r}
+country_sd_flows_cap_controls |> head()
+```
+
+### Run Correlation Analysis
+
+##### Yearly SDs
+
+```{r}
+cor.test(yearly_sd_flows_cap_controls$yearly_sd_net_capital_flows_pgdp, yearly_sd_flows_cap_controls$mean_overall_restrictions_index)
+```
+
+##### Country Aggregate SDs
+
+```{r}
+cor.test(country_sd_flows_cap_controls$country_sd_net_capital_flows_pgdp, country_sd_flows_cap_controls$mean_overall_restrictions_index)
+```
+
+### Drop Outliers and Re-run Correlation Test
+
+```{r}
+drop_outliers_pct <- function(df, col, lower = 0.01, upper = 0.99) {
+  q_low <- quantile(df[[col]], lower, na.rm = TRUE)
+  q_high <- quantile(df[[col]], upper, na.rm = TRUE)
+  
+  df |> filter(df[[col]] >= q_low & df[[col]] <= q_high)
+}
+```
+
+```{r}
+drop_outliers_pct(country_sd_flows_cap_controls, "country_sd_net_capital_flows_pgdp") -> country_sd_flows_cap_controls_no_outliers
+```
+
+```{r}
+drop_outliers_pct(yearly_sd_flows_cap_controls, "yearly_sd_net_capital_flows_pgdp") -> yearly_sd_flows_cap_controls_no_outliers
+```
+
+```{r}
+country_sd_flows_cap_controls_no_outliers |> distinct(iso3c) |> arrange(iso3c)
+```
+
+##### Yearly SDs
+
+```{r}
+cor.test(yearly_sd_flows_cap_controls_no_outliers$yearly_sd_net_capital_flows_pgdp, yearly_sd_flows_cap_controls_no_outliers$mean_overall_restrictions_index)
+```
+
+##### Country Aggregate SDs
+
+```{r}
+cor.test(country_sd_flows_cap_controls_no_outliers$country_sd_net_capital_flows_pgdp, country_sd_flows_cap_controls_no_outliers$mean_overall_restrictions_index)
+```
+
+### Plot Results
+
+```{r, message=F}
+library(ggplot2)
+library(dplyr)
+
+# Helper function
+make_scatter_with_caption <- function(df, xcol, ycol, title, base_caption) {
+  ct <- cor.test(df[[xcol]], df[[ycol]])
+  cor_val <- round(unname(ct$estimate), 2)
+  p_val <- ifelse(ct$p.value < 0.001, "< 0.001", signif(ct$p.value, 3))
+  
+  df <- df %>%
+    mutate(
+      is_iceland = toupper(trimws(iso3c)) == "ISL",
+      legend_lab = ifelse(is_iceland, "Iceland", "Other countries")
+    )
+  
+  ggplot(df, aes(x = .data[[xcol]], y = .data[[ycol]])) +
+    geom_point(aes(shape = legend_lab, color = legend_lab), size = 2) +
+    geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "grey30") +
+    scale_shape_manual(values = c("Other countries" = 16, "Iceland" = 17)) +
+    scale_color_manual(values = c("Other countries" = "black", "Iceland" = "red")) +
+    labs(
+      x = "Standard Deviation of Net Capital Flows (% GDP)",
+      y = "Mean Overall Restrictions Index",
+      title = title,
+      subtitle = paste0("Countries with > ", formatC(gdp_threshold, format = "f", big.mark = ",", digits = 0), " USD 1999 GDP "),
+      caption = paste0(base_caption, "  Cor = ", cor_val, " (p ", p_val, ")"),
+      shape = NULL,
+      color = NULL
+    ) +
+    theme_minimal()
+}
+```
+
+#### With Outliers
+
+```{r, message=F}
+make_scatter_with_caption(
+  yearly_sd_flows_cap_controls,
+  xcol   = "yearly_sd_net_capital_flows_pgdp",
+  ycol   = "mean_overall_restrictions_index",
+  title  = "Yearly SD of Net Capital Flows vs. Restrictions Index",
+  base_caption = "Full dataset, no outliers removed."
+)
+```
+
+```{r, message=F}
+make_scatter_with_caption(
+  country_sd_flows_cap_controls,
+  xcol   = "country_sd_net_capital_flows_pgdp",
+  ycol   = "mean_overall_restrictions_index",
+  title  = "Country SD of Net Capital Flows vs. Restrictions Index",
+  base_caption = "Full dataset, no outliers removed."
+)
+```
+
+#### No Outliers
+
+```{r, message=F}
+make_scatter_with_caption(
+  yearly_sd_flows_cap_controls_no_outliers,
+  xcol   = "yearly_sd_net_capital_flows_pgdp",
+  ycol   = "mean_overall_restrictions_index",
+  title  = "Yearly SD of Net Capital Flows vs. Restrictions Index",
+  base_caption = "Outliers removed (1st & 99th percentile)."
+)
+```
+
+```{r, message=F}
+make_scatter_with_caption(
+  country_sd_flows_cap_controls_no_outliers,
+  xcol   = "country_sd_net_capital_flows_pgdp",
+  ycol   = "mean_overall_restrictions_index",
+  title  = "Country SD of Net Capital Flows vs. Restrictions Index",
+  base_caption = "Outliers removed (1st & 99th percentile)."
+)
+```
+
+
+
