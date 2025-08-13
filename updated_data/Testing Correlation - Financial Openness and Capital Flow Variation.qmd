@@ -159,6 +159,13 @@ clean_net_flows_iso |>
 country_sd_flows_cap_controls |> head()
 ```
 
+```{r}
+country_sd_flows_cap_controls |> 
+  distinct(iso3c) |> 
+  count()
+```
+
+
 ### Run Correlation Analysis
 
 ##### Yearly SDs
