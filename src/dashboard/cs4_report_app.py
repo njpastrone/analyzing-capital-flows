@@ -647,6 +647,8 @@ def run_cs4_integrated_analysis():
         **📊 Indicators Analyzed:**
         - Net Direct Investment
         - Net Portfolio Investment
+          - Debt Securities
+          - Equity & Investment Fund Shares
         - Net Other Investment
         - Net Capital Flows (Total)
         """)
@@ -807,7 +809,9 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
     # Define all indicators for comprehensive analysis
     indicators_for_acf = [
         'Net Direct Investment',
-        'Net Portfolio Investment', 
+        'Net Portfolio Investment',
+        'Net Portfolio Investment - Debt Securities',
+        'Net Portfolio Investment - Equity & Investment Fund Shares',
         'Net Other Investment',
         'Net Capital Flows'
     ]
@@ -898,45 +902,55 @@ def display_comprehensive_analysis_overview(full_results, crisis_results):
         
         # Full Period individual downloads
         st.markdown("**Full Period:**")
-        col1, col2, col3, col4 = st.columns(4)
-        for i, indicator in enumerate(indicators_for_acf):
-            chart = create_comprehensive_acf_chart(indicator, "Full Period")
-            if chart:
-                buf = io.BytesIO()
-                chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
-                buf.seek(0)
-                
-                with [col1, col2, col3, col4][i]:
-                    st.download_button(
-                        label=f"{indicator.replace('Net ', '')}",
-                        data=buf,
-                        file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_full.png",
-                        mime="image/png",
-                        key=f"individual_full_{i}",
-                        use_container_width=True
-                    )
-                plt.close(chart)
+        # Use 3×2 grid layout for 6 indicators
+        for row in range(2):
+            cols = st.columns(3)
+            for col_idx in range(3):
+                i = row * 3 + col_idx
+                if i < len(indicators_for_acf):
+                    indicator = indicators_for_acf[i]
+                    chart = create_comprehensive_acf_chart(indicator, "Full Period")
+                    if chart:
+                        buf = io.BytesIO()
+                        chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+                        buf.seek(0)
+                        
+                        with cols[col_idx]:
+                            st.download_button(
+                                label=f"{indicator.replace('Net ', '').replace(' - ', ': ')}",
+                                data=buf,
+                                file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_full.png",
+                                mime="image/png",
+                                key=f"individual_full_{i}",
+                                use_container_width=True
+                            )
+                        plt.close(chart)
         
         # Crisis-Excluded individual downloads
         st.markdown("**Crisis-Excluded:**")
-        col1, col2, col3, col4 = st.columns(4)
-        for i, indicator in enumerate(indicators_for_acf):
-            chart = create_comprehensive_acf_chart(indicator, "Crisis-Excluded")
-            if chart:
-                buf = io.BytesIO()
-                chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
-                buf.seek(0)
-                
-                with [col1, col2, col3, col4][i]:
-                    st.download_button(
-                        label=f"{indicator.replace('Net ', '')}",
-                        data=buf,
-                        file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_no_crisis.png",
-                        mime="image/png",
-                        key=f"individual_crisis_{i}",
-                        use_container_width=True
-                    )
-                plt.close(chart)
+        # Use 3×2 grid layout for 6 indicators
+        for row in range(2):
+            cols = st.columns(3)
+            for col_idx in range(3):
+                i = row * 3 + col_idx
+                if i < len(indicators_for_acf):
+                    indicator = indicators_for_acf[i]
+                    chart = create_comprehensive_acf_chart(indicator, "Crisis-Excluded")
+                    if chart:
+                        buf = io.BytesIO()
+                        chart.savefig(buf, format='png', dpi=300, bbox_inches='tight', facecolor='white')
+                        buf.seek(0)
+                        
+                        with cols[col_idx]:
+                            st.download_button(
+                                label=f"{indicator.replace('Net ', '').replace(' - ', ': ')}",
+                                data=buf,
+                                file_name=f"cs4_acf_{indicator.lower().replace(' ', '_')}_no_crisis.png",
+                                mime="image/png",
+                                key=f"individual_crisis_{i}",
+                                use_container_width=True
+                            )
+                        plt.close(chart)
     
     # Table 3: Master RMSE Results
     st.markdown("---")
@@ -1174,8 +1188,8 @@ def display_summary_insights_and_export(full_results, crisis_results):
     
     with col1:
         st.markdown("""
-        ### 📊 Key Findings Across All 4 Indicators
-        - **Comprehensive Analysis:** Covers Net Direct Investment, Net Portfolio Investment, Net Other Investment, and Net Capital Flows
+        ### 📊 Key Findings Across All 6 Indicators
+        - **Comprehensive Analysis:** Covers Net Direct Investment, Net Portfolio Investment (total & disaggregated), Net Other Investment, and Net Capital Flows
         - **Volatility Patterns:** Iceland shows systematically different volatility compared to weighted averages of comparator groups
         - **F-Test Results:** Statistical significance varies across indicators, with strongest differences in aggregated capital flows
         - **Crisis Impact:** Crisis exclusion (2008-2010, 2020-2022) reduces volatility measures across all groups and indicators
@@ -1185,8 +1199,8 @@ def display_summary_insights_and_export(full_results, crisis_results):
     with col2:
         st.markdown("""
         ### ⏱️ Temporal Dynamics Across Indicators
-        - **Half-Life Analysis:** All 4 indicators show varying persistence patterns, with most exhibiting 1-3 quarter half-lives
-        - **ACF Patterns:** 8 comprehensive panels (4 indicators × 2 periods) reveal different autocorrelation structures
+        - **Half-Life Analysis:** All 6 indicators show varying persistence patterns, with most exhibiting 1-3 quarter half-lives
+        - **ACF Patterns:** 12 comprehensive panels (6 indicators × 2 periods) reveal different autocorrelation structures
         - **Prediction Accuracy:** RMSE varies significantly across indicators, with Direct Investment showing different patterns than Portfolio flows
         - **Model Performance:** AR(4) models capture temporal dynamics effectively across Full and Crisis-Excluded periods
         - **Crisis Effects:** Crisis exclusion improves model fit and reduces prediction errors for most capital flow types
@@ -1236,10 +1250,10 @@ def display_summary_insights_and_export(full_results, crisis_results):
                 'Table Structure', 'Comparator Groups', 'Statistical Methods', 'Export Date'
             ],
             'Value': [
-                'Net Direct/Portfolio/Other Investment + Net Capital Flows',
+                'Net Direct Investment + Portfolio Investment (total & disaggregated) + Other Investment + Capital Flows',
                 'Weighted vs Simple averages of comparator groups',
-                '4 capital flow indicators', 'Full Period (1999-2025) & Crisis-Excluded',
-                '8 rows × 7 columns per table (4 indicators × 2 periods)',
+                '6 capital flow indicators (including portfolio disaggregation)', 'Full Period (1999-2025) & Crisis-Excluded',
+                '12 rows × 7 columns per table (6 indicators × 2 periods)',
                 'Eurozone, Small Open Economies (SOE), Baltic countries', 
                 'F-tests, AR(4) impulse response, RMSE prediction',
                 pd.Timestamp.now().strftime('%Y-%m-%d %H:%M:%S')

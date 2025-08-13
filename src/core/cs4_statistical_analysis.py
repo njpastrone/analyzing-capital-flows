@@ -42,7 +42,9 @@ class CS4DataLoader:
         # Define indicators and their file mappings
         self.indicators = {
             'Net Direct Investment': {'full': 'net_direct_investment_full.csv', 'no_crises': 'net_direct_investment_no_crises.csv'},
-            'Net Portfolio Investment': {'full': 'net_portfolio_investment_full.csv', 'no_crises': 'net_portfolio_investment_no_crises.csv'}, 
+            'Net Portfolio Investment': {'full': 'net_portfolio_investment_full.csv', 'no_crises': 'net_portfolio_investment_no_crises.csv'},
+            'Net Portfolio Investment - Debt Securities': {'full': 'net_debt_portfolio_investment_full.csv', 'no_crises': 'net_debt_portfolio_investment_no_crises.csv'},
+            'Net Portfolio Investment - Equity & Investment Fund Shares': {'full': 'net_equity_portfolio_investment_full.csv', 'no_crises': 'net_equity_portfolio_investment_no_crises.csv'},
             'Net Other Investment': {'full': 'net_other_investment_full.csv', 'no_crises': 'net_other_investment_no_crises.csv'},
             'Net Capital Flows': {'full': 'net_capital_flows_full.csv', 'no_crises': 'net_capital_flows_no_crises.csv'}
         }
