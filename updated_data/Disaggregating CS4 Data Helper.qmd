@@ -1,0 +1,139 @@
+---
+title: "Disaggregating CS4 Data Helper"
+format: html
+editor: visual
+---
+
+# Case Study 3/4: Other Comparators
+
+```{r, message=F}
+library(tidyverse)
+library(readr)
+library(stringr)
+options(scipen = 999)
+```
+
+### Cleaning Raw BOP Data
+
+```{r}
+case_three_raw <- read_csv("Raw/case_study_4_data_july_28_2025.csv")
+```
+
+```{r}
+head(case_three_raw)
+```
+
+```{r}
+case_three_raw |> summary()
+```
+
+### Check if Timeseries per row data, then do extra step:
+
+```{r}
+library(tidyverse)
+library(rlang)
+library(glue)
+
+pivot_if_timeseries <- function(data) {
+  # Capture the name of the input dataset as a string
+  data_name <- deparse(substitute(data))
+  
+  # Detect year-pattern columns (e.g., "1999", "2000-Q1", "X1999")
+  year_pattern <- "^\\d{4}"
+  year_cols <- names(data)[str_detect(names(data), year_pattern)]
+  
+  # Check number of year columns and pivot if necessary
+  if (length(year_cols) > 3) {
+    message(glue::glue("'{data_name}' is in time-series-per-row format. Pivoting longer..."))
+    
+    data_long <- data |> 
+      pivot_longer(
+        cols = all_of(year_cols),
+        names_to = "TIME_PERIOD",
+        values_to = "OBS_VALUE"
+      )
+    
+    message(glue::glue("'Data pivoted."))
+    
+    # IMF BOP data fetched in long format must be rescaled from Millions into raw units ( * 1000000)
+    message(glue::glue("'Rescaling..."))
+    data_long <- data_long |> 
+      mutate(OBS_VALUE = OBS_VALUE*1000000) |> 
+      select(-c(DATASET, SERIES_CODE, OBS_MEASURE))
+    
+    message(glue::glue("'Data rescaled."))  
+    
+  } else {
+    message(glue::glue("'{data_name}' is NOT in time-series-per-row format. No pivot applied."))
+    data_long <- data
+  }
+  
+  return(data_long)
+}
+
+```
+
+```{r}
+case_three_reshaped_rescaled <- pivot_if_timeseries(case_three_raw) 
+```
+
+```{r}
+case_three_reshaped_rescaled |> head()
+```
+
+### Basic Cleaning
+
+```{r}
+case_three_reshaped_rescaled |> 
+  mutate(
+    ENTRY_FIRST_WORD = str_extract(BOP_ACCOUNTING_ENTRY, "^[^,]+"),
+    FULL_INDICATOR = paste(ENTRY_FIRST_WORD, INDICATOR, sep = " - ")
+  ) |> 
+  select(-c(BOP_ACCOUNTING_ENTRY, INDICATOR, ENTRY_FIRST_WORD, FREQUENCY)) |> 
+  select(COUNTRY, TIME_PERIOD, FULL_INDICATOR, everything()) -> case_three_new_cols
+```
+
+```{r}
+case_three_new_cols |> 
+  head()
+```
+
+```{r}
+case_three_new_cols |> 
+  separate(TIME_PERIOD, into = c("YEAR", "QUARTER"), sep = "-") |> 
+  mutate(QUARTER = parse_number(QUARTER)) -> case_three_final_cols
+```
+
+```{r}
+case_three_final_cols |> 
+  head()
+```
+
+### Pivoting
+
+```{r}
+case_three_final_cols |> 
+  select(-SCALE) |> 
+  mutate(YEAR = as.double(YEAR)) |> 
+  pivot_wider(names_from = FULL_INDICATOR, values_from = OBS_VALUE) -> case_three_pivoted
+```
+
+```{r}
+case_three_pivoted |> head()
+```
+
+### Summary of Case Study 3/4 Data
+
+```{r}
+case_three_pivoted |> summary()
+```
+
+#### Accessing Metadata
+
+```{r}
+colnames(case_three_pivoted)
+```
+
+```{r}
+unique(case_three_pivoted$COUNTRY)
+```
