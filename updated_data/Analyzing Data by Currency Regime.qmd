@@ -330,6 +330,129 @@ clean_flows_regimes %>%
   arrange(desc(dominant_ex_rate_regime), country_group)
 ```
 
+### Match CS4 Table Structure
+
+```{r}
+### ===== Tables with the same structure as CS4 (by regime) =====
+
+# Helper: GDP-weighted mean (ignores NA and nonpositive weights)
+wavg <- function(x, w) {
+  ok <- !is.na(x) & !is.na(w) & w > 0
+  if (!any(ok)) return(NA_real_)
+  sum(x[ok] * w[ok]) / sum(w[ok])
+}
+
+# Stable, safe column slugs in your desired order
+regime_levels <- c(
+  "Hard peg / narrow band / no separate tender",
+  "Crawling peg/band (tight, ≤±2%)",
+  "Crawling band (wider) / managed float",
+  "Freely floating",
+  "Freely falling",
+  "Dual market (parallel data missing)"
+)
+regime_slugs <- c("hard_peg","crawl_tight","managed_float","free_float","freely_falling","dual_market")
+
+# Ensure factor ordering for consistent column order
+clean_flows_regimes <- clean_flows_regimes %>%
+  mutate(regime_simple = factor(regime_simple, levels = regime_levels, ordered = TRUE))
+
+# Core builder: returns a wide table like your reference (YEAR, QUARTER, UNIT, iceland_pgdp, <regime>_pgdp_weighted, <regime>_pgdp_simple)
+make_regime_table <- function(df, metric, case_country = "Iceland") {
+  metric <- rlang::ensym(metric)
+
+  # Iceland series (single column)
+  iceland_series <- df %>%
+    filter(COUNTRY == case_country) %>%
+    select(YEAR, QUARTER, iceland_pgdp = !!metric)
+
+  # Per-regime simple & weighted per quarter
+  per_regime <- df %>%
+    group_by(YEAR, QUARTER, regime_simple) %>%
+    summarise(
+      pgdp_simple   = mean(!!metric, na.rm = TRUE),
+      pgdp_weighted = wavg(!!metric, gdp_weight_usd),
+      .groups = "drop"
+    )
+
+  # Map regimes to slugs to create final column names
+  reg_map <- tibble(regime_simple = factor(regime_levels, levels = regime_levels, ordered = TRUE),
+                    slug = regime_slugs)
+
+  per_regime <- per_regime %>% left_join(reg_map, by = "regime_simple")
+
+  # Two wide frames: weighted and simple
+  wide_w <- per_regime %>%
+    select(YEAR, QUARTER, slug, pgdp_weighted) %>%
+    tidyr::pivot_wider(
+      names_from = slug, values_from = pgdp_weighted,
+      names_glue = "{slug}_pgdp_weighted"
+    )
+
+  wide_s <- per_regime %>%
+    select(YEAR, QUARTER, slug, pgdp_simple) %>%
+    tidyr::pivot_wider(
+      names_from = slug, values_from = pgdp_simple,
+      names_glue = "{slug}_pgdp_simple"
+    )
+
+  # Join and order columns to match your reference pattern
+  out <- full_join(iceland_series, wide_w, by = c("YEAR","QUARTER")) %>%
+    full_join(wide_s, by = c("YEAR","QUARTER")) %>%
+    mutate(UNIT = "Percentage of Nominal GDP (%)") %>%
+    relocate(UNIT, .after = QUARTER)
+
+  # Column order: YEAR, QUARTER, UNIT, iceland_pgdp, then (for each regime) weighted, simple
+  pairwise_cols <- as.vector(rbind(
+    paste0(regime_slugs, "_pgdp_weighted"),
+    paste0(regime_slugs, "_pgdp_simple")
+  ))
+
+  # Include only columns that actually exist (in case some regimes are absent in window)
+  pairwise_cols <- pairwise_cols[pairwise_cols %in% names(out)]
+
+  out %>%
+    select(YEAR, QUARTER, UNIT, iceland_pgdp, all_of(pairwise_cols)) %>%
+    arrange(YEAR, QUARTER)
+}
+
+# Build one table per indicator (add epi_pgdp / dpi_pgdp here if available)
+net_flows_pgdp_by_regime <- make_regime_table(clean_flows_regimes, net_flows_pgdp)
+ndi_pgdp_by_regime       <- make_regime_table(clean_flows_regimes, ndi_pgdp)
+npi_pgdp_by_regime       <- make_regime_table(clean_flows_regimes, npi_pgdp)
+noi_pgdp_by_regime       <- make_regime_table(clean_flows_regimes, noi_pgdp)
+
+# (Optional) Exclude crisis periods to mirror reference
+crisis_years <- c(2008, 2009, 2010, 2020, 2021, 2022)
+net_flows_pgdp_by_regime_no_crises <- net_flows_pgdp_by_regime %>% filter(!YEAR %in% crisis_years)
+ndi_pgdp_by_regime_no_crises       <- ndi_pgdp_by_regime       %>% filter(!YEAR %in% crisis_years)
+npi_pgdp_by_regime_no_crises       <- npi_pgdp_by_regime       %>% filter(!YEAR %in% crisis_years)
+noi_pgdp_by_regime_no_crises       <- noi_pgdp_by_regime       %>% filter(!YEAR %in% crisis_years)
+
+# Preview
+net_flows_pgdp_by_regime %>% head()
+ndi_pgdp_by_regime %>% head()
+npi_pgdp_by_regime %>% head()
+noi_pgdp_by_regime %>% head()
+```
+
+```{r}
+
+# Write to disk using a parallel folder to your CS4 outputs
+write_csv(net_flows_pgdp_by_regime,             "Clean/CS5_Regime_Analysis/net_capital_flows_full.csv")
+write_csv(net_flows_pgdp_by_regime_no_crises,   "Clean/CS5_Regime_Analysis/net_capital_flows_no_crises.csv")
+
+write_csv(ndi_pgdp_by_regime,                   "Clean/CS5_Regime_Analysis/net_direct_investment_full.csv")
+write_csv(ndi_pgdp_by_regime_no_crises,         "Clean/CS5_Regime_Analysis/net_direct_investment_no_crises.csv")
+
+write_csv(npi_pgdp_by_regime,                   "Clean/CS5_Regime_Analysis/net_portfolio_investment_full.csv")
+write_csv(npi_pgdp_by_regime_no_crises,       "Clean/CS5_Regime_Analysis/net_portfolio_investment_no_crises.csv")
+
+write_csv(noi_pgdp_by_regime,                   "Clean/CS5_Regime_Analysis/net_other_investment_full.csv")
+write_csv(noi_pgdp_by_regime_no_crises,         "Clean/CS5_Regime_Analysis/net_other_investment_no_crises.csv")
+
+```
+
 
 
 
