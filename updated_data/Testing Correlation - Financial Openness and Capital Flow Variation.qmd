@@ -124,9 +124,10 @@ clean_capital_controls |>
 ```{r}
 clean_net_flows_iso |> 
   inner_join(clean_capital_controls_iso, by = c("iso3c", "YEAR")) |> 
-  select(!c("COUNTRY.x", "country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
+  select(!c("country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
+  rename(COUNTRY = "COUNTRY.x") |> 
   select(iso3c, everything()) |> 
-  group_by(iso3c, YEAR) |> 
+  group_by(COUNTRY, YEAR) |> 
   summarise(
     yearly_sd_net_capital_flows_pgdp = sd(net_flows_pgdp, na.rm = TRUE),
     mean_overall_restrictions_index = mean(overall_restrictions_index, na.rm = TRUE),
@@ -144,9 +145,10 @@ yearly_sd_flows_cap_controls |> head()
 ```{r}
 clean_net_flows_iso |> 
   inner_join(clean_capital_controls_iso, by = c("iso3c", "YEAR")) |> 
-  select(!c("COUNTRY.x", "country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
+  select(!c("country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
+  rename(COUNTRY = "COUNTRY.x") |> 
   select(iso3c, everything()) |> 
-  group_by(iso3c) |> 
+  group_by(COUNTRY) |> 
   summarise(
     country_sd_net_capital_flows_pgdp = sd(net_flows_pgdp, na.rm = TRUE),
     mean_overall_restrictions_index = mean(overall_restrictions_index, na.rm = TRUE),
@@ -161,7 +163,7 @@ country_sd_flows_cap_controls |> head()
 
 ```{r}
 country_sd_flows_cap_controls |> 
-  distinct(iso3c) |> 
+  distinct(COUNTRY) |> 
   count()
 ```
 
@@ -200,7 +202,7 @@ drop_outliers_pct(yearly_sd_flows_cap_controls, "yearly_sd_net_capital_flows_pgd
 ```
 
 ```{r}
-country_sd_flows_cap_controls_no_outliers |> distinct(iso3c) |> arrange(iso3c)
+country_sd_flows_cap_controls_no_outliers |> distinct(COUNTRY) |> arrange(COUNTRY)
 ```
 
 
@@ -232,7 +234,7 @@ make_scatter_with_caption <- function(df, xcol, ycol, title, base_caption) {
   # legend mapping (Iceland vs others)
   df <- df %>%
     mutate(
-      is_iceland = toupper(trimws(iso3c)) == "ISL",
+      is_iceland = toupper(trimws(COUNTRY)) == "Iceland",
       legend_lab = ifelse(is_iceland, "Iceland", "Other countries")
     )
   
@@ -304,6 +306,42 @@ make_scatter_with_caption(
   base_caption = "Outliers removed (1st & 99th percentile)."
 )
 ```
+
+```{r}
+yearly_sd_flows_cap_controls |> 
+  head()
+```
+
+```{r}
+country_sd_flows_cap_controls |> 
+  head()
+```
+
+
+```{r}
+yearly_sd_flows_cap_controls_no_outliers |> 
+  head()
+```
+
+```{r}
+country_sd_flows_cap_controls_no_outliers |> 
+  head()
+```
+
+```{r}
+write_csv(yearly_sd_flows_cap_controls, "Clean/CS5_Capital_Controls/sd_yearly_flows.csv")
+write_csv(yearly_sd_flows_cap_controls_no_outliers, "Clean/CS5_Capital_Controls/sd_yearly_flows_no_outliers.csv")
+write_csv(country_sd_flows_cap_controls, "Clean/CS5_Capital_Controls/sd_country_flows.csv")
+write_csv(country_sd_flows_cap_controls_no_outliers, "Clean/CS5_Capital_Controls/sd_country_flows_no_outliers.csv")
+```
+
+
+
+
+
+
+
+
 
 
 
