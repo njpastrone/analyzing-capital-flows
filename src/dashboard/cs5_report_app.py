@@ -89,6 +89,33 @@ st.markdown("""
         padding: 1rem 2rem !important;
     }
     
+    /* CS4 Master Table Styling (exact copy) */
+    .cs4-master-table { 
+        width: 100% !important;
+        border-collapse: collapse !important;
+        margin: 20px 0 !important;
+        font-size: 11px !important;
+        font-family: 'Arial', sans-serif !important;
+        table-layout: auto !important;
+    }
+    .cs4-master-table th {
+        background-color: #e6f3ff !important;
+        font-weight: bold !important;
+        text-align: center !important;
+        padding: 8px !important;
+        border: 1px solid #ddd !important;
+        font-size: 10px !important;
+    }
+    .cs4-master-table td {
+        text-align: center !important;
+        padding: 6px !important;
+        border: 1px solid #ddd !important;
+        font-size: 10px !important;
+    }
+    .cs4-master-table tbody tr:nth-child(even) {
+        background-color: #f9f9f9 !important;
+    }
+    
     /* Print Media Queries for PDF Export */
     @media print {
         body { 
@@ -100,6 +127,11 @@ st.markdown("""
         .stApp { 
             margin: 40px !important; 
             max-width: 8.5in !important;
+        }
+        .cs4-master-table { 
+            page-break-inside: avoid !important;
+            font-size: 7px !important;
+            margin: 10px 0 !important;
         }
     }
 </style>
@@ -273,121 +305,152 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     return fig, corr, p_value
 
 
-def calculate_regime_statistics(regime_data, indicator='Net Capital Flows', include_crisis=True):
-    """Calculate standard deviations and F-test statistics for exchange rate regimes"""
+def create_cs5_master_table(regime_data, indicators):
+    """Create master table exactly matching CS4 Table 1 structure for exchange rate regimes"""
     
-    data_key = 'full' if include_crisis else 'no_crises'
-    df = regime_data[indicator][data_key]
+    # Initialize master data structure  
+    master_data = []
     
-    # Define regime groups
-    regime_groups = {
-        'Hard Peg': ['hard_peg_pgdp_weighted', 'hard_peg_pgdp_simple'],
-        'Crawling/Tight': ['crawl_tight_pgdp_weighted', 'crawl_tight_pgdp_simple'],
-        'Managed Float': ['managed_float_pgdp_weighted', 'managed_float_pgdp_simple'],
-        'Free Float': ['free_float_pgdp_weighted', 'free_float_pgdp_simple'],
-        'Freely Falling': ['freely_falling_pgdp_weighted', 'freely_falling_pgdp_simple'],
-        'Dual Market': ['dual_market_pgdp_weighted', 'dual_market_pgdp_simple']
-    }
-    
-    # Include Iceland for comparison
-    results = {}
-    
-    # Calculate Iceland statistics
-    iceland_data = df['iceland_pgdp'].dropna()
-    iceland_std = np.std(iceland_data, ddof=1)
-    results['Iceland'] = {'std': iceland_std, 'n': len(iceland_data)}
-    
-    # Calculate statistics for each regime
-    for regime_name, columns in regime_groups.items():
-        regime_results = {}
-        for col in columns:
-            if col in df.columns:
-                series = df[col].dropna()
-                if len(series) > 1:
-                    std_dev = np.std(series, ddof=1)
-                    # F-test against Iceland
-                    f_stat = iceland_std**2 / std_dev**2 if std_dev > 0 else np.nan
-                    df1 = len(iceland_data) - 1
-                    df2 = len(series) - 1
-                    p_value = 2 * min(stats.f.cdf(f_stat, df1, df2), 
-                                     1 - stats.f.cdf(f_stat, df1, df2)) if not np.isnan(f_stat) else np.nan
-                    
-                    col_type = 'Weighted Avg' if 'weighted' in col else 'Simple Avg'
-                    regime_results[col_type] = {
-                        'std': std_dev,
-                        'n': len(series),
-                        'f_stat': f_stat,
-                        'p_value': p_value
-                    }
-        if regime_results:
-            results[regime_name] = regime_results
-    
-    return results
-
-
-def create_regime_analysis_table(regime_data, indicator='Net Capital Flows'):
-    """Create formatted table for exchange rate regime analysis (exact CS4 Table 1 replication)"""
-    
-    # Get statistics for both full and crisis-excluded periods
-    full_stats = calculate_regime_statistics(regime_data, indicator, include_crisis=True)
-    crisis_stats = calculate_regime_statistics(regime_data, indicator, include_crisis=False)
-    
-    # Create DataFrame with exact CS4 format
-    rows = []
-    
-    # CS4 Format: Iceland as reference, then regime groups with integrated significance
-    for period_name, stats in [('Full Period', full_stats), ('Crisis-Excluded', crisis_stats)]:
-        # Iceland row (reference group)
-        if 'Iceland' in stats:
-            iceland_row = {
-                'Group/Regime': f'Iceland ({period_name})',
-                'Std Dev': f"{stats['Iceland']['std']:.4f}",
-                'Weighted Avg': '-',
-                'Simple Avg': '-'
+    # Process each indicator for both Full and Crisis-Excluded periods
+    for indicator in indicators:
+        for period_name, include_crisis in [('Full', True), ('Crisis-Excluded', False)]:
+            # Get regime data for this indicator and period
+            data_key = 'full' if include_crisis else 'no_crises'
+            df = regime_data[indicator][data_key]
+            
+            # Calculate Iceland standard deviation
+            iceland_data = df['iceland_pgdp'].dropna()
+            iceland_std = np.std(iceland_data, ddof=1) if len(iceland_data) > 1 else np.nan
+            
+            # Initialize row with indicator/period
+            row = {'Indicator/Period': f"{indicator} ({period_name})"}
+            row['Iceland'] = f"{iceland_std:.4f}" if not np.isnan(iceland_std) else 'N/A'
+            
+            # Define regime groups exactly as in original data
+            regime_groups = {
+                'Hard Peg Weighted Avg': 'hard_peg_pgdp_weighted',
+                'Hard Peg Simple Avg': 'hard_peg_pgdp_simple', 
+                'Crawling/Tight Weighted Avg': 'crawl_tight_pgdp_weighted',
+                'Crawling/Tight Simple Avg': 'crawl_tight_pgdp_simple',
+                'Managed Float Weighted Avg': 'managed_float_pgdp_weighted',
+                'Managed Float Simple Avg': 'managed_float_pgdp_simple',
+                'Free Float Weighted Avg': 'free_float_pgdp_weighted',
+                'Free Float Simple Avg': 'free_float_pgdp_simple'
             }
-            rows.append(iceland_row)
-        
-        # Regime group rows with integrated F-test results
-        for regime_name in stats.keys():
-            if regime_name != 'Iceland':
-                regime_stats = stats[regime_name]
-                
-                # Weighted average with significance
-                if 'Weighted Avg' in regime_stats:
-                    w_stats = regime_stats['Weighted Avg']
-                    w_value = f"{w_stats['std']:.4f}"
-                    if w_stats['p_value'] < 0.01:
-                        w_value += "***"
-                    elif w_stats['p_value'] < 0.05:
-                        w_value += "**"
-                    elif w_stats['p_value'] < 0.10:
-                        w_value += "*"
+            
+            # Calculate statistics for each regime group
+            for col_name, data_col in regime_groups.items():
+                if data_col in df.columns:
+                    series = df[data_col].dropna()
+                    if len(series) > 1:
+                        regime_std = np.std(series, ddof=1)
+                        
+                        # F-test against Iceland
+                        if not np.isnan(iceland_std) and iceland_std > 0 and regime_std > 0:
+                            f_stat = iceland_std**2 / regime_std**2
+                            df1 = len(iceland_data) - 1
+                            df2 = len(series) - 1
+                            p_value = 2 * min(stats.f.cdf(f_stat, df1, df2), 
+                                             1 - stats.f.cdf(f_stat, df1, df2))
+                            
+                            # Format value with significance stars
+                            value = f"{regime_std:.4f}"
+                            if p_value < 0.01:
+                                value += "***"
+                            elif p_value < 0.05:
+                                value += "**"
+                            elif p_value < 0.10:
+                                value += "*"
+                        else:
+                            value = f"{regime_std:.4f}" if not np.isnan(regime_std) else 'N/A'
+                    else:
+                        value = 'N/A'
                 else:
-                    w_value = 'N/A'
+                    value = 'N/A'
                 
-                # Simple average with significance
-                if 'Simple Avg' in regime_stats:
-                    s_stats = regime_stats['Simple Avg']
-                    s_value = f"{s_stats['std']:.4f}"
-                    if s_stats['p_value'] < 0.01:
-                        s_value += "***"
-                    elif s_stats['p_value'] < 0.05:
-                        s_value += "**"
-                    elif s_stats['p_value'] < 0.10:
-                        s_value += "*"
-                else:
-                    s_value = 'N/A'
-                
-                regime_row = {
-                    'Group/Regime': f'{regime_name} ({period_name})',
-                    'Std Dev': '-',
-                    'Weighted Avg': w_value,
-                    'Simple Avg': s_value
-                }
-                rows.append(regime_row)
+                row[col_name] = value
+            
+            master_data.append(row)
     
-    df = pd.DataFrame(rows)
-    return df
+    # Create DataFrame with exact CS4 structure
+    master_df = pd.DataFrame(master_data)
+    master_df.set_index('Indicator/Period', inplace=True)
+    
+    return master_df
+
+
+def display_cs5_master_table(df):
+    """Display CS5 master table with exact CS4 styling and color coding"""
+    
+    def get_std_cell_style(val, iceland_val):
+        """Get inline CSS style for standard deviation cells based on significance and volatility direction"""
+        if pd.isna(val) or val == 'N/A' or val == iceland_val:
+            return ''
+        
+        val_str = str(val)
+        # Check for significance stars
+        has_three_stars = '***' in val_str
+        has_two_stars = '**' in val_str and not has_three_stars
+        has_one_star = '*' in val_str and not has_two_stars and not has_three_stars
+        
+        if not (has_one_star or has_two_stars or has_three_stars):
+            return ''  # No significant difference - keep default background
+        
+        # Extract numeric value (remove stars)
+        try:
+            numeric_val = float(val_str.replace('*', ''))
+            iceland_numeric = float(str(iceland_val).replace('*', ''))
+            
+            if iceland_numeric > numeric_val:
+                # Iceland is MORE volatile (higher std dev) - use light red/pink
+                if has_three_stars:
+                    return 'background-color: #ffcccc; color: #990000; font-weight: bold'
+                elif has_two_stars:
+                    return 'background-color: #ffdddd; color: #cc0000; font-weight: bold'
+                else:
+                    return 'background-color: #ffeeee; color: #cc3333'
+            else:
+                # Iceland is LESS volatile (lower std dev) - use light green
+                if has_three_stars:
+                    return 'background-color: #ccffcc; color: #006600; font-weight: bold'
+                elif has_two_stars:
+                    return 'background-color: #ddffdd; color: #009900; font-weight: bold'
+                else:
+                    return 'background-color: #eeffee; color: #00cc00'
+        except:
+            return ''
+    
+    # Generate HTML table exactly like CS4
+    html_table = '<table class="cs4-master-table">'
+    
+    # Table header
+    html_table += '<thead><tr>'
+    html_table += '<th>Indicator/Period</th>'
+    for col in df.columns:
+        html_table += f'<th>{col}</th>'
+    html_table += '</tr></thead><tbody>'
+    
+    # Table body
+    for idx, row in df.iterrows():
+        html_table += '<tr>'
+        html_table += f'<td style="text-align: left; font-weight: bold;">{idx}</td>'
+        
+        for col in df.columns:
+            val = row[col]
+            cell_style = ''
+            
+            if col != 'Iceland':  # Don't color Iceland column
+                cell_style = get_std_cell_style(val, row['Iceland'])
+            
+            style_attr = f' style="{cell_style}"' if cell_style else ''
+            html_table += f'<td{style_attr}>{val}</td>'
+        
+        html_table += '</tr>'
+    
+    html_table += '</tbody></table>'
+    
+    # Display with exact CS4 styling
+    st.markdown(html_table, unsafe_allow_html=True)
 
 
 def run_cs5_analysis():
@@ -503,35 +566,30 @@ def run_cs5_analysis():
     
     # Section 3: Exchange Rate Regime Analysis
     st.header("💱 Section 3: Exchange Rate Regime Analysis")
-    st.markdown("**Structure:** Standard deviations and F-tests by exchange rate regime (replicating CS4 Table 1 format)")
+    st.markdown("**Structure:** Standard deviations and F-tests by exchange rate regime (EXACT CS4 Table 1 replication)")
     
     # Load regime data
     with st.spinner("Loading exchange rate regime data..."):
         regime_data = load_regime_analysis_data()
     
-    # Create analysis table for all indicators (no tabs - direct presentation)
-    st.subheader("📊 Exchange Rate Regime Volatility Analysis")
+    # Create master table exactly like CS4 Table 1
+    st.subheader("🎯 Table 1: Standard Deviation & F-test Results (All Indicators)")
     
-    # Display tables for each indicator
     indicators = ['Net Capital Flows', 'Net Direct Investment', 'Net Portfolio Investment', 'Net Other Investment']
     
-    for i, indicator in enumerate(indicators):
-        if i > 0:
-            st.markdown("---")
-        
-        st.markdown(f"**{indicator}**")
-        regime_table = create_regime_analysis_table(regime_data, indicator)
-        st.dataframe(regime_table, use_container_width=True)
+    # Create and display master table (exact CS4 format)
+    master_regime_table = create_cs5_master_table(regime_data, indicators)
+    display_cs5_master_table(master_regime_table)
     
-    # Add interpretation box
+    # Add interpretation box (exact CS4 format)
     st.info("""
-    **F-test Interpretation (CS4 Format):**
-    - *** : p < 0.01 (highly significant difference from Iceland)
-    - ** : p < 0.05 (significant difference)
-    - * : p < 0.10 (marginally significant)
-    - Empty: No significant difference
+    **Interpretation:** Standard deviations measure volatility levels. Stars indicate F-test significance 
+    for variance differences from Iceland: *** p<0.01, ** p<0.05, * p<0.10.
     
-    **Methodology:** Exact replication of CS4 statistical framework comparing Iceland vs regime groups
+    **Color Coding:**
+    - 🔴 **Red/Pink Background**: Iceland is MORE volatile than regime group (higher standard deviation)
+    - 🟢 **Green Background**: Iceland is LESS volatile than regime group (lower standard deviation)  
+    - ⚪ **No Color**: No statistically significant difference
     """)
     
     # Summary statistics
@@ -556,17 +614,14 @@ def run_cs5_analysis():
     st.markdown("---")
     st.subheader("📥 Export Results")
     
-    # Create download buttons for all tables
-    for indicator in indicators:
-        regime_table = create_regime_analysis_table(regime_data, indicator)
-        csv = regime_table.to_csv(index=False)
-        st.download_button(
-            label=f"📥 Download {indicator} Analysis (CSV)",
-            data=csv,
-            file_name=f"cs5_regime_analysis_{indicator.lower().replace(' ', '_')}.csv",
-            mime="text/csv",
-            key=f"download_{indicator.replace(' ', '_')}"
-        )
+    # Download button for master table (exact CS4 format)
+    csv_master = master_regime_table.to_csv(index=True)
+    st.download_button(
+        label="📥 Download Master Exchange Rate Regime Table (CSV)",
+        data=csv_master,
+        file_name="cs5_master_regime_analysis.csv",
+        mime="text/csv"
+    )
 
 
 # Main execution
