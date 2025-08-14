@@ -4,7 +4,7 @@ format: html
 editor: visual
 ---
 
-#### Currency Regime and Net Flows data
+#### Exchange Rate Regime and Net Flows data
 
 ### Load libraries
 
@@ -27,6 +27,31 @@ net_flows_data_USD <- read_csv("Clean/net_flows_data_USD.csv")
 net_flows_data_USD |> head()
 ```
 
+##### Add Grouping for Analyzed Countries
+
+```{r}
+eurozone_countries <- c("Portugal","Ireland","Finland","Netherlands, The",
+                        "Belgium","Italy","Spain","Austria","France")
+soe_countries <- c("Brunei Darussalam","Bahamas, The","Bermuda","Seychelles",
+                   "Aruba, Kingdom of the Netherlands","Mauritius","Malta")
+baltics_countries <- c("Estonia, Republic of","Latvia, Republic of","Lithuania, Republic of")
+iceland <- "Iceland"
+```
+
+```{r}
+net_flows_data_USD |> 
+  mutate(
+    country_group = as.factor(case_when(
+      COUNTRY %in% eurozone_countries ~ "Eurozone",
+      COUNTRY %in% soe_countries ~ "SOE",
+      COUNTRY %in% baltics_countries ~ "Baltics",
+      COUNTRY %in% iceland ~ "Iceland",
+      TRUE ~ "Other"
+    ))
+  ) -> net_flows_data_USD
+```
+
+
 ##### GDP Standardization and Cleaning
 
 ```{r}
@@ -38,24 +63,31 @@ gdp_data_USD |>
   head()
 ```
 
+##### Note: Portfolio Flows may be disaggregated later, but this would involve another pull from the database.
+
 ```{r}
 net_flows_data_USD |> 
   left_join(gdp_data_USD, by = c("COUNTRY", "YEAR" = "TIME_PERIOD")) |> 
   mutate(net_capital_flows_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities` + `Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities` + `Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities`) |> 
-  select(COUNTRY, YEAR, `Gross domestic product (GDP), Current prices, US dollar`, net_capital_flows_usd) |> mutate(net_flows_pgdp = (net_capital_flows_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`)*100) |> 
-  select(-net_capital_flows_usd, -`Gross domestic product (GDP), Current prices, US dollar`) -> clean_net_flows_pgdp
+  rename(
+    net_direct_investment_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities`,
+    net_portfolio_investment_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities`,
+    net_other_investment_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities`
+  ) |> 
+  select(COUNTRY, YEAR, QUARTER, `Gross domestic product (GDP), Current prices, US dollar`, net_capital_flows_usd, net_direct_investment_usd, net_portfolio_investment_usd, net_other_investment_usd, country_group) |> mutate(
+    net_flows_pgdp = (net_capital_flows_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`)*100,
+    ndi_pgdp = (net_direct_investment_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`)*100,
+    npi_pgdp = (net_portfolio_investment_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`)*100,
+    noi_pgdp = (net_other_investment_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`)*100
+    ) |> 
+  select(-net_capital_flows_usd, -net_direct_investment_usd, -net_portfolio_investment_usd, -net_other_investment_usd, -`Gross domestic product (GDP), Current prices, US dollar`) -> clean_net_flows_pgdp
 ```
 
 ```{r}
 clean_net_flows_pgdp |> head()
 ```
 
-```{r}
-clean_net_flows_pgdp |> 
-  distinct(COUNTRY)
-```
-
-### Currency Regime Data
+### Exchange Rate Regime Data
 
 ```{r}
 cleaned_exchange_rate_regime_indicator <- read_csv("Other Data (Not IMF)/exchange_rate_regime/cleaned_exchange_rate_regime_indicator.csv")
@@ -65,6 +97,8 @@ cleaned_exchange_rate_regime_indicator <- read_csv("Other Data (Not IMF)/exchang
 cleaned_exchange_rate_regime_indicator |> 
   head()
 ```
+
+##### Pivot
 
 ```{r}
 pivot_exchange_regime <- function(df) {
@@ -114,6 +148,8 @@ pivot_exchange_regime <- function(df) {
 long_regimes <- pivot_exchange_regime(cleaned_exchange_rate_regime_indicator)
 ```
 
+##### Adjust monthly data to quarterly
+
 ```{r}
 library(dplyr)
 library(stringr)
@@ -158,9 +194,151 @@ quarterly_regimes <- to_quarterly_regime(long_regimes)
 quarterly_regimes |> head()
 ```
 
+##### Add regime labels
+
 ```{r}
-quarterly_regimes
+add_regime_labels <- function(df) {
+  df %>%
+    mutate(
+      # make a numeric code safely from factor/char/int
+      regime_code = suppressWarnings(as.integer(as.character(currency_regime_type))),
+      regime_simple = case_when(
+        regime_code == 1 ~ "Hard peg / narrow band / no separate tender",
+        regime_code == 2 ~ "Crawling peg/band (tight, ≤±2%)",
+        regime_code == 3 ~ "Crawling band (wider) / managed float",
+        regime_code == 4 ~ "Freely floating",
+        regime_code == 5 ~ "Freely falling",
+        regime_code == 6 ~ "Dual market (parallel data missing)",
+        TRUE ~ NA_character_
+      ),
+      regime_simple = factor(
+        regime_simple,
+        levels = c(
+          "Hard peg / narrow band / no separate tender",
+          "Crawling peg/band (tight, ≤±2%)",
+          "Crawling band (wider) / managed float",
+          "Freely floating",
+          "Freely falling",
+          "Dual market (parallel data missing)"
+        ),
+        ordered = TRUE
+      )
+    ) %>%
+    select(-regime_code)
+}
 ```
+
+```{r}
+quarterly_regimes |>
+  add_regime_labels() -> quarterly_regimes_labeled
+```
+
+### Join Country Columns by ISO3c Codes
+
+```{r}
+library(dplyr)
+library(stringr)
+library(countrycode)
+
+normalize_country <- function(x) {
+  x |>
+    str_squish() |>
+    str_replace_all("[[:punct:]]", "") |>
+    str_to_title()
+}
+
+```
+
+```{r}
+clean_net_flows_pgdp |>
+  mutate(country_clean = normalize_country(COUNTRY),
+         iso3c = countrycode(country_clean, origin = "country.name", destination =
+                               "iso3c")) |> 
+  drop_na() -> clean_net_flows_iso
+```
+###### Note: Unmatched countries deemed insignificant to analysis
+
+```{r}
+quarterly_regimes_labeled |>
+  rename(YEAR = year, QUARTER = quarter) |> 
+  mutate(country_clean = normalize_country(COUNTRY),
+         iso3c = countrycode(country_clean, origin = "country.name", destination = "iso3c")) |> 
+  drop_na() -> clean_regimes_iso
+```
+### Join data
+
+```{r}
+clean_net_flows_iso |> 
+  inner_join(clean_regimes_iso, by = c("iso3c", "YEAR", "QUARTER")) |> 
+  select(!c("country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
+  rename(COUNTRY = "COUNTRY.x") |> 
+  select(iso3c, everything()) -> clean_flows_regimes
+```
+
+### Analyze data
+
+#####  Table of Summary Statistics by Regime Type
+
+```{r}
+clean_flows_regimes |> 
+  group_by(regime_simple) |> 
+  summarise(
+    mean_net_flows = mean(net_flows_pgdp),
+    sd_net_flows = sd(net_flows_pgdp),
+    mean_ndi = mean(ndi_pgdp),
+    sd_ndi = sd(ndi_pgdp),
+    mean_npi = mean(npi_pgdp),
+    sd_npi= sd(npi_pgdp),
+    mean_noi = mean(noi_pgdp),
+    sd_noi = sd(noi_pgdp)
+  )
+```
+
+### Metadata table
+
+```{r}
+clean_flows_regimes |> 
+  filter(country_group == "Eurozone") |> 
+  count(regime_simple)
+```
+
+```{r}
+clean_flows_regimes |> 
+  filter(country_group == "Baltics") |> 
+  count(regime_simple)
+```
+
+```{r}
+clean_flows_regimes |> 
+  filter(country_group == "Iceland") |> 
+  count(regime_simple)
+```
+
+```{r}
+clean_flows_regimes %>% 
+  filter(country_group != "Other", !is.na(regime_simple)) %>% 
+  count(COUNTRY, country_group, regime_simple, name = "n") %>%    # include country_group here
+  group_by(COUNTRY, country_group) %>% 
+  mutate(pct = n / sum(n)) %>% 
+  slice_max(n, n = 1, with_ties = TRUE) %>% 
+  arrange(COUNTRY, desc(n)) %>% 
+  rename(
+    dominant_ex_rate_regime = regime_simple,
+    percent_data_in_dominant_group = pct
+  ) %>% 
+  select(-n) %>% 
+  arrange(desc(dominant_ex_rate_regime), country_group)
+```
+
+
+
+
+
+
+
+
+
+
 
 
 
