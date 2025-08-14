@@ -1,0 +1,170 @@
+---
+title: "Analyzing Data by Currency Regime"
+format: html
+editor: visual
+---
+
+#### Currency Regime and Net Flows data
+
+### Load libraries
+
+```{r, message=F}
+library(tidyverse)
+library(readr)
+library(stringr)
+options(scipen = 999)
+```
+
+### IMF Data
+
+##### Loading
+
+```{r}
+net_flows_data_USD <- read_csv("Clean/net_flows_data_USD.csv")
+```
+
+```{r}
+net_flows_data_USD |> head()
+```
+
+##### GDP Standardization and Cleaning
+
+```{r}
+gdp_data_USD <- read_csv("Clean/gdp_data_USD.csv")
+```
+
+```{r}
+gdp_data_USD |> 
+  head()
+```
+
+```{r}
+net_flows_data_USD |> 
+  left_join(gdp_data_USD, by = c("COUNTRY", "YEAR" = "TIME_PERIOD")) |> 
+  mutate(net_capital_flows_usd = `Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities` + `Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities` + `Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities`) |> 
+  select(COUNTRY, YEAR, `Gross domestic product (GDP), Current prices, US dollar`, net_capital_flows_usd) |> mutate(net_flows_pgdp = (net_capital_flows_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`)*100) |> 
+  select(-net_capital_flows_usd, -`Gross domestic product (GDP), Current prices, US dollar`) -> clean_net_flows_pgdp
+```
+
+```{r}
+clean_net_flows_pgdp |> head()
+```
+
+```{r}
+clean_net_flows_pgdp |> 
+  distinct(COUNTRY)
+```
+
+### Currency Regime Data
+
+```{r}
+cleaned_exchange_rate_regime_indicator <- read_csv("Other Data (Not IMF)/exchange_rate_regime/cleaned_exchange_rate_regime_indicator.csv")
+```
+
+```{r}
+cleaned_exchange_rate_regime_indicator |> 
+  head()
+```
+
+```{r}
+pivot_exchange_regime <- function(df) {
+  # columns that should stay wide identifiers
+  id_cols <- c("year", "month")
+  missing_ids <- setdiff(id_cols, names(df))
+  if (length(missing_ids) > 0) {
+    stop("Missing required id columns: ", paste(missing_ids, collapse = ", "))
+  }
+
+  # columns to pivot (everything except year/month)
+  value_cols <- setdiff(names(df), id_cols)
+  if (length(value_cols) == 0) {
+    stop("No columns to pivot: dataframe only contains ", paste(id_cols, collapse = ", "))
+  }
+
+  # standardize types before pivot (prevents <double> vs <character> combine errors)
+  df <- df %>%
+    dplyr::mutate(dplyr::across(dplyr::all_of(value_cols), as.character))
+
+  # detect whether pivot_longer has the id_cols argument on your tidyr
+  has_id_cols <- "id_cols" %in% names(formals(tidyr::pivot_longer))
+
+  long <- if (has_id_cols) {
+    tidyr::pivot_longer(
+      df,
+      id_cols  = dplyr::all_of(id_cols),
+      names_to = "COUNTRY",
+      values_to = "currency_regime_type"
+    )
+  } else {
+    tidyr::pivot_longer(
+      df,
+      cols     = dplyr::all_of(value_cols),
+      names_to = "COUNTRY",
+      values_to = "currency_regime_type"
+    )
+  }
+
+  long %>%
+    dplyr::mutate(currency_regime_type = factor(currency_regime_type))
+}
+```
+
+```{r}
+# usage
+long_regimes <- pivot_exchange_regime(cleaned_exchange_rate_regime_indicator)
+```
+
+```{r}
+library(dplyr)
+library(stringr)
+
+# helper: dominant (mode) with tie->NA
+mode_dominant <- function(x) {
+  x <- x[!is.na(x)]
+  if (length(x) == 0) return(NA_character_)
+  tab <- sort(table(x), decreasing = TRUE)
+  if (length(tab) > 1 && tab[1] == tab[2]) return(NA_character_)  # tie -> NA
+  names(tab)[1]
+}
+
+# convert monthly to quarterly by dominant regime
+to_quarterly_regime <- function(df) {
+  # remember original factor levels (if any) so we can restore
+  orig_levels <- if (is.factor(df$currency_regime_type)) levels(df$currency_regime_type) else NULL
+
+  df %>%
+    mutate(
+      quarter = ceiling(month / 3)  # 1..4
+    ) %>%
+    group_by(COUNTRY, year, quarter) %>%
+    summarise(
+      currency_regime_type = mode_dominant(as.character(currency_regime_type)),
+      .groups = "drop"
+    ) %>%
+    mutate(
+      currency_regime_type = if (!is.null(orig_levels))
+        factor(currency_regime_type, levels = orig_levels)
+      else
+        factor(currency_regime_type)
+    )
+}
+```
+
+```{r}
+quarterly_regimes <- to_quarterly_regime(long_regimes)
+```
+
+```{r}
+quarterly_regimes |> head()
+```
+
+```{r}
+quarterly_regimes
+```
+
+
+
+
+
+
+
