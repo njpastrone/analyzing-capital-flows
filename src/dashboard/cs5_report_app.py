@@ -22,6 +22,10 @@ import warnings
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
+# Colorblind-friendly econometrics palette (matching CS1-CS4)
+COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
+sns.set_palette(COLORBLIND_SAFE)
+
 # Configure matplotlib for professional PDF export
 warnings.filterwarnings('ignore')
 plt.style.use('default')
@@ -144,49 +148,49 @@ def load_regime_analysis_data():
 
 
 def create_capital_controls_scatter(data, outliers_removed=False):
-    """Create scatter plot for capital controls vs capital flow volatility"""
+    """Create scatter plot for capital controls vs capital flow volatility (axes switched to match R charts)"""
     
     if outliers_removed:
         df = data['yearly_sd_no_outliers']
-        title = "Capital Flow Volatility vs Capital Controls (Outliers Removed)"
+        title = "Capital Controls vs Capital Flow Volatility (Outliers Removed)"
     else:
         df = data['yearly_sd']
-        title = "Capital Flow Volatility vs Capital Controls (Yearly Data)"
+        title = "Capital Controls vs Capital Flow Volatility (Yearly Data)"
     
     # Remove NaN values
     df_clean = df.dropna(subset=['yearly_sd_net_capital_flows_pgdp', 'mean_overall_restrictions_index'])
     
-    # Calculate correlation
+    # Calculate correlation (same correlation, just switched axes for display)
     corr, p_value = stats.pearsonr(
-        df_clean['mean_overall_restrictions_index'],
-        df_clean['yearly_sd_net_capital_flows_pgdp']
+        df_clean['yearly_sd_net_capital_flows_pgdp'],
+        df_clean['mean_overall_restrictions_index']
     )
     
     # Create figure
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Scatter plot
+    # Scatter plot (axes switched: volatility on X, controls on Y)
     scatter = ax.scatter(
-        df_clean['mean_overall_restrictions_index'],
         df_clean['yearly_sd_net_capital_flows_pgdp'],
+        df_clean['mean_overall_restrictions_index'],
         alpha=0.6,
         s=50,
-        color='#3498db',
-        edgecolors='#2c3e50',
+        color=COLORBLIND_SAFE[0],  # Use consistent color scheme
+        edgecolors=COLORBLIND_SAFE[1],
         linewidth=0.5
     )
     
-    # Add trend line
-    z = np.polyfit(df_clean['mean_overall_restrictions_index'], 
-                   df_clean['yearly_sd_net_capital_flows_pgdp'], 1)
+    # Add trend line (axes switched)
+    z = np.polyfit(df_clean['yearly_sd_net_capital_flows_pgdp'], 
+                   df_clean['mean_overall_restrictions_index'], 1)
     p = np.poly1d(z)
-    x_trend = np.linspace(df_clean['mean_overall_restrictions_index'].min(),
-                         df_clean['mean_overall_restrictions_index'].max(), 100)
-    ax.plot(x_trend, p(x_trend), "r-", alpha=0.8, linewidth=2, label='Trend line')
+    x_trend = np.linspace(df_clean['yearly_sd_net_capital_flows_pgdp'].min(),
+                         df_clean['yearly_sd_net_capital_flows_pgdp'].max(), 100)
+    ax.plot(x_trend, p(x_trend), color=COLORBLIND_SAFE[2], alpha=0.8, linewidth=2, label='Trend line')
     
-    # Labels and title
-    ax.set_xlabel('Overall Restrictions Index (Capital Controls)', fontsize=12)
-    ax.set_ylabel('Capital Flow Volatility (Std Dev % of GDP)', fontsize=12)
+    # Labels and title (axes switched)
+    ax.set_xlabel('Capital Flow Volatility (Std Dev % of GDP)', fontsize=12)
+    ax.set_ylabel('Overall Restrictions Index (Capital Controls)', fontsize=12)
     ax.set_title(title, fontweight='bold', fontsize=14, pad=20)
     
     # Add correlation info
@@ -203,47 +207,48 @@ def create_capital_controls_scatter(data, outliers_removed=False):
 
 
 def create_country_aggregate_scatter(data, outliers_removed=False):
-    """Create scatter plot for country aggregate capital controls vs capital flow volatility"""
+    """Create scatter plot for country aggregate capital controls vs capital flow volatility (axes switched)"""
     
     if outliers_removed:
         df = data['country_sd_no_outliers']
-        title = "Country Aggregate: Capital Flow Volatility vs Capital Controls (Outliers Removed)"
+        title = "Country Aggregate: Capital Controls vs Capital Flow Volatility (Outliers Removed)"
     else:
         df = data['country_sd']
-        title = "Country Aggregate: Capital Flow Volatility vs Capital Controls"
+        title = "Country Aggregate: Capital Controls vs Capital Flow Volatility"
     
     # Remove NaN values
     df_clean = df.dropna(subset=['country_sd_net_capital_flows_pgdp', 'mean_overall_restrictions_index'])
     
-    # Calculate correlation
+    # Calculate correlation (same correlation, just switched axes for display)
     corr, p_value = stats.pearsonr(
-        df_clean['mean_overall_restrictions_index'],
-        df_clean['country_sd_net_capital_flows_pgdp']
+        df_clean['country_sd_net_capital_flows_pgdp'],
+        df_clean['mean_overall_restrictions_index']
     )
     
-    # Create interactive plotly figure
+    # Create interactive plotly figure (axes switched)
     fig = px.scatter(
         df_clean,
-        x='mean_overall_restrictions_index',
-        y='country_sd_net_capital_flows_pgdp',
+        x='country_sd_net_capital_flows_pgdp',
+        y='mean_overall_restrictions_index',
         hover_data=['COUNTRY'],
         labels={
-            'mean_overall_restrictions_index': 'Overall Restrictions Index',
             'country_sd_net_capital_flows_pgdp': 'Capital Flow Volatility (Std Dev % of GDP)',
+            'mean_overall_restrictions_index': 'Overall Restrictions Index',
             'COUNTRY': 'Country'
         },
-        title=title
+        title=title,
+        color_discrete_sequence=[COLORBLIND_SAFE[0]]  # Use consistent color scheme
     )
     
-    # Add trend line
+    # Add trend line (axes switched)
     fig.add_trace(
         go.Scatter(
-            x=df_clean['mean_overall_restrictions_index'],
-            y=np.poly1d(np.polyfit(df_clean['mean_overall_restrictions_index'],
-                                  df_clean['country_sd_net_capital_flows_pgdp'], 1))(df_clean['mean_overall_restrictions_index']),
+            x=df_clean['country_sd_net_capital_flows_pgdp'],
+            y=np.poly1d(np.polyfit(df_clean['country_sd_net_capital_flows_pgdp'],
+                                  df_clean['mean_overall_restrictions_index'], 1))(df_clean['country_sd_net_capital_flows_pgdp']),
             mode='lines',
             name='Trend line',
-            line=dict(color='red', width=2)
+            line=dict(color=COLORBLIND_SAFE[2], width=2)
         )
     )
     
@@ -321,68 +326,65 @@ def calculate_regime_statistics(regime_data, indicator='Net Capital Flows', incl
 
 
 def create_regime_analysis_table(regime_data, indicator='Net Capital Flows'):
-    """Create formatted table for exchange rate regime analysis"""
+    """Create formatted table for exchange rate regime analysis (exact CS4 Table 1 replication)"""
     
     # Get statistics for both full and crisis-excluded periods
     full_stats = calculate_regime_statistics(regime_data, indicator, include_crisis=True)
     crisis_stats = calculate_regime_statistics(regime_data, indicator, include_crisis=False)
     
-    # Create DataFrame
+    # Create DataFrame with exact CS4 format
     rows = []
     
-    # Add header row
+    # CS4 Format: Iceland as reference, then regime groups with integrated significance
     for period_name, stats in [('Full Period', full_stats), ('Crisis-Excluded', crisis_stats)]:
+        # Iceland row (reference group)
+        if 'Iceland' in stats:
+            iceland_row = {
+                'Group/Regime': f'Iceland ({period_name})',
+                'Std Dev': f"{stats['Iceland']['std']:.4f}",
+                'Weighted Avg': '-',
+                'Simple Avg': '-'
+            }
+            rows.append(iceland_row)
+        
+        # Regime group rows with integrated F-test results
         for regime_name in stats.keys():
-            if regime_name == 'Iceland':
-                row = {
-                    'Regime': f'Iceland ({period_name})',
-                    'Std Dev': f"{stats[regime_name]['std']:.4f}",
-                    'Weighted Avg': '-',
-                    'Simple Avg': '-',
-                    'F-test (W)': '-',
-                    'F-test (S)': '-'
-                }
-            else:
+            if regime_name != 'Iceland':
                 regime_stats = stats[regime_name]
-                row = {'Regime': f'{regime_name} ({period_name})'}
                 
-                # Add weighted average stats
+                # Weighted average with significance
                 if 'Weighted Avg' in regime_stats:
                     w_stats = regime_stats['Weighted Avg']
-                    row['Weighted Avg'] = f"{w_stats['std']:.4f}"
-                    # Add significance stars
+                    w_value = f"{w_stats['std']:.4f}"
                     if w_stats['p_value'] < 0.01:
-                        row['F-test (W)'] = '***'
+                        w_value += "***"
                     elif w_stats['p_value'] < 0.05:
-                        row['F-test (W)'] = '**'
+                        w_value += "**"
                     elif w_stats['p_value'] < 0.10:
-                        row['F-test (W)'] = '*'
-                    else:
-                        row['F-test (W)'] = ''
+                        w_value += "*"
                 else:
-                    row['Weighted Avg'] = 'N/A'
-                    row['F-test (W)'] = ''
+                    w_value = 'N/A'
                 
-                # Add simple average stats
+                # Simple average with significance
                 if 'Simple Avg' in regime_stats:
                     s_stats = regime_stats['Simple Avg']
-                    row['Simple Avg'] = f"{s_stats['std']:.4f}"
-                    # Add significance stars
+                    s_value = f"{s_stats['std']:.4f}"
                     if s_stats['p_value'] < 0.01:
-                        row['F-test (S)'] = '***'
+                        s_value += "***"
                     elif s_stats['p_value'] < 0.05:
-                        row['F-test (S)'] = '**'
+                        s_value += "**"
                     elif s_stats['p_value'] < 0.10:
-                        row['F-test (S)'] = '*'
-                    else:
-                        row['F-test (S)'] = ''
+                        s_value += "*"
                 else:
-                    row['Simple Avg'] = 'N/A'
-                    row['F-test (S)'] = ''
+                    s_value = 'N/A'
                 
-                row['Std Dev'] = '-'
-            
-            rows.append(row)
+                regime_row = {
+                    'Group/Regime': f'{regime_name} ({period_name})',
+                    'Std Dev': '-',
+                    'Weighted Avg': w_value,
+                    'Simple Avg': s_value
+                }
+                rows.append(regime_row)
     
     df = pd.DataFrame(rows)
     return df
