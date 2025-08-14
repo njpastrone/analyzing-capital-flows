@@ -19,6 +19,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from simple_report_app import main as case_study_1_main
 from case_study_2_euro_adoption import main as case_study_2_main
 from cs4_report_app import main as case_study_4_main
+from cs5_report_app import main as case_study_5_main
 
 def main():
     """Main multi-tab application for capital flows research"""
@@ -36,7 +37,7 @@ def main():
     st.markdown("### Comprehensive Analysis of International Capital Flow Volatility")
     
     # Create tabs
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = st.tabs([
         "📋 Project Overview",
         "⚙️ Data Processing Pipeline", 
         "🇮🇸 Case Study 1 – Iceland vs Eurozone",
@@ -45,6 +46,7 @@ def main():
         "🇱🇹 Case Study 2 – Lithuania",
         "🇮🇸 Case Study 3 – Iceland & Small Open Economies",
         "📊 Case Study 4 – Statistical Analysis",
+        "🌐 Case Study 5 – Capital Controls & Exchange Rate Regimes",
         "📊 Comparative Analysis",
         "📖 Methodology & Data"
     ])
@@ -74,9 +76,12 @@ def main():
         show_case_study_4_restructured()
     
     with tab9:
-        show_comparative_analysis_placeholder()
+        show_case_study_5_restructured()
     
     with tab10:
+        show_comparative_analysis_placeholder()
+    
+    with tab11:
         show_methodology_and_data()
 
 def show_project_overview():
@@ -131,13 +136,21 @@ def show_project_overview():
         **Methodology:** F-tests, AR(4) models, impulse response analysis, and RMSE prediction  
         **Key Finding:** Systematic volatility differences with varying persistence patterns across groups
         """)
+        
+        st.subheader("🌐 Case Study 5: Capital Controls & Exchange Rate Regimes")
+        st.markdown("""
+        **Status:** ✅ Complete  
+        **Focus:** External data integration examining financial openness and regime effects on volatility  
+        **Data Sources:** Fernández et al. (2016) Capital Controls & Ilzetzki-Reinhart-Rogoff (2019) Classifications  
+        **Key Finding:** Complex relationships between capital controls, exchange rate regimes, and volatility patterns
+        """)
     
     with col2:
         st.header("Project Metrics")
         
         # Metrics
-        st.metric("Case Studies", "4", "4 completed")
-        st.metric("Countries Analyzed", "28+", "Iceland, Eurozone, Baltics")
+        st.metric("Case Studies", "5", "5 completed")
+        st.metric("Countries Analyzed", "90+", "Global coverage with external datasets")
         st.metric("Time Period", "1999-2025", "26 years")
         st.metric("Data Points", "75,000+", "High frequency")
         
@@ -3850,6 +3863,16 @@ def show_case_study_4_restructured():
     # Call the new integrated CS4 analysis function
     from cs4_report_app import run_cs4_integrated_analysis
     run_cs4_integrated_analysis()
+
+
+def show_case_study_5_restructured():
+    """Display Case Study 5 - Capital Controls and Exchange Rate Regime Analysis"""
+    st.info("🌐 **Case Study 5: Capital Controls and Exchange Rate Regime Analysis - External Data Integration**")
+    st.markdown("**Research Focus:** Examine relationships between financial openness, capital controls, exchange rate regimes, and capital flow volatility")
+    st.markdown("**External Data Sources:** Fernández et al. (2016) Capital Controls Database & Ilzetzki, Reinhart, Rogoff (2019) Exchange Rate Classifications")
+    
+    # Call the CS5 analysis function
+    case_study_5_main()
 
 # Country-specific analysis functions
 def show_estonia_overall_analysis(include_crisis_years=True):
