@@ -40,7 +40,16 @@ iceland <- "Iceland"
 
 ```{r}
 net_flows_data_USD |> 
-  filter(COUNTRY %in% c(eurozone_countries, soe_countries, baltics_countries, iceland)) -> net_flows_data_filtered_usd
+  filter(COUNTRY %in% c(eurozone_countries, soe_countries, baltics_countries, iceland)) |> 
+  mutate(
+    country_group = as.factor(case_when(
+      COUNTRY %in% eurozone_countries ~ "Eurozone",
+      COUNTRY %in% soe_countries ~ "SOE",
+      COUNTRY %in% baltics_countries ~ "Baltics",
+      COUNTRY %in% iceland ~ "Iceland",
+      TRUE ~ NA_character_
+    ))
+  ) -> net_flows_data_filtered_usd
 ```
 
 
@@ -71,7 +80,7 @@ net_flows_data_filtered_usd |>
       `Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities` +
       `Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities`
   ) |>
-  select(COUNTRY, YEAR, `Gross domestic product (GDP), Current prices, US dollar`, net_capital_flows_usd) |>
+  select(COUNTRY, YEAR, `Gross domestic product (GDP), Current prices, US dollar`, net_capital_flows_usd, country_group) |>
   mutate(net_flows_pgdp = (net_capital_flows_usd * 4 / `Gross domestic product (GDP), Current prices, US dollar`) * 100) |>
   select(-net_capital_flows_usd, -`Gross domestic product (GDP), Current prices, US dollar`) -> clean_net_flows_pgdp
 
@@ -161,7 +170,7 @@ clean_net_flows_iso |>
   inner_join(clean_capital_controls_iso, by = c("iso3c", "YEAR")) |> 
   select(!c("COUNTRY.x", "country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
   select(iso3c, everything()) |> 
-  group_by(iso3c, YEAR) |> 
+  group_by(iso3c, YEAR, country_group) |> 
   summarise(
     yearly_sd_net_capital_flows_pgdp = sd(net_flows_pgdp, na.rm = TRUE),
     mean_overall_restrictions_index = mean(overall_restrictions_index, na.rm = TRUE),
@@ -181,7 +190,7 @@ clean_net_flows_iso |>
   inner_join(clean_capital_controls_iso, by = c("iso3c", "YEAR")) |> 
   select(!c("COUNTRY.x", "country_clean.x", "COUNTRY.y", "country_clean.y")) |> 
   select(iso3c, everything()) |> 
-  group_by(iso3c) |> 
+  group_by(iso3c, country_group) |> 
   summarise(
     country_sd_net_capital_flows_pgdp = sd(net_flows_pgdp, na.rm = TRUE),
     mean_overall_restrictions_index = mean(overall_restrictions_index, na.rm = TRUE),
@@ -217,37 +226,19 @@ cor.test(country_sd_flows_cap_controls$country_sd_net_capital_flows_pgdp, countr
 ### Plot Results
 
 ```{r, message=F}
-library(ggplot2)
-library(dplyr)
+make_scatter_with_caption <- function(df, xcol, ycol, title) { 
+  ct <- cor.test(df[[xcol]], df[[ycol]]) 
+  cor_val <- round(unname(ct$estimate), 2) 
+  p_val <- ifelse(ct$p.value < 0.001, "< 0.001", 
+                  signif(ct$p.value, 3)) 
+  df <- df %>% mutate( is_iceland = toupper(trimws(iso3c)) == "ISL", legend_lab = ifelse(is_iceland, "Iceland", "Other countries"))
+  ggplot(df, aes(x = .data[[xcol]], y = .data[[ycol]])) + 
+    geom_point(aes(shape = legend_lab, color = legend_lab), size = 2) + 
+    geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "grey30") + 
+    scale_shape_manual(values = c("Other countries" = 16, "Iceland" = 17)) + 
+    scale_color_manual(values = c("Other countries" = "black", "Iceland" = "red")) + 
+    labs( x = "Standard Deviation of Net Capital Flows (% GDP)", y = "Mean Overall Restrictions Index", title = title, subtitle = "Eurozone, Small Open Economies, Baltics, and Iceland", caption = paste0(" Cor = ", cor_val, " (p ", p_val, ")"), shape = NULL, color = NULL ) + theme_minimal() }
 
-# Helper function
-make_scatter_with_caption <- function(df, xcol, ycol, title) {
-  ct <- cor.test(df[[xcol]], df[[ycol]])
-  cor_val <- round(unname(ct$estimate), 2)
-  p_val <- ifelse(ct$p.value < 0.001, "< 0.001", signif(ct$p.value, 3))
-  
-  df <- df %>%
-    mutate(
-      is_iceland = toupper(trimws(iso3c)) == "ISL",
-      legend_lab = ifelse(is_iceland, "Iceland", "Other countries")
-    )
-  
-  ggplot(df, aes(x = .data[[xcol]], y = .data[[ycol]])) +
-    geom_point(aes(shape = legend_lab, color = legend_lab), size = 2) +
-    geom_smooth(method = "lm", se = FALSE, linetype = "dashed", color = "grey30") +
-    scale_shape_manual(values = c("Other countries" = 16, "Iceland" = 17)) +
-    scale_color_manual(values = c("Other countries" = "black", "Iceland" = "red")) +
-    labs(
-      x = "Standard Deviation of Net Capital Flows (% GDP)",
-      y = "Mean Overall Restrictions Index",
-      title = title,
-      subtitle = "Eurozone, Small Open Economies, Baltics, and Iceland",
-      caption = paste0("  Cor = ", cor_val, " (p ", p_val, ")"),
-      shape = NULL,
-      color = NULL
-    ) +
-    theme_minimal()
-}
 ```
 
 ```{r, message=F}
@@ -270,5 +261,6 @@ make_scatter_with_caption(
 
 
 
+ADD COUNTRY GROUPS? SHOW EUROZONE VS SOEs, etc??
 
 
