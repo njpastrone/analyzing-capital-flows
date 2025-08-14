@@ -442,84 +442,96 @@ def run_cs5_analysis():
     with st.spinner("Loading capital controls data..."):
         cc_data = load_capital_controls_data()
     
-    # Create tabs for different views
-    tab1, tab2 = st.tabs(["Yearly Analysis", "Country Aggregate Analysis"])
+    # Yearly Analysis (Sequential presentation - no tabs)
+    st.subheader("📈 Yearly Standard Deviations Analysis")
     
-    with tab1:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("📈 Yearly Standard Deviations")
-            fig1, corr1, p1 = create_capital_controls_scatter(cc_data, outliers_removed=False)
-            st.pyplot(fig1)
-            st.info(f"**Correlation:** {corr1:.3f} | **P-value:** {p1:.4f}")
-        
-        with col2:
-            st.subheader("📊 Yearly SD (Outliers Removed)")
-            fig2, corr2, p2 = create_capital_controls_scatter(cc_data, outliers_removed=True)
-            st.pyplot(fig2)
-            st.info(f"**Correlation:** {corr2:.3f} | **P-value:** {p2:.4f}")
+    col1, col2 = st.columns(2)
     
-    with tab2:
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("🌍 Country Aggregate SD")
-            fig3, corr3, p3 = create_country_aggregate_scatter(cc_data, outliers_removed=False)
-            st.plotly_chart(fig3, use_container_width=True)
-            st.info(f"**Correlation:** {corr3:.3f} | **P-value:** {p3:.4f}")
-        
-        with col2:
-            st.subheader("🎯 Country Aggregate (Outliers Removed)")
-            fig4, corr4, p4 = create_country_aggregate_scatter(cc_data, outliers_removed=True)
-            st.plotly_chart(fig4, use_container_width=True)
-            st.info(f"**Correlation:** {corr4:.3f} | **P-value:** {p4:.4f}")
+    with col1:
+        st.markdown("**Full Dataset**")
+        fig1, corr1, p1 = create_capital_controls_scatter(cc_data, outliers_removed=False)
+        st.pyplot(fig1)
+        st.info(f"**Correlation:** {corr1:.3f} | **P-value:** {p1:.4f}")
     
-    # Interpretation
+    with col2:
+        st.markdown("**Outliers Removed**")
+        fig2, corr2, p2 = create_capital_controls_scatter(cc_data, outliers_removed=True)
+        st.pyplot(fig2)
+        st.info(f"**Correlation:** {corr2:.3f} | **P-value:** {p2:.4f}")
+    
     st.markdown("---")
-    st.markdown("""
+    
+    # Country Aggregate Analysis
+    st.subheader("🌍 Country Aggregate Analysis")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.markdown("**Full Dataset**")
+        fig3, corr3, p3 = create_country_aggregate_scatter(cc_data, outliers_removed=False)
+        st.plotly_chart(fig3, use_container_width=True)
+        st.info(f"**Correlation:** {corr3:.3f} | **P-value:** {p3:.4f}")
+    
+    with col2:
+        st.markdown("**Outliers Removed**")
+        fig4, corr4, p4 = create_country_aggregate_scatter(cc_data, outliers_removed=True)
+        st.plotly_chart(fig4, use_container_width=True)
+        st.info(f"**Correlation:** {corr4:.3f} | **P-value:** {p4:.4f}")
+    
+    # Interpretation (Updated based on actual findings)
+    st.markdown("---")
+    st.markdown(f"""
     ### 📊 Capital Controls Analysis Interpretation
     
-    - **Positive Correlation:** Higher capital controls (restrictions) are associated with higher volatility
-    - **Statistical Significance:** P-values indicate the strength of the relationship
-    - **Country Heterogeneity:** Individual country effects visible in aggregate analysis
-    - **Outlier Impact:** Removing outliers affects correlation strength
+    **Key Findings:**
+    - **Yearly Analysis:** Correlation = {corr1:.3f} (p = {p1:.4f}) | Outliers Removed: {corr2:.3f} (p = {p2:.4f})
+    - **Country Aggregate:** Correlation = {corr3:.3f} (p = {p3:.4f}) | Outliers Removed: {corr4:.3f} (p = {p4:.4f})
     
-    **Note:** Correlation does not imply causation. Countries may implement controls in response to volatility.
+    **Statistical Interpretation:**
+    - {'**Significant**' if min(p1, p2, p3, p4) < 0.05 else '**Not significant**'} relationship between capital controls and volatility at 5% level
+    - {'Negative' if corr1 < 0 else 'Positive'} correlation suggests that {'higher' if corr1 > 0 else 'lower'} capital controls are associated with {'higher' if corr1 > 0 else 'lower'} volatility
+    - Outlier removal {'strengthens' if abs(corr2) > abs(corr1) else 'weakens'} the relationship in yearly data
+    - Country-level aggregation {'confirms' if (corr1 > 0 and corr3 > 0) or (corr1 < 0 and corr3 < 0) else 'reverses'} the yearly pattern
+    
+    **Policy Implications:**
+    - Results suggest capital controls may {'increase' if corr1 > 0 else 'decrease'} rather than {'decrease' if corr1 > 0 else 'increase'} volatility
+    - Heterogeneity across countries indicates regime-specific effectiveness
+    - Endogeneity concerns: countries may implement controls in response to volatility
     """)
     
     st.markdown("---")
     
     # Section 3: Exchange Rate Regime Analysis
     st.header("💱 Section 3: Exchange Rate Regime Analysis")
-    st.markdown("**Structure:** Standard deviations and F-tests by exchange rate regime (similar to CS4 Table 1)")
+    st.markdown("**Structure:** Standard deviations and F-tests by exchange rate regime (replicating CS4 Table 1 format)")
     
     # Load regime data
     with st.spinner("Loading exchange rate regime data..."):
         regime_data = load_regime_analysis_data()
     
-    # Indicator selection
-    indicator = st.selectbox(
-        "Select Indicator for Analysis:",
-        ['Net Capital Flows', 'Net Direct Investment', 'Net Portfolio Investment', 'Net Other Investment']
-    )
+    # Create analysis table for all indicators (no tabs - direct presentation)
+    st.subheader("📊 Exchange Rate Regime Volatility Analysis")
     
-    # Create analysis table
-    regime_table = create_regime_analysis_table(regime_data, indicator)
+    # Display tables for each indicator
+    indicators = ['Net Capital Flows', 'Net Direct Investment', 'Net Portfolio Investment', 'Net Other Investment']
     
-    # Display table
-    st.subheader(f"📊 Table: {indicator} Volatility by Exchange Rate Regime")
-    st.dataframe(regime_table, use_container_width=True)
+    for i, indicator in enumerate(indicators):
+        if i > 0:
+            st.markdown("---")
+        
+        st.markdown(f"**{indicator}**")
+        regime_table = create_regime_analysis_table(regime_data, indicator)
+        st.dataframe(regime_table, use_container_width=True)
     
     # Add interpretation box
     st.info("""
-    **F-test Interpretation:**
+    **F-test Interpretation (CS4 Format):**
     - *** : p < 0.01 (highly significant difference from Iceland)
     - ** : p < 0.05 (significant difference)
     - * : p < 0.10 (marginally significant)
     - Empty: No significant difference
     
-    **Note:** F-test compares variance of each regime group against Iceland
+    **Methodology:** Exact replication of CS4 statistical framework comparing Iceland vs regime groups
     """)
     
     # Summary statistics
@@ -538,20 +550,23 @@ def run_cs5_analysis():
     
     with col3:
         st.metric("Statistical Tests", "F-tests")
-        st.caption("Variance equality testing")
+        st.caption("Variance equality testing (CS4 methodology)")
     
     # Export functionality
     st.markdown("---")
     st.subheader("📥 Export Results")
     
-    # Create download button for regime table
-    csv = regime_table.to_csv(index=False)
-    st.download_button(
-        label="📥 Download Regime Analysis Table (CSV)",
-        data=csv,
-        file_name=f"cs5_regime_analysis_{indicator.lower().replace(' ', '_')}.csv",
-        mime="text/csv"
-    )
+    # Create download buttons for all tables
+    for indicator in indicators:
+        regime_table = create_regime_analysis_table(regime_data, indicator)
+        csv = regime_table.to_csv(index=False)
+        st.download_button(
+            label=f"📥 Download {indicator} Analysis (CSV)",
+            data=csv,
+            file_name=f"cs5_regime_analysis_{indicator.lower().replace(' ', '_')}.csv",
+            mime="text/csv",
+            key=f"download_{indicator.replace(' ', '_')}"
+        )
 
 
 # Main execution
