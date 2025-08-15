@@ -89,31 +89,44 @@ st.markdown("""
         padding: 1rem 2rem !important;
     }
     
-    /* CS4 Master Table Styling (exact copy) */
+    /* CS4 Master Table Styling (optimized for 13 columns) */
     .cs4-master-table { 
         width: 100% !important;
         border-collapse: collapse !important;
         margin: 20px 0 !important;
-        font-size: 11px !important;
+        font-size: 9px !important;  /* Smaller font for 13 columns */
         font-family: 'Arial', sans-serif !important;
-        table-layout: auto !important;
+        table-layout: fixed !important;  /* Fixed layout for better column control */
     }
     .cs4-master-table th {
         background-color: #e6f3ff !important;
         font-weight: bold !important;
         text-align: center !important;
-        padding: 8px !important;
+        padding: 6px 4px !important;  /* Reduced padding for more columns */
         border: 1px solid #ddd !important;
-        font-size: 10px !important;
+        font-size: 8px !important;  /* Smaller headers */
+        word-wrap: break-word !important;
     }
     .cs4-master-table td {
         text-align: center !important;
-        padding: 6px !important;
+        padding: 4px 2px !important;  /* Reduced padding */
         border: 1px solid #ddd !important;
-        font-size: 10px !important;
+        font-size: 8px !important;  /* Smaller data font */
+        word-wrap: break-word !important;
     }
     .cs4-master-table tbody tr:nth-child(even) {
         background-color: #f9f9f9 !important;
+    }
+    /* First column (Indicator/Period) wider */
+    .cs4-master-table td:first-child {
+        width: 20% !important;
+        text-align: left !important;
+        font-weight: bold !important;
+        padding-left: 6px !important;
+    }
+    .cs4-master-table th:first-child {
+        width: 20% !important;
+        text-align: center !important;
     }
     
     /* Print Media Queries for PDF Export */
@@ -130,8 +143,13 @@ st.markdown("""
         }
         .cs4-master-table { 
             page-break-inside: avoid !important;
-            font-size: 7px !important;
+            font-size: 6px !important;  /* Even smaller for PDF with 13 columns */
             margin: 10px 0 !important;
+            table-layout: fixed !important;
+        }
+        .cs4-master-table th, .cs4-master-table td {
+            padding: 2px 1px !important;  /* Minimal padding for PDF */
+            font-size: 6px !important;
         }
     }
 </style>
@@ -326,7 +344,7 @@ def create_cs5_master_table(regime_data, indicators):
             row = {'Indicator/Period': f"{indicator} ({period_name})"}
             row['Iceland'] = f"{iceland_std:.4f}" if not np.isnan(iceland_std) else 'N/A'
             
-            # Define regime groups exactly as in original data
+            # Define regime groups exactly as in original data (ALL 6 REGIMES)
             regime_groups = {
                 'Hard Peg Weighted Avg': 'hard_peg_pgdp_weighted',
                 'Hard Peg Simple Avg': 'hard_peg_pgdp_simple', 
@@ -335,7 +353,11 @@ def create_cs5_master_table(regime_data, indicators):
                 'Managed Float Weighted Avg': 'managed_float_pgdp_weighted',
                 'Managed Float Simple Avg': 'managed_float_pgdp_simple',
                 'Free Float Weighted Avg': 'free_float_pgdp_weighted',
-                'Free Float Simple Avg': 'free_float_pgdp_simple'
+                'Free Float Simple Avg': 'free_float_pgdp_simple',
+                'Freely Falling Weighted Avg': 'freely_falling_pgdp_weighted',
+                'Freely Falling Simple Avg': 'freely_falling_pgdp_simple',
+                'Dual Market Weighted Avg': 'dual_market_pgdp_weighted',
+                'Dual Market Simple Avg': 'dual_market_pgdp_simple'
             }
             
             # Calculate statistics for each regime group
@@ -600,7 +622,7 @@ def run_cs5_analysis():
     
     with col1:
         st.metric("Exchange Rate Regimes", "6")
-        st.caption("Different regime classifications analyzed")
+        st.caption("Complete regime coverage: Hard Peg, Crawling/Tight, Managed Float, Free Float, Freely Falling, Dual Market")
     
     with col2:
         st.metric("Time Periods", "2")
