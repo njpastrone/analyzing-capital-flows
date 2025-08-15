@@ -335,12 +335,22 @@ clean_flows_regimes %>%
 ```{r}
 ### ===== Tables with the same structure as CS4 (by regime) =====
 
-# Helper: GDP-weighted mean (ignores NA and nonpositive weights)
-wavg <- function(x, w) {
-  ok <- !is.na(x) & !is.na(w) & w > 0
-  if (!any(ok)) return(NA_real_)
-  sum(x[ok] * w[ok]) / sum(w[ok])
-}
+ANNUALIZE <- 4
+
+# 1) Attach annual GDP (USD) to the regime-joined data
+gdp_cols <- gdp_data_USD %>%
+  transmute(
+    COUNTRY,
+    YEAR = TIME_PERIOD,
+    gdp_usd = `Gross domestic product (GDP), Current prices, US dollar`
+  )
+
+clean_flows_regimes <- clean_flows_regimes %>%
+  left_join(gdp_cols, by = c("COUNTRY", "YEAR")) %>%
+  mutate(
+    # guard against nonpositive/NA GDP in weighting
+    gdp_usd = ifelse(is.na(gdp_usd) | gdp_usd <= 0, NA_real_, gdp_usd)
+  )
 
 # Stable, safe column slugs in your desired order
 regime_levels <- c(
@@ -357,31 +367,45 @@ regime_slugs <- c("hard_peg","crawl_tight","managed_float","free_float","freely_
 clean_flows_regimes <- clean_flows_regimes %>%
   mutate(regime_simple = factor(regime_simple, levels = regime_levels, ordered = TRUE))
 
-# Core builder: returns a wide table like your reference (YEAR, QUARTER, UNIT, iceland_pgdp, <regime>_pgdp_weighted, <regime>_pgdp_simple)
-make_regime_table <- function(df, metric, case_country = "Iceland") {
+# 2) Core builder: EXACTLY mirrors Script 1’s math for weighted means
+make_regime_table <- function(df, metric, case_country = "Iceland", annualize = 4) {
   metric <- rlang::ensym(metric)
 
+  # Reconstruct USD flows so we can do sum(flows)/sum(GDP) * annualize * 100
+  # (%GDP was computed as: flow_usd * annualize / gdp_usd * 100)
+  df2 <- df %>%
+    mutate(
+      flow_usd = (!!metric / 100) * gdp_usd / annualize
+    )
+
   # Iceland series (single column)
-  iceland_series <- df %>%
+  iceland_series <- df2 %>%
     filter(COUNTRY == case_country) %>%
     select(YEAR, QUARTER, iceland_pgdp = !!metric)
 
-  # Per-regime simple & weighted per quarter
-  per_regime <- df %>%
+  # Per-regime: weighted (from USD sums) and simple (mean of %GDP)
+  per_regime <- df2 %>%
     group_by(YEAR, QUARTER, regime_simple) %>%
     summarise(
+      # Weighted via USD sums (identical to Script 1)
+      pgdp_weighted = {
+        flow_sum <- sum(flow_usd, na.rm = TRUE)
+        gdp_sum  <- sum(gdp_usd,  na.rm = TRUE)
+        if (is.finite(gdp_sum) && gdp_sum > 0) (flow_sum * annualize / gdp_sum) * 100 else NA_real_
+      },
+      # Simple average: mean of %GDP across countries
       pgdp_simple   = mean(!!metric, na.rm = TRUE),
-      pgdp_weighted = wavg(!!metric, gdp_weight_usd),
       .groups = "drop"
     )
 
-  # Map regimes to slugs to create final column names
-  reg_map <- tibble(regime_simple = factor(regime_levels, levels = regime_levels, ordered = TRUE),
-                    slug = regime_slugs)
-
+  # Map regimes to slugs for final column names
+  reg_map <- tibble(
+    regime_simple = factor(regime_levels, levels = regime_levels, ordered = TRUE),
+    slug = regime_slugs
+  )
   per_regime <- per_regime %>% left_join(reg_map, by = "regime_simple")
 
-  # Two wide frames: weighted and simple
+  # Wide frames: weighted and simple
   wide_w <- per_regime %>%
     select(YEAR, QUARTER, slug, pgdp_weighted) %>%
     tidyr::pivot_wider(
@@ -402,13 +426,10 @@ make_regime_table <- function(df, metric, case_country = "Iceland") {
     mutate(UNIT = "Percentage of Nominal GDP (%)") %>%
     relocate(UNIT, .after = QUARTER)
 
-  # Column order: YEAR, QUARTER, UNIT, iceland_pgdp, then (for each regime) weighted, simple
   pairwise_cols <- as.vector(rbind(
     paste0(regime_slugs, "_pgdp_weighted"),
     paste0(regime_slugs, "_pgdp_simple")
   ))
-
-  # Include only columns that actually exist (in case some regimes are absent in window)
   pairwise_cols <- pairwise_cols[pairwise_cols %in% names(out)]
 
   out %>%
@@ -416,7 +437,7 @@ make_regime_table <- function(df, metric, case_country = "Iceland") {
     arrange(YEAR, QUARTER)
 }
 
-# Build one table per indicator (add epi_pgdp / dpi_pgdp here if available)
+# 3) Build one table per indicator (use existing %GDP metrics)
 net_flows_pgdp_by_regime <- make_regime_table(clean_flows_regimes, net_flows_pgdp)
 ndi_pgdp_by_regime       <- make_regime_table(clean_flows_regimes, ndi_pgdp)
 npi_pgdp_by_regime       <- make_regime_table(clean_flows_regimes, npi_pgdp)
