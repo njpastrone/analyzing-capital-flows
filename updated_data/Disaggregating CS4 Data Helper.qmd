@@ -109,6 +109,7 @@ case_three_final_cols |>
   head()
 ```
 
+
 ### Pivoting
 
 ```{r}
@@ -122,11 +123,217 @@ case_three_final_cols |>
 case_three_pivoted |> head()
 ```
 
+```{r}
+colnames(case_three_pivoted)
+```
+
 ### Summary of Case Study 3/4 Data
 
 ```{r}
 case_three_pivoted |> summary()
 ```
+
+#### QA Checks
+
+```{r}
+case_three_pivoted |> 
+  select()
+```
+
+
+
+
+```{r}
+case_three_pivoted |> 
+  select(`Assets - Portfolio investment, Debt securities`, `Assets - Portfolio investment, Equity and investment fund shares`, `Assets - Portfolio investment, Total financial assets/liabilities`) |> 
+  mutate(total_assets = `Assets - Portfolio investment, Debt securities` + `Assets - Portfolio investment, Equity and investment fund shares`) |> 
+  select(!c(`Assets - Portfolio investment, Debt securities`, `Assets - Portfolio investment, Equity and investment fund shares`))
+```
+
+```{r}
+colnames(case_three_pivoted)
+```
+
+```{r}
+# Function to test if debt + equity matches total portfolio flows
+check_portfolio_sums <- function(df,
+                                 total_col,
+                                 debt_col,
+                                 equity_col,
+                                 tolerance = 1e-6) {
+  
+  df |> 
+    mutate(
+      calculated_total = .data[[debt_col]] + .data[[equity_col]],
+      difference = .data[[total_col]] - calculated_total,
+      match = abs(difference) <= tolerance
+    )
+}
+
+# Example usage:
+# For assets
+assets_check <- check_portfolio_sums(
+  df = case_three_pivoted,
+  total_col = "Assets - Portfolio investment, Total financial assets/liabilities",
+  debt_col = "Assets - Portfolio investment, Debt securities",
+  equity_col = "Assets - Portfolio investment, Equity and investment fund shares"
+)
+
+# For liabilities
+liabilities_check <- check_portfolio_sums(
+  df = case_three_pivoted,
+  total_col = "Liabilities - Portfolio investment, Total financial assets/liabilities",
+  debt_col = "Liabilities - Portfolio investment, Debt securities",
+  equity_col = "Liabilities - Portfolio investment, Equity and investment fund shares"
+)
+
+# View rows where the sums don't match
+assets_check |> filter(!match)
+liabilities_check |> filter(!match)
+
+```
+
+```{r}
+check_portfolio_sums <- function(df, total_col, debt_col, equity_col, tolerance = 1e-6) {
+  
+  results <- df |> 
+    mutate(
+      calculated_total = .data[[debt_col]] + .data[[equity_col]],
+      difference = .data[[total_col]] - calculated_total,
+      status = ifelse(abs(difference) <= tolerance, "OK", "Mismatch")
+    ) |> 
+    select(all_of(c(total_col, debt_col, equity_col, "calculated_total", "difference", "status")))
+  
+  # Summary
+  summary_table <- results |> 
+    count(status) |> 
+    mutate(percentage = round(100 * n / sum(n), 2))
+  
+  list(
+    detailed_results = results,
+    summary = summary_table
+  )
+}
+
+# Example usage for Assets
+assets_check <- check_portfolio_sums(
+  df = case_three_pivoted,
+  total_col = "Assets - Portfolio investment, Total financial assets/liabilities",
+  debt_col = "Assets - Portfolio investment, Debt securities",
+  equity_col = "Assets - Portfolio investment, Equity and investment fund shares"
+)
+
+# See the summary
+assets_check$summary
+
+# See only mismatches
+assets_check$detailed_results |> filter(status == "Mismatch")
+
+```
+
+```{r}
+check_portfolio_sums <- function(df, total_col, debt_col, equity_col, tolerance_value = 5e5) {
+  
+  results <- df |> 
+    mutate(
+      calculated_total = .data[[debt_col]] + .data[[equity_col]],
+      difference = .data[[total_col]] - calculated_total,
+      status = ifelse(abs(difference) <= tolerance_value, "OK", "Mismatch")
+    ) |> 
+    select(all_of(c(total_col, debt_col, equity_col, "calculated_total", "difference", "status")))
+  
+  # Summary counts
+  summary_table <- results |> 
+    count(status) |> 
+    mutate(percentage = round(100 * n / sum(n), 2))
+  
+  list(
+    detailed_results = results,
+    summary = summary_table
+  )
+}
+
+# Example: Allow differences up to ±5,000,000 USD
+assets_check <- check_portfolio_sums(
+  df = case_three_pivoted,
+  total_col = "Assets - Portfolio investment, Total financial assets/liabilities",
+  debt_col = "Assets - Portfolio investment, Debt securities",
+  equity_col = "Assets - Portfolio investment, Equity and investment fund shares",
+  tolerance_value = 5e6
+)
+
+# View summary
+assets_check$summary
+
+# View only rows that exceed tolerance
+assets_check$detailed_results |> filter(status == "Mismatch")
+
+```
+
+```{r}
+calculate_and_check_net_portfolio <- function(df,
+                                              assets_debt_col,
+                                              liabilities_debt_col,
+                                              assets_equity_col,
+                                              liabilities_equity_col,
+                                              reported_net_total_col,
+                                              tolerance_value = 5e5) {
+  
+  results <- df |>
+    mutate(
+      net_portfolio_debt   = .data[[assets_debt_col]] - .data[[liabilities_debt_col]],
+      net_portfolio_equity = .data[[assets_equity_col]] - .data[[liabilities_equity_col]],
+      calculated_net_total = net_portfolio_debt + net_portfolio_equity,
+      net_difference       = .data[[reported_net_total_col]] - calculated_net_total,
+      status = case_when(
+        is.na(.data[[reported_net_total_col]]) |
+        is.na(net_portfolio_debt) |
+        is.na(net_portfolio_equity) ~ "Missing data",
+        abs(net_difference) <= tolerance_value ~ "OK",
+        TRUE ~ "Mismatch"
+      )
+    ) |>
+    select(
+      all_of(c(
+        assets_debt_col, liabilities_debt_col,
+        assets_equity_col, liabilities_equity_col,
+        reported_net_total_col,
+        "net_portfolio_debt", "net_portfolio_equity",
+        "calculated_net_total", "net_difference", "status"
+      ))
+    )
+  
+  # Summary counts
+  summary_table <- results |>
+    count(status) |>
+    mutate(percentage = round(100 * n / sum(n), 2))
+  
+  list(
+    detailed_results = results,
+    summary = summary_table
+  )
+}
+
+# Example usage:
+net_portfolio_check <- calculate_and_check_net_portfolio(
+  df = case_three_pivoted,
+  assets_debt_col = "Assets - Portfolio investment, Debt securities",
+  liabilities_debt_col = "Liabilities - Portfolio investment, Debt securities",
+  assets_equity_col = "Assets - Portfolio investment, Equity and investment fund shares",
+  liabilities_equity_col = "Liabilities - Portfolio investment, Equity and investment fund shares",
+  reported_net_total_col = "Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities",
+  tolerance_value = 5e5 # allow ±500,000 USD difference
+)
+
+# View the summary
+net_portfolio_check$summary
+
+# View only mismatches
+net_portfolio_check$detailed_results |> filter(status == "Mismatch")
+
+```
+
+
 
 #### Accessing Metadata
 
