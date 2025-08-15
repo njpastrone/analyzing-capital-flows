@@ -202,10 +202,10 @@ def create_capital_controls_scatter(data, outliers_removed=False):
     
     if outliers_removed:
         df = data['yearly_sd_no_outliers']
-        title = "Capital Controls vs Capital Flow Volatility (Outliers Removed)"
+        title = "Capital Controls vs Capital Flow Volatility (1999-2017, Outliers Removed)"
     else:
         df = data['yearly_sd']
-        title = "Capital Controls vs Capital Flow Volatility (Yearly Data)"
+        title = "Capital Controls vs Capital Flow Volatility (1999-2017, Yearly Data)"
     
     # Remove NaN values
     df_clean = df.dropna(subset=['yearly_sd_net_capital_flows_pgdp', 'mean_overall_restrictions_index'])
@@ -261,10 +261,10 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     
     if outliers_removed:
         df = data['country_sd_no_outliers']
-        title = "Country Aggregate: Capital Controls vs Capital Flow Volatility (Outliers Removed)"
+        title = "Country Aggregate: Capital Controls vs Capital Flow Volatility (1999-2017, Outliers Removed)"
     else:
         df = data['country_sd']
-        title = "Country Aggregate: Capital Controls vs Capital Flow Volatility"
+        title = "Country Aggregate: Capital Controls vs Capital Flow Volatility (1999-2017)"
     
     # Remove NaN values
     df_clean = df.dropna(subset=['country_sd_net_capital_flows_pgdp', 'mean_overall_restrictions_index'])
@@ -488,28 +488,36 @@ def run_cs5_analysis():
     
     with col1:
         st.markdown("""
-        ### 📊 External Data Sources
+        ### 📊 External Data Sources & Periods
         
-        **Capital Controls Data:**
+        **Capital Controls Data (1999-2017):**
         - **Source:** Fernández et al. (2016) Capital Control Measures Database
         - **Metric:** Overall Restrictions Index (0-1 scale)
         - **Coverage:** Multiple countries, annual frequency
+        - **Data Limitation:** Available through 2017 only
         - **Processing:** R script: "Testing Correlation - Financial Openness and Capital Flow Variation.qmd"
         
-        **Exchange Rate Regime Data:**
+        **Exchange Rate Regime Data (1999-2019):**
         - **Source:** Ilzetzki, Reinhart, and Rogoff (2019) Classification
         - **Categories:** Hard Peg, Crawling/Tight, Managed Float, Free Float, Freely Falling, Dual Market
+        - **Data Limitation:** Available through 2019 only
         - **Processing:** R script: "Analyzing Data by Currency Regime.qmd"
         """)
     
     with col2:
         st.markdown("""
-        ### 🎯 Analytical Approach
+        ### 🎯 Analytical Approach & Limitations
         
         **Methodology:**
-        1. **Capital Controls Analysis:** Examine correlation between financial openness and capital flow volatility
-        2. **Regime Analysis:** Compare volatility across different exchange rate regimes
+        1. **Capital Controls Analysis (1999-2017):** Examine correlation between financial openness and capital flow volatility
+        2. **Regime Analysis (1999-2019):** Compare volatility across different exchange rate regimes
         3. **Statistical Testing:** Apply F-tests for variance equality (similar to CS4 methodology)
+        
+        **Data Period Limitations:**
+        - **Different time windows** due to external data availability constraints
+        - **Capital controls:** Limited to 2017 (database constraint)
+        - **Exchange rate regimes:** Extended through 2019 (classification updates)
+        - **Shorter periods** than other case studies (1999-2025)
         
         **Key Questions:**
         - Do capital controls reduce capital flow volatility?
@@ -520,8 +528,9 @@ def run_cs5_analysis():
     st.markdown("---")
     
     # Section 2: Capital Controls Analysis
-    st.header("🔒 Section 2: Capital Controls Analysis")
+    st.header("🔒 Section 2: Capital Controls Analysis (1999-2017)")
     st.markdown("**Objective:** Examine the relationship between capital controls (Overall Restrictions Index) and capital flow volatility")
+    st.markdown("**⏰ Analysis Period:** 1999-2017 (limited by capital controls database availability)")
     
     # Load capital controls data
     with st.spinner("Loading capital controls data..."):
@@ -587,8 +596,9 @@ def run_cs5_analysis():
     st.markdown("---")
     
     # Section 3: Exchange Rate Regime Analysis
-    st.header("💱 Section 3: Exchange Rate Regime Analysis")
+    st.header("💱 Section 3: Exchange Rate Regime Analysis (1999-2019)")
     st.markdown("**Structure:** Standard deviations and F-tests by exchange rate regime (EXACT CS4 Table 1 replication)")
+    st.markdown("**⏰ Analysis Period:** 1999-2019 (extended coverage through regime classification updates)")
     
     # Load regime data
     with st.spinner("Loading exchange rate regime data..."):
@@ -596,6 +606,7 @@ def run_cs5_analysis():
     
     # Create master table exactly like CS4 Table 1
     st.subheader("🎯 Table 1: Standard Deviation & F-test Results (All Indicators)")
+    st.caption("**Data Period:** 1999-2019 | **Note:** Analysis limited by exchange rate regime classification availability")
     
     indicators = ['Net Capital Flows', 'Net Direct Investment', 'Net Portfolio Investment', 'Net Other Investment']
     
@@ -612,6 +623,8 @@ def run_cs5_analysis():
     - 🔴 **Red/Pink Background**: Iceland is MORE volatile than regime group (higher standard deviation)
     - 🟢 **Green Background**: Iceland is LESS volatile than regime group (lower standard deviation)  
     - ⚪ **No Color**: No statistically significant difference
+    
+    **Data Period Note:** Analysis covers 1999-2019, shorter than other case studies due to regime classification data constraints.
     """)
     
     # Summary statistics
@@ -657,18 +670,26 @@ def main():
     with tab2:
         st.header("📚 Methodology Documentation")
         st.markdown("""
-        ## Data Sources and Cleaning
+        ## Data Sources, Periods, and Cleaning
         
-        ### Capital Controls Data
+        ### Capital Controls Data (1999-2017)
         - **Original Source:** Fernández, Klein, Rebucci, Schindler, and Uribe (2016)
         - **Database:** Capital Control Measures: A New Dataset
+        - **Data Period:** 1999-2017 (database limitation)
         - **Cleaning Process:** R script processes raw data to calculate yearly and country-level standard deviations
         - **Key Variable:** Overall Restrictions Index (0 = no controls, 1 = full controls)
         
-        ### Exchange Rate Regime Classification
+        ### Exchange Rate Regime Classification (1999-2019)
         - **Original Source:** Ilzetzki, Reinhart, and Rogoff (2019)
         - **Classification:** Fine classification with 6 main categories
+        - **Data Period:** 1999-2019 (extended through classification updates)
         - **Aggregation:** Weighted and simple averages across countries in each regime
+        
+        ### Data Period Limitations
+        - **Different time windows:** Capital controls (2017) vs Exchange rate regimes (2019)
+        - **Shorter than other case studies:** CS1-CS4 use 1999-2025 data
+        - **External data constraints:** Limited by third-party database availability
+        - **Impact on interpretation:** Results may not capture recent developments (2020-2025)
         
         ### Statistical Methodology
         
