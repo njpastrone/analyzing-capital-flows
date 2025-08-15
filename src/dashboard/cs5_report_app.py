@@ -210,6 +210,10 @@ def create_capital_controls_scatter(data, outliers_removed=False):
     # Remove NaN values
     df_clean = df.dropna(subset=['yearly_sd_net_capital_flows_pgdp', 'mean_overall_restrictions_index'])
     
+    # Separate Iceland data from other countries
+    iceland_data = df_clean[df_clean['COUNTRY'] == 'Iceland']
+    other_data = df_clean[df_clean['COUNTRY'] != 'Iceland']
+    
     # Calculate correlation (same correlation, just switched axes for display)
     corr, p_value = stats.pearsonr(
         df_clean['yearly_sd_net_capital_flows_pgdp'],
@@ -219,16 +223,31 @@ def create_capital_controls_scatter(data, outliers_removed=False):
     # Create figure
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Scatter plot (axes switched: volatility on X, controls on Y)
-    scatter = ax.scatter(
-        df_clean['yearly_sd_net_capital_flows_pgdp'],
-        df_clean['mean_overall_restrictions_index'],
+    # Scatter plot for other countries (axes switched: volatility on X, controls on Y)
+    scatter_other = ax.scatter(
+        other_data['yearly_sd_net_capital_flows_pgdp'],
+        other_data['mean_overall_restrictions_index'],
         alpha=0.6,
         s=50,
-        color=COLORBLIND_SAFE[0],  # Use consistent color scheme
+        color=COLORBLIND_SAFE[0],  # Blue for other countries
         edgecolors=COLORBLIND_SAFE[1],
-        linewidth=0.5
+        linewidth=0.5,
+        label='Other Countries'
     )
+    
+    # Scatter plot for Iceland (highlighted with distinct shape and color)
+    if not iceland_data.empty:
+        scatter_iceland = ax.scatter(
+            iceland_data['yearly_sd_net_capital_flows_pgdp'],
+            iceland_data['mean_overall_restrictions_index'],
+            alpha=0.9,
+            s=120,  # Larger size
+            color='red',  # Distinct red color
+            marker='D',  # Diamond shape
+            edgecolors='darkred',
+            linewidth=2,
+            label='Iceland'
+        )
     
     # Add trend line (axes switched)
     z = np.polyfit(df_clean['yearly_sd_net_capital_flows_pgdp'], 
@@ -248,7 +267,7 @@ def create_capital_controls_scatter(data, outliers_removed=False):
             transform=ax.transAxes, fontsize=10, verticalalignment='top',
             bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
     
-    # Grid
+    # Grid and legend
     ax.grid(True, alpha=0.3)
     ax.legend(loc='upper right')
     
@@ -269,6 +288,10 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     # Remove NaN values
     df_clean = df.dropna(subset=['country_sd_net_capital_flows_pgdp', 'mean_overall_restrictions_index'])
     
+    # Separate Iceland from other countries
+    iceland_data = df_clean[df_clean['COUNTRY'] == 'Iceland']
+    other_data = df_clean[df_clean['COUNTRY'] != 'Iceland']
+    
     # Calculate correlation (same correlation, just switched axes for display)
     corr, p_value = stats.pearsonr(
         df_clean['country_sd_net_capital_flows_pgdp'],
@@ -276,19 +299,48 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     )
     
     # Create interactive plotly figure (axes switched)
-    fig = px.scatter(
-        df_clean,
-        x='country_sd_net_capital_flows_pgdp',
-        y='mean_overall_restrictions_index',
-        hover_data=['COUNTRY'],
-        labels={
-            'country_sd_net_capital_flows_pgdp': 'Capital Flow Volatility (Std Dev % of GDP)',
-            'mean_overall_restrictions_index': 'Overall Restrictions Index',
-            'COUNTRY': 'Country'
-        },
-        title=title,
-        color_discrete_sequence=[COLORBLIND_SAFE[0]]  # Use consistent color scheme
+    fig = go.Figure()
+    
+    # Add other countries scatter points
+    fig.add_trace(
+        go.Scatter(
+            x=other_data['country_sd_net_capital_flows_pgdp'],
+            y=other_data['mean_overall_restrictions_index'],
+            mode='markers',
+            marker=dict(
+                color=COLORBLIND_SAFE[0],
+                size=8,
+                opacity=0.7
+            ),
+            text=other_data['COUNTRY'],
+            hovertemplate='<b>%{text}</b><br>' +
+                         'Capital Flow Volatility: %{x:.4f}<br>' +
+                         'Overall Restrictions Index: %{y:.4f}<extra></extra>',
+            name='Other Countries'
+        )
     )
+    
+    # Add Iceland scatter points (highlighted)
+    if not iceland_data.empty:
+        fig.add_trace(
+            go.Scatter(
+                x=iceland_data['country_sd_net_capital_flows_pgdp'],
+                y=iceland_data['mean_overall_restrictions_index'],
+                mode='markers',
+                marker=dict(
+                    color='red',
+                    size=15,  # Larger size
+                    symbol='diamond',  # Diamond shape
+                    opacity=0.9,
+                    line=dict(color='darkred', width=2)
+                ),
+                text=iceland_data['COUNTRY'],
+                hovertemplate='<b>%{text}</b><br>' +
+                             'Capital Flow Volatility: %{x:.4f}<br>' +
+                             'Overall Restrictions Index: %{y:.4f}<extra></extra>',
+                name='Iceland'
+            )
+        )
     
     # Add trend line (axes switched)
     fig.add_trace(
@@ -314,7 +366,11 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
         font=dict(size=12)
     )
     
+    # Update layout
     fig.update_layout(
+        title=title,
+        xaxis_title='Capital Flow Volatility (Std Dev % of GDP)',
+        yaxis_title='Overall Restrictions Index',
         height=600,
         showlegend=True,
         hovermode='closest'
@@ -518,11 +574,6 @@ def run_cs5_analysis():
         - **Capital controls:** Limited to 2017 (database constraint)
         - **Exchange rate regimes:** Extended through 2019 (classification updates)
         - **Shorter periods** than other case studies (1999-2025)
-        
-        **Key Questions:**
-        - Do capital controls reduce capital flow volatility?
-        - Which exchange rate regime provides most stability?
-        - How does Iceland compare to different regime groups?
         """)
     
     st.markdown("---")
@@ -572,10 +623,10 @@ def run_cs5_analysis():
         st.plotly_chart(fig4, use_container_width=True)
         st.info(f"**Correlation:** {corr4:.3f} | **P-value:** {p4:.4f}")
     
-    # Interpretation (Updated based on actual findings)
+    # Statistical Interpretation (Updated based on actual findings)
     st.markdown("---")
     st.markdown(f"""
-    ### 📊 Capital Controls Analysis Interpretation
+    ### 📊 Capital Controls Analysis Results
     
     **Key Findings:**
     - **Yearly Analysis:** Correlation = {corr1:.3f} (p = {p1:.4f}) | Outliers Removed: {corr2:.3f} (p = {p2:.4f})
@@ -583,14 +634,14 @@ def run_cs5_analysis():
     
     **Statistical Interpretation:**
     - {'**Significant**' if min(p1, p2, p3, p4) < 0.05 else '**Not significant**'} relationship between capital controls and volatility at 5% level
-    - {'Negative' if corr1 < 0 else 'Positive'} correlation suggests that {'higher' if corr1 > 0 else 'lower'} capital controls are associated with {'higher' if corr1 > 0 else 'lower'} volatility
+    - {'Negative' if corr1 < 0 else 'Positive'} correlation indicates that {'higher' if corr1 > 0 else 'lower'} capital controls are associated with {'higher' if corr1 > 0 else 'lower'} volatility
     - Outlier removal {'strengthens' if abs(corr2) > abs(corr1) else 'weakens'} the relationship in yearly data
     - Country-level aggregation {'confirms' if (corr1 > 0 and corr3 > 0) or (corr1 < 0 and corr3 < 0) else 'reverses'} the yearly pattern
     
-    **Policy Implications:**
-    - Results suggest capital controls may {'increase' if corr1 > 0 else 'decrease'} rather than {'decrease' if corr1 > 0 else 'increase'} volatility
-    - Heterogeneity across countries indicates regime-specific effectiveness
-    - Endogeneity concerns: countries may implement controls in response to volatility
+    **Methodological Notes:**
+    - Correlation analysis captures association, not causation
+    - Heterogeneity across countries suggests varying institutional contexts
+    - Endogeneity considerations: controls may respond to volatility patterns
     """)
     
     st.markdown("---")
