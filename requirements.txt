@@ -20,5 +20,9 @@ statsmodels>=0.14.0
 # Data Import and Export
 openpyxl>=3.1.0                 # Excel file support
 
+# Testing Framework
+pytest>=7.4.0                   # Core testing framework
+pytest-cov>=4.1.0              # Coverage reporting
+
 # Standard Library (built-in, listed for documentation)
 # pathlib, logging, warnings, io, base64, datetime, sys, re
