@@ -22,143 +22,80 @@ import warnings
 # Add parent directory to path for imports
 sys.path.append(str(Path(__file__).parent.parent))
 
-# Colorblind-friendly econometrics palette (matching CS1-CS4)
-COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
-sns.set_palette(COLORBLIND_SAFE)
+# Import centralized dashboard configuration
+from dashboard_config import COLORBLIND_SAFE, get_data_paths, get_professional_css
 
-# Configure matplotlib for professional PDF export
-warnings.filterwarnings('ignore')
-plt.style.use('default')
-plt.rcParams.update({
-    'font.size': 12,
-    'font.family': 'serif',
-    'axes.linewidth': 1.2,
-    'axes.spines.top': False,
-    'axes.spines.right': False,
-    'axes.grid': True,
-    'grid.alpha': 0.3,
-    'figure.facecolor': 'white',
-    'axes.facecolor': 'white',
-    'figure.dpi': 300,
-    'savefig.dpi': 300,
-    'savefig.bbox': 'tight',
-    'figure.max_open_warning': 0
-})
+# Page configuration - removed to avoid conflicts when imported into main_app.py
+# st.set_page_config() is now handled by main_app.py or when run standalone
 
-# Configure page
-st.set_page_config(
-    page_title="CS5: Capital Controls & Exchange Rate Regime Analysis",
-    page_icon="🌐",
-    layout="wide"
-)
-
-# Professional styling
-st.markdown("""
-<style>
-    /* Professional table styling */
-    .dataframe {
-        font-size: 12px !important;
-        font-family: 'Arial', sans-serif !important;
-    }
-    .dataframe th {
-        background-color: #e6f3ff !important;
-        font-weight: bold !important;
-        text-align: center !important;
-        padding: 8px !important;
-    }
-    .dataframe td {
-        text-align: center !important;
-        padding: 6px !important;
-    }
-    .dataframe tbody tr:nth-child(even) {
-        background-color: #f9f9f9 !important;
-    }
-    
-    /* Chart container constraints */
-    .chart-container { 
-        max-width: 100% !important;
-        overflow: hidden !important;
-        text-align: center !important;
-        margin: 20px 0 !important;
-    }
-    
-    /* Main container constraints */
-    .main .block-container {
-        max-width: 8.5in !important;
-        margin: 0 auto !important;
-        padding: 1rem 2rem !important;
-    }
-    
-    /* CS4 Master Table Styling (optimized for 13 columns) */
-    .cs4-master-table { 
-        width: 100% !important;
-        border-collapse: collapse !important;
-        margin: 20px 0 !important;
-        font-size: 9px !important;  /* Smaller font for 13 columns */
-        font-family: 'Arial', sans-serif !important;
-        table-layout: fixed !important;  /* Fixed layout for better column control */
-    }
-    .cs4-master-table th {
-        background-color: #e6f3ff !important;
-        font-weight: bold !important;
-        text-align: center !important;
-        padding: 6px 4px !important;  /* Reduced padding for more columns */
-        border: 1px solid #ddd !important;
-        font-size: 8px !important;  /* Smaller headers */
-        word-wrap: break-word !important;
-    }
-    .cs4-master-table td {
-        text-align: center !important;
-        padding: 4px 2px !important;  /* Reduced padding */
-        border: 1px solid #ddd !important;
-        font-size: 8px !important;  /* Smaller data font */
-        word-wrap: break-word !important;
-    }
-    .cs4-master-table tbody tr:nth-child(even) {
-        background-color: #f9f9f9 !important;
-    }
-    /* First column (Indicator/Period) wider */
-    .cs4-master-table td:first-child {
-        width: 20% !important;
-        text-align: left !important;
-        font-weight: bold !important;
-        padding-left: 6px !important;
-    }
-    .cs4-master-table th:first-child {
-        width: 20% !important;
-        text-align: center !important;
-    }
-    
-    /* Print Media Queries for PDF Export */
-    @media print {
-        body { 
-            font-family: serif !important;
-            margin: 40px !important; 
-            line-height: 1.6 !important;
-            color: black !important;
-        }
-        .stApp { 
-            margin: 40px !important; 
-            max-width: 8.5in !important;
-        }
+def apply_professional_styling():
+    """Apply professional CSS styling to the app"""
+    # Use centralized CSS with CS5-specific table styling
+    base_css = get_professional_css()
+    cs5_specific_css = """
+    <style>
+        /* CS5 Master Table Styling (optimized for 13 columns) */
         .cs4-master-table { 
-            page-break-inside: avoid !important;
-            font-size: 6px !important;  /* Even smaller for PDF with 13 columns */
-            margin: 10px 0 !important;
-            table-layout: fixed !important;
+            width: 100% !important;
+            border-collapse: collapse !important;
+            margin: 20px 0 !important;
+            font-size: 9px !important;  /* Smaller font for 13 columns */
+            font-family: 'Arial', sans-serif !important;
+            table-layout: fixed !important;  /* Fixed layout for better column control */
         }
-        .cs4-master-table th, .cs4-master-table td {
-            padding: 2px 1px !important;  /* Minimal padding for PDF */
-            font-size: 6px !important;
+        .cs4-master-table th {
+            background-color: #e6f3ff !important;
+            font-weight: bold !important;
+            text-align: center !important;
+            padding: 6px 4px !important;  /* Reduced padding for more columns */
+            border: 1px solid #ddd !important;
+            font-size: 8px !important;  /* Smaller headers */
+            word-wrap: break-word !important;
         }
-    }
-</style>
-""", unsafe_allow_html=True)
+        .cs4-master-table td {
+            text-align: center !important;
+            padding: 4px 2px !important;  /* Reduced padding */
+            border: 1px solid #ddd !important;
+            font-size: 8px !important;  /* Smaller data font */
+            word-wrap: break-word !important;
+        }
+        .cs4-master-table tbody tr:nth-child(even) {
+            background-color: #f9f9f9 !important;
+        }
+        /* First column (Indicator/Period) wider */
+        .cs4-master-table td:first-child {
+            width: 20% !important;
+            text-align: left !important;
+            font-weight: bold !important;
+            padding-left: 6px !important;
+        }
+        .cs4-master-table th:first-child {
+            width: 20% !important;
+            text-align: center !important;
+        }
+        
+        /* Print Media Queries for PDF Export */
+        @media print {
+            .cs4-master-table { 
+                page-break-inside: avoid !important;
+                font-size: 6px !important;  /* Even smaller for PDF with 13 columns */
+                margin: 10px 0 !important;
+                table-layout: fixed !important;
+            }
+            .cs4-master-table th, .cs4-master-table td {
+                padding: 2px 1px !important;  /* Minimal padding for PDF */
+                font-size: 6px !important;
+            }
+        }
+    </style>
+    """
+    st.markdown(base_css + cs5_specific_css, unsafe_allow_html=True)
 
 
 def load_capital_controls_data():
     """Load capital controls analysis data"""
-    base_path = Path(__file__).parent.parent.parent / "updated_data" / "Clean" / "CS5_Capital_Controls"
+    data_paths = get_data_paths()
+    base_path = data_paths['cs5_controls']
     
     # Load yearly standard deviations
     yearly_sd = pd.read_csv(base_path / "sd_yearly_flows.csv")
@@ -178,7 +115,8 @@ def load_capital_controls_data():
 
 def load_regime_analysis_data():
     """Load exchange rate regime analysis data"""
-    base_path = Path(__file__).parent.parent.parent / "updated_data" / "Clean" / "CS5_Regime_Analysis"
+    data_paths = get_data_paths()
+    base_path = data_paths['cs5_regimes']
     
     indicators = {
         'Net Capital Flows': 'net_capital_flows',
@@ -534,6 +472,9 @@ def display_cs5_master_table(df):
 def run_cs5_analysis():
     """Main function to run CS5 analysis"""
     
+    # Apply styling when function is called
+    apply_professional_styling()
+    
     st.title("🌐 Case Study 5: Capital Controls and Exchange Rate Regime Analysis")
     st.markdown("---")
     
@@ -711,8 +652,16 @@ def run_cs5_analysis():
 
 
 # Main execution
-def main():
+def main(standalone=False):
     """Main function with tabs"""
+    # Only set page config when running standalone
+    if standalone:
+        st.set_page_config(
+            page_title="CS5: Capital Controls & Exchange Rate Regime Analysis",
+            page_icon="🌐",
+            layout="wide"
+        )
+    
     tab1, tab2 = st.tabs(["📊 Analysis", "📚 Methodology"])
     
     with tab1:
@@ -763,4 +712,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Running standalone - set page config
+    main(standalone=True)

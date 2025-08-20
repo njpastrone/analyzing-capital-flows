@@ -82,15 +82,12 @@ def get_pdf_optimized_figsize(chart_type, base_width=10, base_height=6):
         height = min(base_height, max_pdf_height * 0.5)
         return (width, height)
 
-# Configure page
-st.set_page_config(
-    page_title="CS4: Statistical Analysis",
-    page_icon="📊",
-    layout="wide"
-)
+# Page configuration - removed to avoid conflicts when imported into main_app.py
+# st.set_page_config() is now handled by main_app.py or when run standalone
 
-# Professional styling with PDF export optimization
-st.markdown("""
+def apply_professional_styling():
+    """Apply professional CSS styling with PDF export optimization"""
+    st.markdown("""
 <style>
     /* PDF Export Optimized Body and Layout */
     body {
@@ -300,7 +297,7 @@ st.markdown("""
         color: #0c5460 !important;
     }
 </style>
-""", unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 
 def format_table_for_display(df: pd.DataFrame, title: str = "") -> str:
@@ -1405,8 +1402,19 @@ def create_integrated_table(indicator, full_table, crisis_table, table_type):
             st.metric("Total Statistical Results", len(indicators) * len(full_results['metadata']['comparator_groups']) * 3 * 2)
 
 
-def main():
+def main(standalone=False):
     """Main application function"""
+    
+    # Only set page config when running standalone
+    if standalone:
+        st.set_page_config(
+            page_title="CS4: Statistical Analysis",
+            page_icon="📊",
+            layout="wide"
+        )
+    
+    # Apply styling when function is called
+    apply_professional_styling()
     
     # Title and description
     st.title("🇮🇸 Case Study 4: Comprehensive Statistical Analysis")
@@ -1500,4 +1508,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    # Running standalone - set page config
+    main(standalone=True)

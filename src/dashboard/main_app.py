@@ -1597,7 +1597,7 @@ def show_expanded_bop_pipeline():
             if i == 1:
                 st.code("""
 # Load expanded BOP dataset
-bop_df = pd.read_csv('data/net_flows_july_30_2025.csv')
+bop_df = pd.read_csv('updated_data/Raw/net_flows_july_30_2025.csv')
 print(f"Loaded: {bop_df.shape} - {bop_df['COUNTRY'].nunique()} countries")
                 """)
                 st.markdown("**Result:** 63,752 observations across 159 countries loaded successfully")
