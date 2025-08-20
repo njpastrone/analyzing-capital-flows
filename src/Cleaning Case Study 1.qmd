@@ -16,7 +16,7 @@ options(scipen = 999)
 ### Cleaning Raw BOP Data
 
 ```{r}
-case_one_raw <- read_csv("../data/case_study_1_data_july_24_2025.csv")
+case_one_raw <- read_csv("../updated_data/Raw/case_study_1_data_july_24_2025.csv")
 ```
 
 ```{r}
@@ -63,7 +63,7 @@ unique(case_one_final_cols$FULL_INDICATOR)
 ### Cleaning Raw GDP Data
 
 ```{r}
-gdp_raw <- read_csv("../data/dataset_2025-07-24T18_28_31.898465539Z_DEFAULT_INTEGRATION_IMF.RES_WEO_6.0.0.csv")
+gdp_raw <- read_csv("../updated_data/Raw/gdp_july_24_2025.csv")
 ```
 ```{r}
 head(gdp_raw)

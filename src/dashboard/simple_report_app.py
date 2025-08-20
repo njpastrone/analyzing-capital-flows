@@ -133,7 +133,7 @@ def load_default_data(include_crisis_years=True):
     try:
         # Use new cleaned data path
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
         
         if not comprehensive_file.exists():
             st.error("Cleaned data file not found. Please check file paths.")
@@ -339,7 +339,7 @@ def load_overall_capital_flows_data(include_crisis_years=True):
     try:
         # Use comprehensive dataset
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
         
         if not comprehensive_file.exists():
             return None, None

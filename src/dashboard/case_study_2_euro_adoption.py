@@ -96,7 +96,7 @@ def load_case_study_2_data(include_crisis_years=True):
     try:
         # Load comprehensive dataset
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "  # Note trailing space
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
         
         if not comprehensive_file.exists():
             st.error(f"Comprehensive dataset not found at {comprehensive_file}")
@@ -385,7 +385,7 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         # Navigate up to find the project root (contains updated_data)
         project_root = current_dir.parent.parent
         data_dir = project_root / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
+        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
         
         if not comprehensive_file.exists():
             return None, None, None

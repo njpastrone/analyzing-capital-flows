@@ -77,7 +77,7 @@ def load_case_study_3_data():
     try:
         # Load the comprehensive labeled dataset
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        file_path = data_dir / "comprehensive_df_PGDP_labeled.csv "  # Note: space in filename
+        file_path = data_dir / "comprehensive_df_PGDP_labeled.csv"
         
         if not file_path.exists():
             st.error(f"❌ Data file not found: {file_path}")

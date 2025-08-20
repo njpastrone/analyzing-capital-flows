@@ -329,7 +329,7 @@ def show_data_processing_pipeline():
     try:
         # Load the labeled dataset
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        labeled_file = data_dir / "comprehensive_df_PGDP_labeled.csv "
+        labeled_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
         
         if labeled_file.exists():
             # Load a small sample

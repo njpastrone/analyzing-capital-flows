@@ -18,7 +18,7 @@ print("="*60)
 
 # Load raw BOP data
 print("\n1. Loading and cleaning raw BOP data...")
-case_one_raw = pd.read_csv("../data/case_study_1_data_july_24_2025.csv")
+case_one_raw = pd.read_csv("../updated_data/Raw/case_study_1_data_july_24_2025.csv")
 print(f"Raw BOP data shape: {case_one_raw.shape}")
 print("\nFirst few rows of raw BOP data:")
 print(case_one_raw.head())
@@ -58,7 +58,7 @@ for indicator in sorted(case_one_final_cols['FULL_INDICATOR'].unique()):
 
 # Load and clean GDP data
 print("\n2. Loading and cleaning raw GDP data...")
-gdp_raw = pd.read_csv("../data/dataset_2025-07-24T18_28_31.898465539Z_DEFAULT_INTEGRATION_IMF.RES_WEO_6.0.0.csv")
+gdp_raw = pd.read_csv("../updated_data/Raw/gdp_july_24_2025.csv")
 print(f"Raw GDP data shape: {gdp_raw.shape}")
 print("\nFirst few rows of raw GDP data:")
 print(gdp_raw.head())
