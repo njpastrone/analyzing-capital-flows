@@ -1,0 +1,41 @@
+
+WINSORIZATION METHODOLOGY DOCUMENTATION
+========================================
+
+Purpose:
+This winsorization pipeline creates outlier-adjusted versions of all Capital Flows Research 
+datasets to assess the sensitivity of statistical findings to extreme values.
+
+Methodology:
+- Symmetric winsorization at 5% level (default)
+- Replaces values below 5th percentile with 5th percentile value
+- Replaces values above 95th percentile with 95th percentile value
+- Applied indicator-by-indicator to preserve variable-specific distributions
+- Grouped by country-indicator pairs to maintain cross-sectional relationships
+
+Technical Specifications:
+- Winsorization Level: 5% from each tail (configurable)
+- Missing Values: Excluded from percentile calculations, preserved as NA
+- Temporal Structure: Maintained across all time periods
+- Crisis Periods: Definitions unchanged from original data
+
+Implementation Details:
+- R Version: 4.0+
+- Key Packages: tidyverse, readr
+- Processing: Indicator-by-indicator within country groups
+- Output Format: CSV files with '_winsorized' suffix
+
+Academic References:
+- Tukey, J.W. (1962). 'The Future of Data Analysis'
+- Dixon, W.J. (1960). 'Simplified Estimation from Censored Normal Samples'
+- Barnett, V. & Lewis, T. (1994). 'Outliers in Statistical Data'
+
+Quality Assurance:
+- Sample sizes preserved across all datasets
+- Statistical moments calculated for comparison
+- Percentage of affected observations documented
+- Temporal and cross-sectional structures validated
+
+Generated: 2025-08-21
+Winsorization Level: 5% from each tail
+

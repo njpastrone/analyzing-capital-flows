@@ -21,6 +21,14 @@ from case_study_2_euro_adoption import main as case_study_2_main
 from cs4_report_app import main as case_study_4_main
 from cs5_report_app import main as case_study_5_main
 
+# Import winsorized data functionality
+from core.winsorized_data_loader import (
+    load_winsorized_comprehensive_data,
+    load_original_vs_winsorized_comparison,
+    calculate_winsorization_impact,
+    load_winsorization_summary
+)
+
 def main():
     """Main multi-tab application for capital flows research"""
     
@@ -37,7 +45,7 @@ def main():
     st.markdown("### Comprehensive Analysis of International Capital Flow Volatility")
     
     # Create tabs
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11, tab12 = st.tabs([
         "📋 Project Overview",
         "⚙️ Data Processing Pipeline", 
         "🇮🇸 Case Study 1 – Iceland vs Eurozone",
@@ -47,6 +55,7 @@ def main():
         "🇮🇸 Case Study 3 – Iceland & Small Open Economies",
         "📊 Case Study 4 – Statistical Analysis",
         "🌐 Case Study 5 – Capital Controls & Exchange Rate Regimes",
+        "🛡️ Robust Analysis (Outlier-Adjusted)",
         "📊 Comparative Analysis",
         "📖 Methodology & Data"
     ])
@@ -79,9 +88,12 @@ def main():
         show_case_study_5_restructured()
     
     with tab10:
-        show_comparative_analysis_placeholder()
+        show_robust_analysis()
     
     with tab11:
+        show_comparative_analysis_placeholder()
+    
+    with tab12:
         show_methodology_and_data()
 
 def show_project_overview():
@@ -4266,6 +4278,276 @@ def show_country_indicator_analysis(country, include_crisis_years=True):
             
     except Exception as e:
         st.error(f"Error loading indicator analysis: {str(e)}")
+
+def show_robust_analysis():
+    """Display robust analysis with winsorized data comparison"""
+    
+    st.header("🛡️ Robust Analysis - Outlier-Adjusted Results")
+    st.markdown("""
+    This section presents outlier-robust analysis using **winsorized data** (5% symmetric winsorization) 
+    to assess the sensitivity of statistical findings to extreme values.
+    """)
+    
+    # Winsorization methodology info
+    with st.expander("📖 Winsorization Methodology", expanded=False):
+        st.markdown("""
+        **Symmetric 5% Winsorization:**
+        - Replaces values below 5th percentile with 5th percentile value
+        - Replaces values above 95th percentile with 95th percentile value
+        - Applied indicator-by-indicator within country groups
+        - Preserves temporal structure and cross-sectional relationships
+        
+        **Academic References:**
+        - Tukey, J.W. (1962). 'The Future of Data Analysis'
+        - Dixon, W.J. (1960). 'Simplified Estimation from Censored Normal Samples'
+        - Barnett, V. & Lewis, T. (1994). 'Outliers in Statistical Data'
+        """)
+    
+    # Configuration options
+    st.subheader("📊 Analysis Configuration")
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        include_crisis = st.checkbox("Include Crisis Years", value=True,
+                                   help="Include Global Financial Crisis (2008-2010) and COVID-19 (2020-2022)")
+    
+    with col2:
+        case_study_focus = st.selectbox("Case Study Focus", 
+                                      ["All Case Studies", "CS1 - Iceland vs Eurozone", 
+                                       "CS2 - Baltic Euro Adoption", "CS4 - Statistical Modeling"],
+                                      help="Focus analysis on specific case study")
+    
+    with col3:
+        comparison_type = st.selectbox("Comparison Type",
+                                     ["Side-by-Side Results", "Impact Analysis", "Summary Statistics"],
+                                     help="Type of robust analysis to display")
+    
+    try:
+        # Load winsorized data
+        with st.spinner("Loading winsorized datasets..."):
+            df_winsorized, indicators_winsorized, metadata_winsorized = load_winsorized_comprehensive_data(include_crisis)
+            df_original, df_winsorized_comp = load_original_vs_winsorized_comparison("CS1", include_crisis)
+        
+        st.success(f"✓ Loaded {len(df_winsorized):,} winsorized observations across {len(indicators_winsorized)} indicators")
+        
+        # Display analysis based on selected type
+        if comparison_type == "Side-by-Side Results":
+            show_side_by_side_results(df_original, df_winsorized_comp, indicators_winsorized, include_crisis)
+        elif comparison_type == "Impact Analysis":
+            show_winsorization_impact_analysis(df_original, df_winsorized_comp, indicators_winsorized)
+        else:  # Summary Statistics
+            show_winsorization_summary_statistics()
+        
+    except Exception as e:
+        st.error(f"Error loading winsorized data: {str(e)}")
+        st.info("Please ensure winsorized datasets have been generated using the R winsorization pipeline.")
+
+def show_side_by_side_results(df_original, df_winsorized, indicators, include_crisis):
+    """Show side-by-side comparison of original vs winsorized results"""
+    
+    st.subheader("📊 Side-by-Side Statistical Results")
+    
+    # Import statistical functions
+    from simple_report_app import perform_volatility_tests
+    
+    try:
+        # Perform F-tests on both datasets
+        with st.spinner("Computing F-test results..."):
+            original_results = perform_volatility_tests(df_original, indicators)
+            winsorized_results = perform_volatility_tests(df_winsorized, indicators)
+        
+        if isinstance(original_results, pd.DataFrame) and isinstance(winsorized_results, pd.DataFrame):
+            # Merge results for comparison
+            comparison_results = []
+            
+            for indicator in indicators:
+                orig_row = original_results[original_results['Indicator'] == indicator]
+                wins_row = winsorized_results[winsorized_results['Indicator'] == indicator]
+                
+                if not orig_row.empty and not wins_row.empty:
+                    orig_stats = orig_row.iloc[0]
+                    wins_stats = wins_row.iloc[0]
+                    
+                    comparison_results.append({
+                        'Indicator': indicator,
+                        'Original_F_Stat': orig_stats.get('F_Statistic', np.nan),
+                        'Winsorized_F_Stat': wins_stats.get('F_Statistic', np.nan),
+                        'Original_P_Value': orig_stats.get('P_Value', np.nan),
+                        'Winsorized_P_Value': wins_stats.get('P_Value', np.nan),
+                        'Original_Significant': 'Yes' if orig_stats.get('P_Value', 1) < 0.05 else 'No',
+                        'Winsorized_Significant': 'Yes' if wins_stats.get('P_Value', 1) < 0.05 else 'No',
+                        'Conclusion_Changed': 'Yes' if (orig_stats.get('P_Value', 1) < 0.05) != (wins_stats.get('P_Value', 1) < 0.05) else 'No'
+                    })
+            
+            if comparison_results:
+                comparison_df = pd.DataFrame(comparison_results)
+                
+                # Display results
+                st.markdown("**F-Test Results Comparison (Original vs Winsorized)**")
+                
+                # Format display dataframe
+                display_df = comparison_df.copy()
+                numeric_cols = ['Original_F_Stat', 'Winsorized_F_Stat', 'Original_P_Value', 'Winsorized_P_Value']
+                display_df[numeric_cols] = display_df[numeric_cols].round(4)
+                
+                st.dataframe(display_df, use_container_width=True)
+                
+                # Summary statistics
+                col1, col2, col3 = st.columns(3)
+                
+                with col1:
+                    orig_sig_count = (comparison_df['Original_Significant'] == 'Yes').sum()
+                    st.metric("Original Significant Results", f"{orig_sig_count}/{len(comparison_df)}")
+                
+                with col2:
+                    wins_sig_count = (comparison_df['Winsorized_Significant'] == 'Yes').sum()
+                    st.metric("Winsorized Significant Results", f"{wins_sig_count}/{len(comparison_df)}")
+                
+                with col3:
+                    changed_count = (comparison_df['Conclusion_Changed'] == 'Yes').sum()
+                    st.metric("Conclusions Changed", f"{changed_count}/{len(comparison_df)}")
+                
+                # Highlight changed conclusions
+                if changed_count > 0:
+                    changed_indicators = comparison_df[comparison_df['Conclusion_Changed'] == 'Yes']['Indicator'].tolist()
+                    st.warning(f"⚠️ **Outlier Sensitivity Detected:** {changed_count} indicators changed significance after winsorization:")
+                    for indicator in changed_indicators:
+                        st.markdown(f"• **{indicator}**")
+                else:
+                    st.success("✅ **Robust Results:** No changes in statistical significance after outlier adjustment")
+                
+                # Download button for comparison results
+                csv_data = comparison_df.to_csv(index=False)
+                crisis_suffix = "_crisis_excluded" if not include_crisis else "_full"
+                
+                st.download_button(
+                    label="📥 Download Comparison Results (CSV)",
+                    data=csv_data,
+                    file_name=f"robust_analysis_comparison{crisis_suffix}.csv",
+                    mime="text/csv"
+                )
+        
+    except Exception as e:
+        st.error(f"Error computing side-by-side results: {str(e)}")
+
+def show_winsorization_impact_analysis(df_original, df_winsorized, indicators):
+    """Show detailed impact analysis of winsorization"""
+    
+    st.subheader("📈 Winsorization Impact Analysis")
+    
+    try:
+        # Calculate impact statistics
+        with st.spinner("Calculating winsorization impact..."):
+            impact_df = calculate_winsorization_impact(df_original, df_winsorized, indicators)
+        
+        if not impact_df.empty:
+            st.markdown("**Statistical Impact of 5% Winsorization**")
+            
+            # Display key impact metrics
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.markdown("**Mean Changes:**")
+                st.dataframe(
+                    impact_df[['Indicator', 'Original_Mean', 'Winsorized_Mean', 'Mean_Change_Pct']].round(3),
+                    use_container_width=True
+                )
+            
+            with col2:
+                st.markdown("**Volatility Changes:**")
+                st.dataframe(
+                    impact_df[['Indicator', 'Original_Std', 'Winsorized_Std', 'Std_Change_Pct']].round(3),
+                    use_container_width=True
+                )
+            
+            # Summary of data affected
+            st.markdown("**Data Modification Summary:**")
+            affected_summary = impact_df[['Indicator', 'Values_Changed', 'Pct_Values_Changed']].copy()
+            affected_summary = affected_summary.sort_values('Pct_Values_Changed', ascending=False)
+            
+            st.dataframe(affected_summary.round(2), use_container_width=True)
+            
+            # Highlight most affected indicators
+            most_affected = affected_summary.iloc[0]
+            avg_affected = affected_summary['Pct_Values_Changed'].mean()
+            
+            st.info(f"""
+            📊 **Impact Summary:**
+            - Most affected indicator: **{most_affected['Indicator']}** ({most_affected['Pct_Values_Changed']:.1f}% of values changed)
+            - Average data modification: **{avg_affected:.1f}%** of observations per indicator
+            - Winsorization threshold: **5% symmetric** (affecting top and bottom 5% of values)
+            """)
+            
+            # Download impact analysis
+            csv_impact = impact_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Impact Analysis (CSV)",
+                data=csv_impact,
+                file_name="winsorization_impact_analysis.csv",
+                mime="text/csv"
+            )
+        
+    except Exception as e:
+        st.error(f"Error calculating impact analysis: {str(e)}")
+
+def show_winsorization_summary_statistics():
+    """Show comprehensive winsorization summary statistics"""
+    
+    st.subheader("📋 Winsorization Summary Statistics")
+    
+    try:
+        # Load summary statistics
+        summary_df = load_winsorization_summary()
+        
+        if not summary_df.empty:
+            st.markdown("**Comprehensive Winsorization Statistics**")
+            
+            # Display full summary
+            st.dataframe(summary_df.round(3), use_container_width=True)
+            
+            # Key insights
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                avg_affected = summary_df['Pct_Data_Affected'].mean()
+                st.metric("Average Data Modified", f"{avg_affected:.1f}%")
+            
+            with col2:
+                max_affected = summary_df['Pct_Data_Affected'].max()
+                most_affected_indicator = summary_df.loc[summary_df['Pct_Data_Affected'].idxmax(), 'Indicator']
+                st.metric("Max Data Modified", f"{max_affected:.1f}%", delta=most_affected_indicator)
+            
+            with col3:
+                total_obs = summary_df['N_Observations'].sum()
+                st.metric("Total Observations", f"{total_obs:,}")
+            
+            # Distribution of impact
+            st.markdown("**Distribution of Winsorization Impact**")
+            
+            impact_ranges = [
+                ("Low Impact (< 5%)", (summary_df['Pct_Data_Affected'] < 5).sum()),
+                ("Medium Impact (5-15%)", ((summary_df['Pct_Data_Affected'] >= 5) & (summary_df['Pct_Data_Affected'] < 15)).sum()),
+                ("High Impact (≥ 15%)", (summary_df['Pct_Data_Affected'] >= 15).sum())
+            ]
+            
+            for range_name, count in impact_ranges:
+                st.markdown(f"• **{range_name}:** {count} indicators")
+            
+            # Download summary
+            csv_summary = summary_df.to_csv(index=False)
+            st.download_button(
+                label="📥 Download Summary Statistics (CSV)",
+                data=csv_summary,
+                file_name="winsorization_summary_statistics.csv",
+                mime="text/csv"
+            )
+            
+        else:
+            st.warning("Winsorization summary statistics not available. Please regenerate using the R pipeline.")
+        
+    except Exception as e:
+        st.error(f"Error loading summary statistics: {str(e)}")
 
 
 if __name__ == "__main__":
