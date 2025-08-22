@@ -1,11 +1,10 @@
 """
-Outlier-Adjusted Capital Flows Analysis - Case Study 2: Lithuania Euro Adoption Report
+Capital Flows Analysis - Case Study 2: Lithuania Euro Adoption Report
 
-This Streamlit application provides an exact mirror of the Lithuania tab using winsorized data,
+This Streamlit application provides an exact mirror of the Lithuania tab from the main dashboard,
 optimized for clean PDF export with professional formatting.
 
 Research Focus: Lithuania Euro Adoption Analysis - Capital Flow Volatility Before and After Euro Adoption (2015)
-Using 5% symmetric winsorization for robust statistical analysis
 """
 
 import streamlit as st
@@ -15,11 +14,11 @@ import matplotlib.pyplot as plt
 import warnings
 
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 warnings.filterwarnings('ignore')
 
-# Configure matplotlib for PDF export optimization (matching simple_report_app.py)
+# Configure matplotlib for PDF export optimization (matching cs1_report_app.py)
 plt.style.use('default')
 plt.rcParams.update({
     'font.size': 12,
@@ -36,11 +35,11 @@ plt.rcParams.update({
 def main():
     """Lithuania report app - exact mirror of main dashboard Lithuania tab, optimized for PDF export"""
     
-    # Note: st.set_page_config() is now handled by main_app.py (matching simple_report_app.py)
+    # Note: st.set_page_config() is now handled by main_app.py (matching cs1_report_app.py)
     # Removing page config call to prevent margin/layout conflicts that affect PDF export
     
     # Mirror the exact content from show_case_study_2_lithuania_restructured()
-    st.title("🛡️ 🇱🇹 Lithuania Euro Adoption Analysis (Outlier-Adjusted)")
+    st.title("🇱🇹 Lithuania Euro Adoption Analysis")
     st.subheader("Capital Flow Volatility Before and After Euro Adoption (2015)")
     
     st.markdown("""
@@ -48,15 +47,10 @@ def main():
     
     **Methodology:** Temporal comparison of capital flow patterns before (2008-2013) and after (2016-2021) Euro adoption.
     
-    **📋 Outlier-Adjusted Analysis:** This analysis uses 5% symmetric winsorization to assess
-    the robustness of statistical findings to extreme values. Data points below the 5th percentile
-    are replaced with the 5th percentile value; data points above the 95th percentile are replaced
-    with the 95th percentile value.
-    
     **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
     """)
     
-    # Data and Methodology section (matching simple_report_app.py format)
+    # Data and Methodology section (matching cs1_report_app.py format)
     with st.expander("📋 Data and Methodology", expanded=False):
         st.markdown("""
         ### Data Sources
@@ -77,10 +71,10 @@ def main():
         - **Crisis Exclusion:** Global Financial Crisis (2008-2010) and COVID-19 (2020-2022)
         """)
     
-    # Add PDF export tip (matching simple_report_app.py)
+    # Add PDF export tip (matching cs1_report_app.py)
     st.info("💡 **Tip:** You can print this page to PDF using your browser's print function for a professional document with proper margins.")
     
-    # Add PDF-specific CSS styling (matching simple_report_app.py margins)
+    # Add PDF-specific CSS styling (matching cs1_report_app.py margins)
     st.markdown("""
     <style>
         @media print {
@@ -136,7 +130,7 @@ def main():
 def show_lithuania_overall_analysis(include_crisis_years=True):
     """Show Lithuania overall capital flows analysis with PDF-optimized formatting"""
     try:
-        from case_study_2_euro_adoption_outlier_adjusted import show_overall_capital_flows_analysis_cs2
+        from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
         import matplotlib.pyplot as plt
         
         # Apply PDF optimization context with figure size constraints
@@ -144,7 +138,7 @@ def show_lithuania_overall_analysis(include_crisis_years=True):
             # Store original settings
             original_rcParams = plt.rcParams.copy()
             
-            # Apply PDF-optimized settings matching simple_report_app.py
+            # Apply PDF-optimized settings matching cs1_report_app.py
             plt.rcParams.update({
                 'font.size': 12,
                 'font.family': 'serif',
@@ -166,7 +160,7 @@ def show_lithuania_overall_analysis(include_crisis_years=True):
             def pdf_optimized_subplots(*args, **kwargs):
                 if 'figsize' in kwargs:
                     width, height = kwargs['figsize']
-                    # Constrain to PDF-friendly sizes (matching simple_report_app.py max)
+                    # Constrain to PDF-friendly sizes (matching cs1_report_app.py max)
                     if width > 16:
                         kwargs['figsize'] = (16, min(height, 12))
                     elif height > 12:
@@ -210,7 +204,7 @@ def show_lithuania_overall_analysis(include_crisis_years=True):
 def show_lithuania_indicator_analysis(include_crisis_years=True):
     """Show Lithuania indicator-level analysis with PDF-optimized formatting"""
     try:
-        from case_study_2_euro_adoption_outlier_adjusted import show_indicator_level_analysis_cs2
+        from case_study_2_euro_adoption import show_indicator_level_analysis_cs2
         import matplotlib.pyplot as plt
         
         # Apply PDF optimization context with figure size constraints
@@ -218,7 +212,7 @@ def show_lithuania_indicator_analysis(include_crisis_years=True):
             # Store original settings
             original_rcParams = plt.rcParams.copy()
             
-            # Apply PDF-optimized settings matching simple_report_app.py
+            # Apply PDF-optimized settings matching cs1_report_app.py
             plt.rcParams.update({
                 'font.size': 12,
                 'font.family': 'serif',
@@ -240,7 +234,7 @@ def show_lithuania_indicator_analysis(include_crisis_years=True):
             def pdf_optimized_subplots(*args, **kwargs):
                 if 'figsize' in kwargs:
                     width, height = kwargs['figsize']
-                    # Constrain to PDF-friendly sizes (matching simple_report_app.py max)
+                    # Constrain to PDF-friendly sizes (matching cs1_report_app.py max)
                     if width > 16:
                         kwargs['figsize'] = (16, min(height, 12))
                     elif height > 12:

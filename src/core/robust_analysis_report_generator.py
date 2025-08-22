@@ -723,7 +723,7 @@ def generate_lightweight_pdf_report(case_study: str = "CS1",
     try:
         # Import required modules
         sys.path.append(str(Path(__file__).parent.parent / "dashboard"))
-        from simple_report_app import perform_volatility_tests
+        from cs1_report_app import perform_volatility_tests
         from winsorized_data_loader import (
             load_original_vs_winsorized_comparison,
             calculate_winsorization_impact

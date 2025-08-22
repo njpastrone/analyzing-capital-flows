@@ -18,8 +18,8 @@ import matplotlib.patches as mpatches
 import warnings
 from statsmodels.tsa.stattools import acf
 
-# Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
+# Add src directory to path for imports (moved to subfolder)
+sys.path.append(str(Path(__file__).parent.parent.parent))
 from core.cs4_statistical_analysis import CS4AnalysisFramework
 
 # Configure matplotlib for professional PDF export (from commit 8181df5)

@@ -18,7 +18,17 @@ import base64
 import zipfile
 
 # Add core modules to path
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+# Define robust data path function for outlier-adjusted reports
+def get_outlier_adjusted_data_paths():
+    """Get data paths from outlier_adjusted_reports subfolder context"""
+    # Go up 3 levels: outlier_adjusted_reports -> dashboard -> src -> project_root
+    base_path = Path(__file__).parent.parent.parent.parent
+    return {
+        'clean_data': base_path / "updated_data" / "Clean",
+        'winsorized_dataset': base_path / "updated_data" / "Clean" / "comprehensive_df_PGDP_labeled_winsorized.csv"
+    }
 
 warnings.filterwarnings('ignore')
 
@@ -132,8 +142,8 @@ def load_default_data(include_crisis_years=True):
     """Load outlier-adjusted Case Study 1 data from winsorized datasets with optional crisis filtering"""
     try:
         # Use winsorized data path
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled_winsorized.csv"
+        data_paths = get_outlier_adjusted_data_paths()
+        comprehensive_file = data_paths["winsorized_dataset"]
         
         if not comprehensive_file.exists():
             st.error("Cleaned data file not found. Please check file paths.")
@@ -338,8 +348,8 @@ def load_overall_capital_flows_data(include_crisis_years=True):
     """Load data specifically for Overall Capital Flows Analysis with optional crisis filtering"""
     try:
         # Use comprehensive dataset
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
+        data_paths = get_outlier_adjusted_data_paths()
+        comprehensive_file = data_paths["winsorized_dataset"]
         
         if not comprehensive_file.exists():
             return None, None

@@ -18,14 +18,18 @@ from datetime import datetime
 import base64
 
 # Add core modules to path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+# Import dashboard configuration for robust data paths
 sys.path.append(str(Path(__file__).parent.parent))
+from dashboard_config import get_data_paths
 sys.path.append(str(Path(__file__).parent))
 
 warnings.filterwarnings('ignore')
 
 # Import shared functions from Case Study 1  
-import simple_report_app
-from simple_report_app import (
+import cs1_report_app
+from cs1_report_app import (
     create_indicator_nicknames, 
     get_nickname,
     get_investment_type_order,
@@ -95,7 +99,8 @@ def load_case_study_2_data(include_crisis_years=True):
     """Load Euro adoption analysis data from comprehensive dataset"""
     try:
         # Load comprehensive dataset
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        data_paths = get_data_paths()
+        data_dir = data_paths["clean_data"]
         comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled_winsorized.csv"
         
         if not comprehensive_file.exists():

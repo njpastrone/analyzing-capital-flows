@@ -1,10 +1,10 @@
 """
-Capital Flows Analysis - Case Study 2: Lithuania Euro Adoption Report
+Capital Flows Analysis - Case Study 2: Estonia Euro Adoption Report
 
-This Streamlit application provides an exact mirror of the Lithuania tab from the main dashboard,
+This Streamlit application provides an exact mirror of the Estonia tab from the main dashboard,
 optimized for clean PDF export with professional formatting.
 
-Research Focus: Lithuania Euro Adoption Analysis - Capital Flow Volatility Before and After Euro Adoption (2015)
+Research Focus: Estonia Euro Adoption Analysis - Capital Flow Volatility Before and After Euro Adoption (2011)
 """
 
 import streamlit as st
@@ -14,11 +14,11 @@ import matplotlib.pyplot as plt
 import warnings
 
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 warnings.filterwarnings('ignore')
 
-# Configure matplotlib for PDF export optimization (matching simple_report_app.py)
+# Configure matplotlib for PDF export optimization (matching cs1_report_app.py)
 plt.style.use('default')
 plt.rcParams.update({
     'font.size': 12,
@@ -33,30 +33,30 @@ plt.rcParams.update({
 })
 
 def main():
-    """Lithuania report app - exact mirror of main dashboard Lithuania tab, optimized for PDF export"""
+    """Estonia report app - exact mirror of main dashboard Estonia tab, optimized for PDF export"""
     
-    # Note: st.set_page_config() is now handled by main_app.py (matching simple_report_app.py)
+    # Note: st.set_page_config() is now handled by main_app.py (matching cs1_report_app.py)
     # Removing page config call to prevent margin/layout conflicts that affect PDF export
     
-    # Mirror the exact content from show_case_study_2_lithuania_restructured()
-    st.title("🇱🇹 Lithuania Euro Adoption Analysis")
-    st.subheader("Capital Flow Volatility Before and After Euro Adoption (2015)")
+    # Mirror the exact content from show_case_study_2_estonia_restructured()
+    st.title("🇪🇪 Estonia Euro Adoption Analysis")
+    st.subheader("Capital Flow Volatility Before and After Euro Adoption (2011)")
     
     st.markdown("""
-    **Research Focus:** How did Euro adoption affect Lithuania's capital flow volatility?
+    **Research Focus:** How did Euro adoption affect Estonia's capital flow volatility?
     
-    **Methodology:** Temporal comparison of capital flow patterns before (2008-2013) and after (2016-2021) Euro adoption.
+    **Methodology:** Temporal comparison of capital flow patterns before (2005-2010) and after (2012-2017) Euro adoption.
     
     **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
     """)
     
-    # Data and Methodology section (matching simple_report_app.py format)
+    # Data and Methodology section (matching cs1_report_app.py format)
     with st.expander("📋 Data and Methodology", expanded=False):
         st.markdown("""
         ### Data Sources
         - **Balance of Payments Data:** IMF, quarterly frequency (1999-2025)
         - **GDP Data:** IMF World Economic Outlook, annual frequency
-        - **Country:** Lithuania, Republic of
+        - **Country:** Estonia, Republic of
         
         ### Methodology
         1. **Data Normalization:** All BOP flows converted to annualized % of GDP
@@ -65,16 +65,16 @@ def main():
         4. **Temporal Comparison:** Pre-Euro vs Post-Euro period analysis
         
         ### Euro Adoption Timeline
-        - **Euro Adoption Date:** January 1, 2015
-        - **Pre-Euro Period:** 1999-2014 (full series) 
-        - **Post-Euro Period:** 2015-2025 (full series)
+        - **Euro Adoption Date:** January 1, 2011
+        - **Pre-Euro Period:** 1999-2010 (full series) 
+        - **Post-Euro Period:** 2011-2025 (full series)
         - **Crisis Exclusion:** Global Financial Crisis (2008-2010) and COVID-19 (2020-2022)
         """)
     
-    # Add PDF export tip (matching simple_report_app.py)
+    # Add PDF export tip (matching cs1_report_app.py)
     st.info("💡 **Tip:** You can print this page to PDF using your browser's print function for a professional document with proper margins.")
     
-    # Add PDF-specific CSS styling (matching simple_report_app.py margins)
+    # Add PDF-specific CSS styling (matching cs1_report_app.py margins)
     st.markdown("""
     <style>
         @media print {
@@ -108,11 +108,11 @@ def main():
     
     # Overall Capital Flows Analysis
     st.subheader("📈 Overall Capital Flows Analysis")
-    show_lithuania_overall_analysis(include_crisis_years=True)
+    show_estonia_overall_analysis(include_crisis_years=True)
     
     # Indicator-Level Analysis  
     st.subheader("🔍 Indicator-Level Analysis")
-    show_lithuania_indicator_analysis(include_crisis_years=True)
+    show_estonia_indicator_analysis(include_crisis_years=True)
     
     # Crisis-Excluded Section
     st.markdown("---")
@@ -121,24 +121,25 @@ def main():
     
     # Overall Capital Flows Analysis - Crisis Excluded
     st.subheader("📈 Overall Capital Flows Analysis")
-    show_lithuania_overall_analysis(include_crisis_years=False)
+    show_estonia_overall_analysis(include_crisis_years=False)
     
     # Indicator-Level Analysis - Crisis Excluded
     st.subheader("🔍 Indicator-Level Analysis") 
-    show_lithuania_indicator_analysis(include_crisis_years=False)
+    show_estonia_indicator_analysis(include_crisis_years=False)
 
-def show_lithuania_overall_analysis(include_crisis_years=True):
-    """Show Lithuania overall capital flows analysis with PDF-optimized formatting"""
+def show_estonia_overall_analysis(include_crisis_years=True):
+    """Show Estonia overall capital flows analysis with PDF-optimized formatting"""
     try:
         from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
         import matplotlib.pyplot as plt
+        import numpy as np
         
         # Apply PDF optimization context with figure size constraints
         with plt.style.context('default'):
             # Store original settings
             original_rcParams = plt.rcParams.copy()
             
-            # Apply PDF-optimized settings matching simple_report_app.py
+            # Apply PDF-optimized settings matching cs1_report_app.py
             plt.rcParams.update({
                 'font.size': 12,
                 'font.family': 'serif',
@@ -155,12 +156,12 @@ def show_lithuania_overall_analysis(include_crisis_years=True):
                 'figure.max_open_warning': 0
             })
             
-            # Monkey-patch plt.subplots to enforce PDF-friendly figure sizes
+            # Monkey-patch plt.subplots to enforce PDF-friendly figure sizes and titles
             original_subplots = plt.subplots
             def pdf_optimized_subplots(*args, **kwargs):
                 if 'figsize' in kwargs:
                     width, height = kwargs['figsize']
-                    # Constrain to PDF-friendly sizes (matching simple_report_app.py max)
+                    # Constrain to PDF-friendly sizes (matching cs1_report_app.py max)
                     if width > 16:
                         kwargs['figsize'] = (16, min(height, 12))
                     elif height > 12:
@@ -192,17 +193,17 @@ def show_lithuania_overall_analysis(include_crisis_years=True):
             matplotlib.axes.Axes.set_title = pdf_optimized_set_title
             
             try:
-                show_overall_capital_flows_analysis_cs2('Lithuania, Republic of', 'Lithuania', include_crisis_years)
+                show_overall_capital_flows_analysis_cs2('Estonia, Republic of', 'Estonia', include_crisis_years)
             finally:
                 # Restore original settings and subplots function
                 plt.subplots = original_subplots
                 plt.rcParams.update(original_rcParams)
                 
     except Exception as e:
-        st.error(f"Error displaying Lithuania overall analysis: {str(e)}")
+        st.error(f"Error displaying Estonia overall analysis: {str(e)}")
 
-def show_lithuania_indicator_analysis(include_crisis_years=True):
-    """Show Lithuania indicator-level analysis with PDF-optimized formatting"""
+def show_estonia_indicator_analysis(include_crisis_years=True):
+    """Show Estonia indicator-level analysis with PDF-optimized formatting"""
     try:
         from case_study_2_euro_adoption import show_indicator_level_analysis_cs2
         import matplotlib.pyplot as plt
@@ -212,7 +213,7 @@ def show_lithuania_indicator_analysis(include_crisis_years=True):
             # Store original settings
             original_rcParams = plt.rcParams.copy()
             
-            # Apply PDF-optimized settings matching simple_report_app.py
+            # Apply PDF-optimized settings matching cs1_report_app.py
             plt.rcParams.update({
                 'font.size': 12,
                 'font.family': 'serif',
@@ -229,12 +230,12 @@ def show_lithuania_indicator_analysis(include_crisis_years=True):
                 'figure.max_open_warning': 0
             })
             
-            # Monkey-patch plt.subplots to enforce PDF-friendly figure sizes
+            # Monkey-patch plt.subplots to enforce PDF-friendly figure sizes and titles
             original_subplots = plt.subplots
             def pdf_optimized_subplots(*args, **kwargs):
                 if 'figsize' in kwargs:
                     width, height = kwargs['figsize']
-                    # Constrain to PDF-friendly sizes (matching simple_report_app.py max)
+                    # Constrain to PDF-friendly sizes (matching cs1_report_app.py max)
                     if width > 16:
                         kwargs['figsize'] = (16, min(height, 12))
                     elif height > 12:
@@ -266,14 +267,14 @@ def show_lithuania_indicator_analysis(include_crisis_years=True):
             matplotlib.axes.Axes.set_title = pdf_optimized_set_title
             
             try:
-                show_indicator_level_analysis_cs2('Lithuania, Republic of', include_crisis_years)
+                show_indicator_level_analysis_cs2('Estonia, Republic of', include_crisis_years)
             finally:
                 # Restore original settings and subplots function
                 plt.subplots = original_subplots
                 plt.rcParams.update(original_rcParams)
                 
     except Exception as e:
-        st.error(f"Error displaying Lithuania indicator analysis: {str(e)}")
+        st.error(f"Error displaying Estonia indicator analysis: {str(e)}")
 
 if __name__ == "__main__":
     main()

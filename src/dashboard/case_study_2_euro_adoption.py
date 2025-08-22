@@ -24,8 +24,8 @@ sys.path.append(str(Path(__file__).parent))
 warnings.filterwarnings('ignore')
 
 # Import shared functions from Case Study 1  
-import simple_report_app
-from simple_report_app import (
+import cs1_report_app
+from cs1_report_app import (
     create_indicator_nicknames, 
     get_nickname,
     get_investment_type_order,

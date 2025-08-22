@@ -23,11 +23,15 @@ import base64
 import zipfile
 
 # Add core modules to path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+# Import dashboard configuration for robust data paths
 sys.path.append(str(Path(__file__).parent.parent))
+from dashboard_config import get_data_paths
 
 warnings.filterwarnings('ignore')
 
-# Configure matplotlib for PDF export optimization (matching simple_report_app.py)
+# Configure matplotlib for PDF export optimization (matching cs1_report_app.py)
 plt.style.use('default')
 plt.rcParams.update({
     'font.size': 12,
@@ -41,7 +45,7 @@ plt.rcParams.update({
     'axes.facecolor': 'white'
 })
 
-# Colorblind-friendly econometrics palette (matching simple_report_app.py)
+# Colorblind-friendly econometrics palette (matching cs1_report_app.py)
 COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
 sns.set_palette(COLORBLIND_SAFE)
 
@@ -77,7 +81,8 @@ def load_case_study_3_outlier_adjusted_data():
     """Load Case Study 3 data: Iceland vs Small Open Economies"""
     try:
         # Load the comprehensive labeled dataset
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
+        data_paths = get_data_paths()
+        data_dir = data_paths["clean_data"]
         file_path = data_dir / "comprehensive_df_PGDP_labeled_winsorized.csv"
         
         if not file_path.exists():
@@ -133,7 +138,7 @@ def load_case_study_3_outlier_adjusted_data():
 def main():
     """CS3 report app - exact mirror of CS1 structure, optimized for PDF export"""
     
-    # Note: st.set_page_config() is now handled by main_app.py (matching simple_report_app.py)
+    # Note: st.set_page_config() is now handled by main_app.py (matching cs1_report_app.py)
     # Removing page config call to prevent margin/layout conflicts that affect PDF export
     
     st.title("🛡️ 🇮🇸 Comparative Analysis: Iceland and Small Open Economies (Outlier-Adjusted)")
@@ -152,7 +157,7 @@ def main():
     **Key Hypothesis:** Iceland and other small open economies may exhibit different capital flow volatility patterns despite similar economic structures and currency regimes.
     """)
     
-    # Data and Methodology section (matching simple_report_app.py format) 
+    # Data and Methodology section (matching cs1_report_app.py format) 
     with st.expander("📋 Data and Methodology", expanded=False):
         st.markdown("""
         ### Data Sources
@@ -171,10 +176,10 @@ def main():
         - **Crisis Exclusion Analysis:** Excludes Global Financial Crisis (2008-2010) and COVID-19 (2020-2022)
         """)
     
-    # Add PDF export tip (matching simple_report_app.py)
+    # Add PDF export tip (matching cs1_report_app.py)
     st.info("💡 **Tip:** You can print this page to PDF using your browser's print function for a professional document with proper margins.")
     
-    # Add PDF-specific CSS styling (matching simple_report_app.py margins)
+    # Add PDF-specific CSS styling (matching cs1_report_app.py margins)
     st.markdown("""
     <style>
         @media print {

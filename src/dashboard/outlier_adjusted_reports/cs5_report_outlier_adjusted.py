@@ -1,8 +1,8 @@
 """
-Case Study 5: Capital Controls and Exchange Rate Regime Analysis Report Application
+Case Study 5: Capital Controls and Exchange Rate Regime Analysis Report Application (Outlier-Adjusted)
 
 Professional dashboard for CS5 analysis examining the relationship between financial openness,
-capital controls, exchange rate regimes, and capital flow volatility using external data sources.
+capital controls, exchange rate regimes, and capital flow volatility using winsorized external data sources.
 """
 
 import streamlit as st
@@ -20,7 +20,7 @@ from scipy import stats
 import warnings
 
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Import centralized dashboard configuration
 from dashboard_config import COLORBLIND_SAFE, get_data_paths, get_professional_css
@@ -32,7 +32,7 @@ def apply_professional_styling():
     """Apply professional CSS styling to the app"""
     # Use centralized CSS with CS5-specific table styling
     base_css = get_professional_css()
-    cs5_specific_css = """
+    cs5_outlier_adjusted_specific_css = """
     <style>
         /* CS5 Master Table Styling (optimized for 13 columns) */
         .cs4-master-table { 
@@ -89,13 +89,13 @@ def apply_professional_styling():
         }
     </style>
     """
-    st.markdown(base_css + cs5_specific_css, unsafe_allow_html=True)
+    st.markdown(base_css + cs5_outlier_adjusted_specific_css, unsafe_allow_html=True)
 
 
 def load_capital_controls_data():
     """Load capital controls analysis data"""
     data_paths = get_data_paths()
-    base_path = data_paths['cs5_controls']
+    base_path = data_paths['clean_data'] / "CS5_Capital_Controls_winsorized"
     
     # Load yearly standard deviations
     yearly_sd = pd.read_csv(base_path / "sd_yearly_flows.csv")
@@ -116,7 +116,7 @@ def load_capital_controls_data():
 def load_regime_analysis_data():
     """Load exchange rate regime analysis data"""
     data_paths = get_data_paths()
-    base_path = data_paths['cs5_regimes']
+    base_path = data_paths['clean_data'] / "CS5_Regime_Analysis_winsorized"
     
     indicators = {
         'Net Capital Flows': 'net_capital_flows',
@@ -317,7 +317,7 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     return fig, corr, p_value
 
 
-def create_cs5_master_table(regime_data, indicators):
+def create_cs5_outlier_adjusted_master_table(regime_data, indicators):
     """Create master table exactly matching CS4 Table 1 structure for exchange rate regimes"""
     
     # Initialize master data structure  
@@ -395,7 +395,7 @@ def create_cs5_master_table(regime_data, indicators):
     return master_df
 
 
-def display_cs5_master_table(df):
+def display_cs5_outlier_adjusted_master_table(df):
     """Display CS5 master table with exact CS4 styling and color coding"""
     
     def get_std_cell_style(val, iceland_val):
@@ -469,13 +469,13 @@ def display_cs5_master_table(df):
     st.markdown(html_table, unsafe_allow_html=True)
 
 
-def run_cs5_analysis():
+def run_cs5_outlier_adjusted_analysis():
     """Main function to run CS5 analysis"""
     
     # Apply styling when function is called
     apply_professional_styling()
     
-    st.title("🌐 Case Study 5: Capital Controls and Exchange Rate Regime Analysis")
+    st.title("🛡️ 🌐 Case Study 5: Capital Controls and Exchange Rate Regime Analysis (Outlier-Adjusted)")
     st.markdown("---")
     
     # Section 1: Analysis Overview
@@ -523,6 +523,7 @@ def run_cs5_analysis():
     st.header("🔒 Section 2: Capital Controls Analysis (1999-2017)")
     st.markdown("**Objective:** Examine the relationship between capital controls (Overall Restrictions Index) and capital flow volatility")
     st.markdown("**⏰ Analysis Period:** 1999-2017 (limited by capital controls database availability)")
+    st.markdown("**📋 Outlier-Adjusted Analysis:** This analysis uses 5% symmetric winsorization to assess the robustness of statistical findings to extreme values.")
     
     # Load capital controls data
     with st.spinner("Loading capital controls data..."):
@@ -591,6 +592,7 @@ def run_cs5_analysis():
     st.header("💱 Section 3: Exchange Rate Regime Analysis (1999-2019)")
     st.markdown("**Structure:** Standard deviations and F-tests by exchange rate regime (EXACT CS4 Table 1 replication)")
     st.markdown("**⏰ Analysis Period:** 1999-2019 (extended coverage through regime classification updates)")
+    st.markdown("**📋 Outlier-Adjusted Analysis:** This analysis uses 5% symmetric winsorization to assess the robustness of statistical findings to extreme values.")
     
     # Load regime data
     with st.spinner("Loading exchange rate regime data..."):
@@ -603,8 +605,8 @@ def run_cs5_analysis():
     indicators = ['Net Capital Flows', 'Net Direct Investment', 'Net Portfolio Investment', 'Net Other Investment']
     
     # Create and display master table (exact CS4 format)
-    master_regime_table = create_cs5_master_table(regime_data, indicators)
-    display_cs5_master_table(master_regime_table)
+    master_regime_table = create_cs5_outlier_adjusted_master_table(regime_data, indicators)
+    display_cs5_outlier_adjusted_master_table(master_regime_table)
     
     # Add interpretation box (exact CS4 format)
     st.info("""
@@ -646,7 +648,7 @@ def run_cs5_analysis():
     st.download_button(
         label="📥 Download Master Exchange Rate Regime Table (CSV)",
         data=csv_master,
-        file_name="cs5_master_regime_analysis.csv",
+        file_name="cs5_outlier_adjusted_master_regime_analysis.csv",
         mime="text/csv"
     )
 
@@ -665,7 +667,7 @@ def main(standalone=False):
     tab1, tab2 = st.tabs(["📊 Analysis", "📚 Methodology"])
     
     with tab1:
-        run_cs5_analysis()
+        run_cs5_outlier_adjusted_analysis()
     
     with tab2:
         st.header("📚 Methodology Documentation")

@@ -18,7 +18,11 @@ import base64
 import zipfile
 
 # Add core modules to path
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+# Import dashboard configuration for robust data paths
 sys.path.append(str(Path(__file__).parent.parent))
+from dashboard_config import get_data_paths
 
 warnings.filterwarnings('ignore')
 
@@ -131,9 +135,9 @@ sns.set_palette(COLORBLIND_SAFE)
 def load_default_data(include_crisis_years=True):
     """Load default Case Study 1 data from cleaned datasets with optional crisis filtering"""
     try:
-        # Use new cleaned data path
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
+        # Use centralized data path configuration
+        data_paths = get_data_paths()
+        comprehensive_file = data_paths['master_dataset']
         
         if not comprehensive_file.exists():
             st.error("Cleaned data file not found. Please check file paths.")
@@ -337,9 +341,9 @@ def perform_volatility_tests(data, indicators):
 def load_overall_capital_flows_data(include_crisis_years=True):
     """Load data specifically for Overall Capital Flows Analysis with optional crisis filtering"""
     try:
-        # Use comprehensive dataset
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
+        # Use centralized data path configuration
+        data_paths = get_data_paths()
+        comprehensive_file = data_paths['master_dataset']
         
         if not comprehensive_file.exists():
             return None, None

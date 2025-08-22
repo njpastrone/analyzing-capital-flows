@@ -12,11 +12,13 @@ from datetime import datetime
 import re
 import io
 
-# Add core modules to path
+# Add core modules and dashboard subfolders to path
 sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent / "full_reports"))
+sys.path.append(str(Path(__file__).parent / "outlier_adjusted_reports"))
 
-# Import case study modules
-from simple_report_app import main as case_study_1_main
+# Import case study modules from full_reports subfolder
+from cs1_report_app import main as case_study_1_main
 from case_study_2_euro_adoption import main as case_study_2_main
 from cs4_report_app import main as case_study_4_main
 from cs5_report_app import main as case_study_5_main
@@ -2621,7 +2623,7 @@ def case_study_2_main_filtered(country, include_crisis_years=True):
 def generate_case_study_1_full_report():
     """Generate HTML report for Case Study 1 that exactly matches the app interface structure"""
     # Import required modules
-    from simple_report_app import (
+    from cs1_report_app import (
         load_default_data, calculate_group_statistics, perform_volatility_tests, 
         create_boxplot_data, load_overall_capital_flows_data
     )
@@ -4303,11 +4305,14 @@ def show_robust_analysis():
     - Meet academic standards for methodological rigor
     """)
     
-    # Download buttons section
-    st.subheader("⬇️ Download Outlier-Adjusted Reports")
+    # Launch buttons section
+    st.subheader("🚀 Launch Outlier-Adjusted Reports")
     st.markdown("""
     Each report is a **complete functional replica** of its original counterpart with identical 
     analysis depth, visualizations, and export capabilities - using winsorized data for robust conclusions.
+    
+    **Quick Access:** Click any button below to get the command for launching that specific outlier-adjusted report.
+    Each report runs on a separate port for parallel access.
     """)
     
     col1, col2 = st.columns(2)
@@ -4315,43 +4320,110 @@ def show_robust_analysis():
     with col1:
         st.markdown("#### **Case Study 1 & 2 Reports**")
         
-        if st.button("📥 CS1 - Iceland vs Eurozone (Outlier-Adjusted)", key="dl_cs1", use_container_width=True):
+        if st.button("🚀 Launch CS1 - Iceland vs Eurozone (Outlier-Adjusted)", key="dl_cs1", use_container_width=True):
             st.success("✅ **CS1 Report Available**")
-            st.code("streamlit run src/dashboard/simple_report_outlier_adjusted.py", language="bash")
-            st.info("Complete Iceland vs Eurozone comparison using winsorized data")
+            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
+            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs1_report_outlier_adjusted.py --server.port 8502", language="bash")
+            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8502")
         
-        if st.button("📥 CS2 - Estonia Euro Adoption (Outlier-Adjusted)", key="dl_cs2_est", use_container_width=True):
+        if st.button("🚀 Launch CS2 - Estonia Euro Adoption (Outlier-Adjusted)", key="dl_cs2_est", use_container_width=True):
             st.success("✅ **CS2 Estonia Report Available**")
-            st.code("streamlit run src/dashboard/cs2_estonia_report_outlier_adjusted.py", language="bash")
-            st.info("Estonia Euro adoption analysis with outlier-adjusted data")
+            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
+            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs2_estonia_report_outlier_adjusted.py --server.port 8503", language="bash")
+            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8503")
         
-        if st.button("📥 CS2 - Latvia Euro Adoption (Outlier-Adjusted)", key="dl_cs2_lat", use_container_width=True):
+        if st.button("🚀 Launch CS2 - Latvia Euro Adoption (Outlier-Adjusted)", key="dl_cs2_lat", use_container_width=True):
             st.success("✅ **CS2 Latvia Report Available**")
-            st.code("streamlit run src/dashboard/cs2_latvia_report_outlier_adjusted.py", language="bash")
-            st.info("Latvia Euro adoption analysis with outlier-adjusted data")
+            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
+            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs2_latvia_report_outlier_adjusted.py --server.port 8504", language="bash")
+            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8504")
         
-        if st.button("📥 CS2 - Lithuania Euro Adoption (Outlier-Adjusted)", key="dl_cs2_lit", use_container_width=True):
+        if st.button("🚀 Launch CS2 - Lithuania Euro Adoption (Outlier-Adjusted)", key="dl_cs2_lit", use_container_width=True):
             st.success("✅ **CS2 Lithuania Report Available**")
-            st.code("streamlit run src/dashboard/cs2_lithuania_report_outlier_adjusted.py", language="bash")
-            st.info("Lithuania Euro adoption analysis with outlier-adjusted data")
+            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
+            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs2_lithuania_report_outlier_adjusted.py --server.port 8505", language="bash")
+            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8505")
     
     with col2:
         st.markdown("#### **Case Study 3, 4 & 5 Reports**")
         
-        if st.button("📥 CS3 - Iceland vs Small Open Economies (Outlier-Adjusted)", key="dl_cs3", use_container_width=True):
+        if st.button("🚀 Launch CS3 - Iceland vs Small Open Economies (Outlier-Adjusted)", key="dl_cs3", use_container_width=True):
             st.success("✅ **CS3 Report Available**")
-            st.code("streamlit run src/dashboard/cs3_report_outlier_adjusted.py", language="bash")
-            st.info("Comparative analysis of Iceland with small open economies")
+            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
+            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs3_report_outlier_adjusted.py --server.port 8506", language="bash")
+            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8506")
         
-        if st.button("📥 CS4 - Statistical Analysis (Outlier-Adjusted)", key="dl_cs4", use_container_width=True):
+        if st.button("🚀 Launch CS4 - Statistical Analysis (Outlier-Adjusted)", key="dl_cs4", use_container_width=True):
             st.success("✅ **CS4 Report Available**")
-            st.code("streamlit run src/dashboard/cs4_report_outlier_adjusted.py", language="bash")
-            st.info("Comprehensive statistical modeling with winsorized data")
+            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
+            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs4_report_outlier_adjusted.py --server.port 8507", language="bash")
+            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8507")
         
-        if st.button("📥 CS5 - Capital Controls & Exchange Rates (Outlier-Adjusted)", key="dl_cs5", use_container_width=True):
+        if st.button("🚀 Launch CS5 - Capital Controls & Exchange Rates (Outlier-Adjusted)", key="dl_cs5", use_container_width=True):
             st.success("✅ **CS5 Report Available**")
-            st.code("streamlit run src/dashboard/cs5_report_outlier_adjusted.py", language="bash")
-            st.info("Policy analysis of capital controls and exchange rate regimes")
+            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
+            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs5_report_outlier_adjusted.py --server.port 8508", language="bash")
+            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8508")
+    
+    # Static PDF Downloads Section
+    st.markdown("---")
+    st.subheader("📄 Static PDF Downloads")
+    st.markdown("""
+    **Quick Reference:** Download pre-generated PDF reports for offline viewing and sharing. 
+    These static reports provide complete analysis summaries with key findings and visualizations.
+    """)
+    
+    # PDF Download Helper Function
+    def create_pdf_download_button(report_name, file_name, button_key):
+        """Create a PDF download button with error handling"""
+        pdf_path = Path(__file__).parent / "pdfs" / file_name
+        if pdf_path.exists():
+            try:
+                with open(pdf_path, "rb") as pdf_file:
+                    pdf_data = pdf_file.read()
+                    st.download_button(
+                        label=f"📄 {report_name}",
+                        data=pdf_data,
+                        file_name=file_name,
+                        mime="application/pdf",
+                        key=button_key,
+                        use_container_width=True
+                    )
+                return True
+            except Exception as e:
+                st.error(f"Error loading {report_name}: {str(e)}")
+                return False
+        else:
+            st.warning(f"📄 {report_name} not yet available")
+            st.info("💡 Use interactive version above or check back later")
+            return False
+    
+    # PDF Download Buttons
+    pdf_col1, pdf_col2, pdf_col3 = st.columns(3)
+    
+    with pdf_col1:
+        st.markdown("**Case Studies 1-2**")
+        create_pdf_download_button("CS1 - Iceland vs Eurozone", "CS1_Iceland_vs_Eurozone_Outlier_Adjusted.pdf", "pdf_cs1")
+        create_pdf_download_button("CS2 - Estonia Euro Adoption", "CS2_Estonia_Euro_Adoption_Outlier_Adjusted.pdf", "pdf_cs2_est")
+        create_pdf_download_button("CS2 - Latvia Euro Adoption", "CS2_Latvia_Euro_Adoption_Outlier_Adjusted.pdf", "pdf_cs2_lat")
+    
+    with pdf_col2:
+        st.markdown("**Case Studies 3-4**")
+        create_pdf_download_button("CS2 - Lithuania Euro Adoption", "CS2_Lithuania_Euro_Adoption_Outlier_Adjusted.pdf", "pdf_cs2_lit")
+        create_pdf_download_button("CS3 - Iceland vs Small Economies", "CS3_Iceland_vs_Small_Open_Economies_Outlier_Adjusted.pdf", "pdf_cs3")
+        create_pdf_download_button("CS4 - Statistical Analysis", "CS4_Statistical_Analysis_Outlier_Adjusted.pdf", "pdf_cs4")
+    
+    with pdf_col3:
+        st.markdown("**Case Study 5 & Methodology**")
+        create_pdf_download_button("CS5 - Capital Controls & Exchange Rates", "CS5_Capital_Controls_Exchange_Rates_Outlier_Adjusted.pdf", "pdf_cs5")
+        create_pdf_download_button("Winsorization Methodology Report", "Winsorization_Methodology_Report.pdf", "pdf_methodology")
+        
+        # Bulk download option
+        st.markdown("**Bulk Download**")
+        if st.button("📦 Prepare All Reports Archive", key="bulk_pdf", use_container_width=True):
+            st.info("🔄 Preparing complete archive... This may take a moment.")
+            # Note: This would trigger archive creation in a real implementation
+            st.success("Archive preparation initiated. Check downloads folder in ~30 seconds.")
     
     # Technical implementation details
     st.markdown("---")

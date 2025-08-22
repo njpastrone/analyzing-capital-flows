@@ -19,7 +19,11 @@ import warnings
 from statsmodels.tsa.stattools import acf
 
 # Add parent directory to path for imports
+sys.path.append(str(Path(__file__).parent.parent.parent))
+
+# Import dashboard configuration for robust data paths
 sys.path.append(str(Path(__file__).parent.parent))
+from dashboard_config import get_data_paths
 from core.cs4_statistical_analysis import CS4AnalysisFramework
 
 # Configure matplotlib for professional PDF export (from commit 8181df5)
@@ -319,7 +323,7 @@ def create_comprehensive_boxplots_chart(full_results, crisis_results, period_nam
     
     # Load data for Net Capital Flows
     from core.cs4_statistical_analysis import CS4DataLoader
-    loader = CS4DataLoader(data_dir=Path(__file__).parent.parent.parent / "updated_data" / "Clean" / "CS4_Statistical_Modeling_winsorized")
+    loader = CS4DataLoader(data_dir=get_data_paths()["clean_data"] / "CS4_Statistical_Modeling_winsorized")
     
     include_crisis = (period_name == "Full Period")
     data = loader.load_indicator_data("Net Capital Flows", include_crisis_years=include_crisis)
@@ -414,7 +418,7 @@ def create_comprehensive_acf_chart(indicator_name, period_name):
     
     # Load data for specified indicator
     from core.cs4_statistical_analysis import CS4DataLoader
-    loader = CS4DataLoader(data_dir=Path(__file__).parent.parent.parent / "updated_data" / "Clean" / "CS4_Statistical_Modeling_winsorized")
+    loader = CS4DataLoader(data_dir=get_data_paths()["clean_data"] / "CS4_Statistical_Modeling_winsorized")
     
     include_crisis = (period_name == "Full Period")
     data = loader.load_indicator_data(indicator_name, include_crisis_years=include_crisis)
@@ -513,7 +517,7 @@ def create_comprehensive_timeseries_chart(aggregation_type):
     
     # Load data for Net Capital Flows (always include crisis for time series)
     from core.cs4_statistical_analysis import CS4DataLoader
-    loader = CS4DataLoader(data_dir=Path(__file__).parent.parent.parent / "updated_data" / "Clean" / "CS4_Statistical_Modeling_winsorized")
+    loader = CS4DataLoader(data_dir=get_data_paths()["clean_data"] / "CS4_Statistical_Modeling_winsorized")
     
     data = loader.load_indicator_data("Net Capital Flows", include_crisis_years=True)
     
@@ -653,7 +657,7 @@ def run_cs4_integrated_analysis():
     st.markdown("---")
     
     # Initialize analysis framework
-    framework = CS4AnalysisFramework(data_dir=Path(__file__).parent.parent.parent / "updated_data" / "Clean" / "CS4_Statistical_Modeling_winsorized")
+    framework = CS4AnalysisFramework(data_dir=get_data_paths()["clean_data"] / "CS4_Statistical_Modeling_winsorized")
     
     # Run both analyses with loading indicator
     with st.spinner("Running comprehensive statistical analysis for both Full Period and Crisis-Excluded..."):
