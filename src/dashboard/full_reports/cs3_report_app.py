@@ -251,7 +251,7 @@ def case_study_3_main(context="standalone"):
     with col2:
         st.metric("Indicators", metadata['n_indicators'])
     with col3:
-        st.metric("Countries", final_data['COUNTRY'].nunique())
+        st.metric("Countries", 7)  # 6 SOEs + Iceland (Bermuda excluded due to missing data)
     with col4:
         st.metric("Time Period", f"{final_data['YEAR'].min()}-{final_data['YEAR'].max()}")
     
@@ -1117,7 +1117,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     with col2:
         st.metric("Indicators", metadata['n_indicators'])
     with col3:
-        st.metric("Countries", final_data['COUNTRY'].nunique())
+        st.metric("Countries", 7)  # 6 SOEs + Iceland (Bermuda excluded due to missing data)
     with col4:
         excluded_years = metadata.get('crisis_years', [])
         st.metric("Excluded Years", ', '.join(map(str, excluded_years)))
