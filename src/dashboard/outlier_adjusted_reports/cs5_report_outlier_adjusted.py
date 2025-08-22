@@ -20,7 +20,13 @@ from scipy import stats
 import warnings
 
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent.parent))
+# Add parent directory (main dashboard) and current directory (outlier_adjusted_reports) to path
+current_file_dir = Path(__file__).parent.absolute()
+parent_dir = current_file_dir.parent
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
+if str(current_file_dir) not in sys.path:
+    sys.path.insert(0, str(current_file_dir))
 
 # Import centralized dashboard configuration
 from dashboard_config import COLORBLIND_SAFE, get_data_paths, get_professional_css
@@ -161,10 +167,10 @@ def create_capital_controls_scatter(data, outliers_removed=False):
     # Create figure
     fig, ax = plt.subplots(figsize=(10, 6))
     
-    # Scatter plot for other countries (axes switched: volatility on X, controls on Y)
+    # Scatter plot for other countries (controls on X, volatility on Y)
     scatter_other = ax.scatter(
-        other_data['yearly_sd_net_capital_flows_pgdp'],
         other_data['mean_overall_restrictions_index'],
+        other_data['yearly_sd_net_capital_flows_pgdp'],
         alpha=0.6,
         s=50,
         color=COLORBLIND_SAFE[0],  # Blue for other countries
@@ -176,8 +182,8 @@ def create_capital_controls_scatter(data, outliers_removed=False):
     # Scatter plot for Iceland (highlighted with distinct shape and color)
     if not iceland_data.empty:
         scatter_iceland = ax.scatter(
-            iceland_data['yearly_sd_net_capital_flows_pgdp'],
             iceland_data['mean_overall_restrictions_index'],
+            iceland_data['yearly_sd_net_capital_flows_pgdp'],
             alpha=0.9,
             s=120,  # Larger size
             color='red',  # Distinct red color
@@ -187,17 +193,17 @@ def create_capital_controls_scatter(data, outliers_removed=False):
             label='Iceland'
         )
     
-    # Add trend line (axes switched)
-    z = np.polyfit(df_clean['yearly_sd_net_capital_flows_pgdp'], 
-                   df_clean['mean_overall_restrictions_index'], 1)
+    # Add trend line (controls on X, volatility on Y)
+    z = np.polyfit(df_clean['mean_overall_restrictions_index'], 
+                   df_clean['yearly_sd_net_capital_flows_pgdp'], 1)
     p = np.poly1d(z)
-    x_trend = np.linspace(df_clean['yearly_sd_net_capital_flows_pgdp'].min(),
-                         df_clean['yearly_sd_net_capital_flows_pgdp'].max(), 100)
+    x_trend = np.linspace(df_clean['mean_overall_restrictions_index'].min(),
+                         df_clean['mean_overall_restrictions_index'].max(), 100)
     ax.plot(x_trend, p(x_trend), color=COLORBLIND_SAFE[2], alpha=0.8, linewidth=2, label='Trend line')
     
-    # Labels and title (axes switched)
-    ax.set_xlabel('Capital Flow Volatility (Std Dev % of GDP)', fontsize=12)
-    ax.set_ylabel('Overall Restrictions Index (Capital Controls)', fontsize=12)
+    # Labels and title (controls on X, volatility on Y)
+    ax.set_xlabel('Overall Restrictions Index (Capital Controls)', fontsize=12)
+    ax.set_ylabel('Capital Flow Volatility (Std Dev % of GDP)', fontsize=12)
     ax.set_title(title, fontweight='bold', fontsize=14, pad=20)
     
     # Add correlation info
@@ -242,8 +248,8 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     # Add other countries scatter points
     fig.add_trace(
         go.Scatter(
-            x=other_data['country_sd_net_capital_flows_pgdp'],
-            y=other_data['mean_overall_restrictions_index'],
+            x=other_data['mean_overall_restrictions_index'],
+            y=other_data['country_sd_net_capital_flows_pgdp'],
             mode='markers',
             marker=dict(
                 color=COLORBLIND_SAFE[0],
@@ -252,8 +258,8 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
             ),
             text=other_data['COUNTRY'],
             hovertemplate='<b>%{text}</b><br>' +
-                         'Capital Flow Volatility: %{x:.4f}<br>' +
-                         'Overall Restrictions Index: %{y:.4f}<extra></extra>',
+                         'Overall Restrictions Index: %{x:.4f}<br>' +
+                         'Capital Flow Volatility: %{y:.4f}<extra></extra>',
             name='Other Countries'
         )
     )
@@ -262,8 +268,8 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     if not iceland_data.empty:
         fig.add_trace(
             go.Scatter(
-                x=iceland_data['country_sd_net_capital_flows_pgdp'],
-                y=iceland_data['mean_overall_restrictions_index'],
+                x=iceland_data['mean_overall_restrictions_index'],
+                y=iceland_data['country_sd_net_capital_flows_pgdp'],
                 mode='markers',
                 marker=dict(
                     color='red',
@@ -274,18 +280,18 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
                 ),
                 text=iceland_data['COUNTRY'],
                 hovertemplate='<b>%{text}</b><br>' +
-                             'Capital Flow Volatility: %{x:.4f}<br>' +
-                             'Overall Restrictions Index: %{y:.4f}<extra></extra>',
+                             'Overall Restrictions Index: %{x:.4f}<br>' +
+                             'Capital Flow Volatility: %{y:.4f}<extra></extra>',
                 name='Iceland'
             )
         )
     
-    # Add trend line (axes switched)
+    # Add trend line (controls on X, volatility on Y)
     fig.add_trace(
         go.Scatter(
-            x=df_clean['country_sd_net_capital_flows_pgdp'],
-            y=np.poly1d(np.polyfit(df_clean['country_sd_net_capital_flows_pgdp'],
-                                  df_clean['mean_overall_restrictions_index'], 1))(df_clean['country_sd_net_capital_flows_pgdp']),
+            x=df_clean['mean_overall_restrictions_index'],
+            y=np.poly1d(np.polyfit(df_clean['mean_overall_restrictions_index'],
+                                  df_clean['country_sd_net_capital_flows_pgdp'], 1))(df_clean['mean_overall_restrictions_index']),
             mode='lines',
             name='Trend line',
             line=dict(color=COLORBLIND_SAFE[2], width=2)
@@ -307,8 +313,8 @@ def create_country_aggregate_scatter(data, outliers_removed=False):
     # Update layout
     fig.update_layout(
         title=title,
-        xaxis_title='Capital Flow Volatility (Std Dev % of GDP)',
-        yaxis_title='Overall Restrictions Index',
+        xaxis_title='Overall Restrictions Index',
+        yaxis_title='Capital Flow Volatility (Std Dev % of GDP)',
         height=600,
         showlegend=True,
         hovermode='closest'
@@ -529,41 +535,21 @@ def run_cs5_outlier_adjusted_analysis():
     with st.spinner("Loading capital controls data..."):
         cc_data = load_capital_controls_data()
     
-    # Yearly Analysis (Sequential presentation - no tabs)
+    # Yearly Analysis
     st.subheader("📈 Yearly Standard Deviations Analysis")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("**Full Dataset**")
-        fig1, corr1, p1 = create_capital_controls_scatter(cc_data, outliers_removed=False)
-        st.pyplot(fig1)
-        st.info(f"**Correlation:** {corr1:.3f} | **P-value:** {p1:.4f}")
-    
-    with col2:
-        st.markdown("**Outliers Removed**")
-        fig2, corr2, p2 = create_capital_controls_scatter(cc_data, outliers_removed=True)
-        st.pyplot(fig2)
-        st.info(f"**Correlation:** {corr2:.3f} | **P-value:** {p2:.4f}")
+    fig1, corr1, p1 = create_capital_controls_scatter(cc_data, outliers_removed=False)
+    st.pyplot(fig1)
+    st.info(f"**Correlation:** {corr1:.3f} | **P-value:** {p1:.4f}")
     
     st.markdown("---")
     
     # Country Aggregate Analysis
     st.subheader("🌍 Country Aggregate Analysis")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("**Full Dataset**")
-        fig3, corr3, p3 = create_country_aggregate_scatter(cc_data, outliers_removed=False)
-        st.plotly_chart(fig3, use_container_width=True)
-        st.info(f"**Correlation:** {corr3:.3f} | **P-value:** {p3:.4f}")
-    
-    with col2:
-        st.markdown("**Outliers Removed**")
-        fig4, corr4, p4 = create_country_aggregate_scatter(cc_data, outliers_removed=True)
-        st.plotly_chart(fig4, use_container_width=True)
-        st.info(f"**Correlation:** {corr4:.3f} | **P-value:** {p4:.4f}")
+    fig3, corr3, p3 = create_country_aggregate_scatter(cc_data, outliers_removed=False)
+    st.plotly_chart(fig3, use_container_width=True)
+    st.info(f"**Correlation:** {corr3:.3f} | **P-value:** {p3:.4f}")
     
     # Statistical Interpretation (Updated based on actual findings)
     st.markdown("---")
@@ -571,19 +557,19 @@ def run_cs5_outlier_adjusted_analysis():
     ### 📊 Capital Controls Analysis Results
     
     **Key Findings:**
-    - **Yearly Analysis:** Correlation = {corr1:.3f} (p = {p1:.4f}) | Outliers Removed: {corr2:.3f} (p = {p2:.4f})
-    - **Country Aggregate:** Correlation = {corr3:.3f} (p = {p3:.4f}) | Outliers Removed: {corr4:.3f} (p = {p4:.4f})
+    - **Yearly Analysis:** Correlation = {corr1:.3f} (p = {p1:.4f})
+    - **Country Aggregate:** Correlation = {corr3:.3f} (p = {p3:.4f})
     
     **Statistical Interpretation:**
-    - {'**Significant**' if min(p1, p2, p3, p4) < 0.05 else '**Not significant**'} relationship between capital controls and volatility at 5% level
+    - {'**Significant**' if min(p1, p3) < 0.05 else '**Not significant**'} relationship between capital controls and volatility at 5% level
     - {'Negative' if corr1 < 0 else 'Positive'} correlation indicates that {'higher' if corr1 > 0 else 'lower'} capital controls are associated with {'higher' if corr1 > 0 else 'lower'} volatility
-    - Outlier removal {'strengthens' if abs(corr2) > abs(corr1) else 'weakens'} the relationship in yearly data
     - Country-level aggregation {'confirms' if (corr1 > 0 and corr3 > 0) or (corr1 < 0 and corr3 < 0) else 'reverses'} the yearly pattern
     
     **Methodological Notes:**
     - Correlation analysis captures association, not causation
     - Heterogeneity across countries suggests varying institutional contexts
     - Endogeneity considerations: controls may respond to volatility patterns
+    - Data uses winsorized values for robust statistical analysis
     """)
     
     st.markdown("---")

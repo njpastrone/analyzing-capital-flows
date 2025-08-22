@@ -15,7 +15,13 @@ import matplotlib.pyplot as plt
 import warnings
 
 # Add parent directory to path for imports
-sys.path.append(str(Path(__file__).parent.parent.parent))
+# Add parent directory (main dashboard) and current directory (outlier_adjusted_reports) to path
+current_file_dir = Path(__file__).parent.absolute()
+parent_dir = current_file_dir.parent
+if str(parent_dir) not in sys.path:
+    sys.path.insert(0, str(parent_dir))
+if str(current_file_dir) not in sys.path:
+    sys.path.insert(0, str(current_file_dir))
 
 warnings.filterwarnings('ignore')
 

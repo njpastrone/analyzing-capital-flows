@@ -27,9 +27,9 @@ sys.path.append(str(Path(__file__).parent))
 
 warnings.filterwarnings('ignore')
 
-# Import shared functions from Case Study 1  
-import cs1_report_app
-from cs1_report_app import (
+# Import shared functions from Case Study 1 outlier-adjusted
+import cs1_report_outlier_adjusted
+from cs1_report_outlier_adjusted import (
     create_indicator_nicknames, 
     get_nickname,
     get_investment_type_order,
