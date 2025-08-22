@@ -2,7 +2,7 @@
 CS3 Complete Analysis Functions - Exact Copy of CS1 with CS3 Groupings
 
 This module contains the complete CS3 analysis implementation copied from CS1
-with adaptations for Iceland vs Small Open Economies comparison.
+with adaptations for Iceland vs SOEs comparison.
 """
 
 import streamlit as st
@@ -49,7 +49,7 @@ def get_nickname(indicator_name):
     return nickname
 
 def load_cs3_data(include_crisis_years=True):
-    """Load CS3 data: Iceland vs Small Open Economies"""
+    """Load CS3 data: Iceland vs SOEs"""
     try:
         # Load the comprehensive labeled dataset
         data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"

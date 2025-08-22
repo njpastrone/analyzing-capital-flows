@@ -71,7 +71,9 @@ analyzing-capital-flows/
 
 ### ✅ **Case Study 3: Small Open Economies**
 - **Status**: Complete implementation
-- **Methodology**: Iceland compared to comparable small open economies
+- **Methodology**: Iceland compared to 6 comparable small open economies
+- **Countries Analyzed**: Aruba, Bahamas, Brunei Darussalam, Malta, Mauritius, Seychelles
+- **Data Limitation**: Bermuda excluded due to missing GDP data (required for % GDP normalization)
 - **Focus**: Size-adjusted volatility analysis beyond currency union effects
 - **File**: `cs3_report_app.py`
 
@@ -204,6 +206,11 @@ quarto render "updated_data/Cleaning_All_Datasets.qmd"
 - **Missing Data Management**: Graceful degradation with statistical adjustments
 - **Outlier Detection**: Robust statistical methods with removal options
 - **Validation**: Cross-verification with original sources
+
+### **Known Data Limitations**
+- **CS3 Bermuda Exclusion**: Bermuda has complete Balance of Payments data but missing GDP data in IMF World Economic Outlook database, preventing % GDP normalization. Automatically excluded from CS3 analysis (6 countries analyzed instead of 7 originally planned)
+- **Non-IMF Member Territories**: Some offshore financial centers may have limited standardized reporting despite data availability
+- **GDP Normalization Dependency**: All capital flows indicators require corresponding GDP data for cross-country comparability
 
 ## Working with the Codebase
 

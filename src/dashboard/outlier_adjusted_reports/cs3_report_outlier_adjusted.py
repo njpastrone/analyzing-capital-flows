@@ -1,10 +1,10 @@
 """
-Outlier-Adjusted Capital Flows Analysis - Case Study 3: Iceland vs Small Open Economies Report
+Outlier-Adjusted Capital Flows Analysis - Case Study 3: Iceland vs SOEs Report
 
 This Streamlit application provides an exact mirror of Case Study 1 structure using winsorized data,
 optimized for clean PDF export with professional formatting.
 
-Research Focus: Iceland vs Small Open Economies - Capital Flow Volatility Comparison (1999-2025)
+Research Focus: Iceland vs SOEs - Capital Flow Volatility Comparison (1999-2025)
 Using 5% symmetric winsorization for robust statistical analysis
 """
 
@@ -141,7 +141,7 @@ def main():
     # Note: st.set_page_config() is now handled by main_app.py (matching cs1_report_app.py)
     # Removing page config call to prevent margin/layout conflicts that affect PDF export
     
-    st.title("🛡️ 🇮🇸 Comparative Analysis: Iceland and Small Open Economies (Outlier-Adjusted)")
+    st.title("🛡️ 🇮🇸 Comparative Analysis: Iceland and SOEs (Outlier-Adjusted)")
     st.subheader("Capital Flow Volatility Patterns (1999-2025)")
     
     st.markdown("""
@@ -163,7 +163,11 @@ def main():
         ### Data Sources
         - **Balance of Payments Data:** IMF, quarterly frequency (1999-2025)
         - **GDP Data:** IMF World Economic Outlook, annual frequency
-        - **Countries:** Iceland vs Small Open Economies (as defined in CS3_GROUP)
+        - **Countries:** Iceland vs 6 Small Open Economies (Aruba, Bahamas, Brunei Darussalam, Malta, Mauritius, Seychelles)
+        
+        ### Data Limitations
+        - **Bermuda Exclusion:** Originally planned as 7th SOE country but excluded due to missing GDP data in IMF WEO database
+        - **GDP Dependency:** All indicators require GDP normalization for cross-country comparability
         
         ### Methodology
         1. **Data Normalization:** All BOP flows converted to annualized % of GDP
@@ -269,7 +273,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     
     if overall_data is not None and indicators_mapping is not None:
         # Use consistent COLORBLIND_SAFE palette
-        colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+        colors = {'Iceland': COLORBLIND_SAFE[1], 'SOEs': COLORBLIND_SAFE[0]}
         
         # Summary statistics
         st.subheader("📊 Summary Statistics by Group")
@@ -378,7 +382,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
                 
                 # Create boxplot
                 bp = ax.boxplot([iceland_data, soe_data], 
-                               labels=['Iceland', 'Small Open Economies'], 
+                               labels=['Iceland', 'SOEs'], 
                                patch_artist=True)
                 
                 # Color the boxes
@@ -417,12 +421,12 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
                     ax.plot(iceland_data['DATE'], iceland_data[col_name], 
                            color=colors['Iceland'], label='Iceland', linewidth=2, alpha=0.8)
                 
-                # Plot Small Open Economies average
+                # Plot SOEs average
                 soe_data = overall_data_ts[overall_data_ts['GROUP'] == 'Small Open Economies']
                 if len(soe_data) > 0:
                     soe_avg = soe_data.groupby('DATE')[col_name].mean().reset_index()
                     ax.plot(soe_avg['DATE'], soe_avg[col_name], 
-                           color=colors['Small Open Economies'], label='SOE Average', linewidth=2, alpha=0.8)
+                           color=colors['SOEs'], label='SOE Average', linewidth=2, alpha=0.8)
                 
                 ax.set_title(clean_name, fontweight='bold', fontsize=10)
                 ax.set_ylabel('% of GDP (annualized)', fontsize=9)
@@ -473,9 +477,9 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
             if high_vol_count >= total_indicators * 0.75:
                 st.write("🔴 **Iceland shows consistently higher volatility** across most capital flow categories")
             elif high_vol_count >= total_indicators * 0.5:
-                st.write("🟡 **Mixed volatility patterns** between Iceland and Small Open Economies")
+                st.write("🟡 **Mixed volatility patterns** between Iceland and SOEs")
             else:
-                st.write("🟢 **Similar volatility levels** between Iceland and Small Open Economies")
+                st.write("🟢 **Similar volatility levels** between Iceland and SOEs")
     
     st.markdown("---")
     
@@ -500,7 +504,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     mean_iceland = mean_data[mean_data['GROUP'] == 'Iceland']['Value']
     mean_soe = mean_data[mean_data['GROUP'] == 'Small Open Economies']['Value']
     
-    bp1 = ax1.boxplot([mean_iceland, mean_soe], labels=['Iceland', 'Small Open Economies'], patch_artist=True)
+    bp1 = ax1.boxplot([mean_iceland, mean_soe], labels=['Iceland', 'SOEs'], patch_artist=True)
     bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
@@ -509,7 +513,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax1.tick_params(axis='both', which='major', labelsize=8)
     ax1.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\nSmall Open Economies Avg: {mean_soe.mean():.2f}%', 
+    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\nSOEs Avg: {mean_soe.mean():.2f}%', 
             transform=ax1.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -518,7 +522,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     std_iceland = std_data[std_data['GROUP'] == 'Iceland']['Value']
     std_soe = std_data[std_data['GROUP'] == 'Small Open Economies']['Value']
     
-    bp2 = ax2.boxplot([std_iceland, std_soe], labels=['Iceland', 'Small Open Economies'], patch_artist=True)
+    bp2 = ax2.boxplot([std_iceland, std_soe], labels=['Iceland', 'SOEs'], patch_artist=True)
     bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
@@ -529,7 +533,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     ax2.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
     
     volatility_ratio = std_iceland.mean() / std_soe.mean() if std_soe.mean() != 0 else float('inf')
-    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
+    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSOEs Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
             transform=ax2.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -556,7 +560,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     with col2:
         # Download individual std dev plot
         fig2_ind, ax2_ind = plt.subplots(1, 1, figsize=(6, 4))
-        bp2_ind = ax2_ind.boxplot([std_iceland, std_soe], labels=['Iceland', 'Small Open Economies'], patch_artist=True)
+        bp2_ind = ax2_ind.boxplot([std_iceland, std_soe], labels=['Iceland', 'SOEs'], patch_artist=True)
         bp2_ind['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])
         bp2_ind['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])
         ax2_ind.set_title('Panel B: Distribution of Std Deviations - All Indicators', 
@@ -564,7 +568,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
         ax2_ind.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
         ax2_ind.tick_params(axis='both', which='major', labelsize=8)
         ax2_ind.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
+        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSOEs Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
                 transform=ax2_ind.transAxes, verticalalignment='top', fontsize=8,
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
         fig2_ind.tight_layout()
@@ -582,7 +586,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
             key=f"download_stddev_cs3_full_{context}"
         )
     
-    st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than Small Open Economies on average")
+    st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than SOEs on average")
     
     # 1b. Individual Country Comparisons
     st.subheader("1b. Individual Country Comparisons: Iceland vs Each Small Open Economy")
@@ -624,7 +628,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
             box.set_alpha(0.8)
         else:
-            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for SOEs
             box.set_alpha(0.6)
     
     ax3.set_title('Panel C: Distribution of Means - Iceland vs Individual SOEs', 
@@ -661,7 +665,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
             box.set_alpha(0.8)
         else:
-            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for SOEs
             box.set_alpha(0.6)
     
     ax4.set_title('Panel D: Distribution of Volatility - Iceland vs Individual SOEs', 
@@ -701,7 +705,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     # 2. Comprehensive Statistical Summary Table
     st.header("2. Comprehensive Statistical Summary Table")
     
-    st.markdown("**All Indicators - Iceland vs Small Open Economies Statistics**")
+    st.markdown("**All Indicators - Iceland vs SOEs Statistics**")
     
     # Create a clean table with one row per indicator (both groups side-by-side)
     sorted_indicators = sort_indicators_by_type(analysis_indicators)
@@ -805,7 +809,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
     # 3. Hypothesis Testing Results
     st.header("3. Hypothesis Testing Results")
     
-    st.markdown("**F-Tests for Variance Equality Between Iceland and Small Open Economies** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
+    st.markdown("**F-Tests for Variance Equality Between Iceland and SOEs** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
     # Create a clean static table for hypothesis tests
     results_display = test_results.copy()
@@ -988,7 +992,7 @@ def case_study_3_outlier_adjusted_main(context="standalone"):
             ax.plot(iceland_data['Date'], iceland_data[indicator], 
                     color=COLORBLIND_SAFE[1], linewidth=1.5, label='Iceland')
             
-            # Plot Small Open Economies average
+            # Plot SOEs average
             soe_avg = final_data_copy[final_data_copy['GROUP'] == 'Small Open Economies'].groupby('Date')[indicator].mean()
             ax.plot(soe_avg.index, soe_avg.values, 
                     color=COLORBLIND_SAFE[0], linewidth=1.5, label='Small Open Economies Average')
@@ -1136,7 +1140,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     
     if overall_data_crisis is not None and indicators_mapping_crisis is not None:
         # Use consistent COLORBLIND_SAFE palette
-        colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+        colors = {'Iceland': COLORBLIND_SAFE[1], 'SOEs': COLORBLIND_SAFE[0]}
         
         # Summary statistics
         st.subheader("📊 Summary Statistics by Group (Crisis-Excluded)")
@@ -1206,7 +1210,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
                 
                 # Create boxplot (EXACT CS1 implementation)
                 bp = ax.boxplot([iceland_data, soe_data], 
-                               labels=['Iceland', 'Small Open Economies'], 
+                               labels=['Iceland', 'SOEs'], 
                                patch_artist=True)
                 
                 # Color the boxes (EXACT CS1 styling)
@@ -1240,7 +1244,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
         fig_ts, axes = plt.subplots(2, 2, figsize=(15, 10))
         axes = axes.flatten()
         
-        colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+        colors = {'Iceland': COLORBLIND_SAFE[1], 'SOEs': COLORBLIND_SAFE[0]}
         
         plot_count = 0
         for clean_name, col_name in indicators_mapping_crisis.items():
@@ -1286,7 +1290,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
                             ax.plot(segment['DATE'], segment[col_name], 
                                    color=colors['Iceland'], label=label, linewidth=2, alpha=0.8)
                 
-                # Plot Small Open Economies with line breaks at data gaps (EXACT CS1)
+                # Plot SOEs with line breaks at data gaps (EXACT CS1)
                 soe_data = overall_data_ts[overall_data_ts['GROUP'] == 'Small Open Economies']
                 if len(soe_data) > 0:
                     soe_avg = soe_data.groupby('DATE')[col_name].mean().reset_index()
@@ -1316,7 +1320,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
                         if len(segment) > 0:
                             label = 'Small Open Economies' if j == 0 else None
                             ax.plot(segment['DATE'], segment[col_name], 
-                                   color=colors['Small Open Economies'], label=label, linewidth=2, alpha=0.8)
+                                   color=colors['SOEs'], label=label, linewidth=2, alpha=0.8)
                 
                 ax.set_title(f'{clean_name}', fontweight='bold', fontsize=10, pad=12)
                 ax.set_xlabel('Time', fontsize=9)
@@ -1376,7 +1380,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
             if high_vol_count >= total_indicators * 0.75:
                 st.write("🔴 **Iceland shows consistently higher volatility** even excluding crisis periods")
             elif high_vol_count >= total_indicators * 0.5:
-                st.write("🟡 **Mixed volatility patterns** between Iceland and Small Open Economies")
+                st.write("🟡 **Mixed volatility patterns** between Iceland and SOEs")
             else:
                 st.write("🟢 **Similar volatility levels** when crisis periods are excluded")
     
@@ -1403,7 +1407,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     mean_iceland = mean_data[mean_data['GROUP'] == 'Iceland']['Value']
     mean_soe = mean_data[mean_data['GROUP'] == 'Small Open Economies']['Value']
     
-    bp1 = ax1.boxplot([mean_iceland, mean_soe], labels=['Iceland', 'Small Open Economies'], patch_artist=True)
+    bp1 = ax1.boxplot([mean_iceland, mean_soe], labels=['Iceland', 'SOEs'], patch_artist=True)
     bp1['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp1['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
@@ -1412,7 +1416,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     ax1.set_ylabel('Mean (% of GDP, annualized)', fontsize=9)
     ax1.tick_params(axis='both', which='major', labelsize=8)
     ax1.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\nSmall Open Economies Avg: {mean_soe.mean():.2f}%', 
+    ax1.text(0.02, 0.98, f'Iceland Avg: {mean_iceland.mean():.2f}%\nSOEs Avg: {mean_soe.mean():.2f}%', 
             transform=ax1.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -1421,7 +1425,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     std_iceland = std_data[std_data['GROUP'] == 'Iceland']['Value']
     std_soe = std_data[std_data['GROUP'] == 'Small Open Economies']['Value']
     
-    bp2 = ax2.boxplot([std_iceland, std_soe], labels=['Iceland', 'Small Open Economies'], patch_artist=True)
+    bp2 = ax2.boxplot([std_iceland, std_soe], labels=['Iceland', 'SOEs'], patch_artist=True)
     bp2['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])  # Iceland in orange
     bp2['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])  # SOE in blue
     
@@ -1432,7 +1436,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     ax2.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
     
     volatility_ratio = std_iceland.mean() / std_soe.mean() if std_soe.mean() != 0 else float('inf')
-    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
+    ax2.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSOEs Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
             transform=ax2.transAxes, verticalalignment='top', fontsize=8,
             bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
     
@@ -1459,7 +1463,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     with col2:
         # Download individual std dev plot
         fig2_ind, ax2_ind = plt.subplots(1, 1, figsize=(6, 4))
-        bp2_ind = ax2_ind.boxplot([std_iceland, std_soe], labels=['Iceland', 'Small Open Economies'], patch_artist=True)
+        bp2_ind = ax2_ind.boxplot([std_iceland, std_soe], labels=['Iceland', 'SOEs'], patch_artist=True)
         bp2_ind['boxes'][0].set_facecolor(COLORBLIND_SAFE[1])
         bp2_ind['boxes'][1].set_facecolor(COLORBLIND_SAFE[0])
         ax2_ind.set_title('Panel B: Distribution of Std Deviations - All Indicators (Crisis-Excluded)', 
@@ -1467,7 +1471,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
         ax2_ind.set_ylabel('Std Dev. (% of GDP, annualized)', fontsize=9)
         ax2_ind.tick_params(axis='both', which='major', labelsize=8)
         ax2_ind.axhline(y=0, color='black', linestyle='-', alpha=0.3, linewidth=1)
-        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSmall Open Economies Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
+        ax2_ind.text(0.02, 0.98, f'Iceland Avg: {std_iceland.mean():.2f}%\nSOEs Avg: {std_soe.mean():.2f}%\nRatio: {volatility_ratio:.2f}x', 
                 transform=ax2_ind.transAxes, verticalalignment='top', fontsize=8,
                 bbox=dict(boxstyle='round,pad=0.3', facecolor='white', alpha=0.8, edgecolor='gray'))
         fig2_ind.tight_layout()
@@ -1485,7 +1489,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
             key=f"download_stddev_cs3_crisis_{context}"
         )
     
-    st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than Small Open Economies on average (excluding crisis periods)")
+    st.info(f"**Volatility Comparison:** Iceland volatility is {volatility_ratio:.2f}x higher than SOEs on average (excluding crisis periods)")
     
     # 1b. Individual Country Comparisons (Crisis-Excluded)
     st.subheader("1b. Individual Country Comparisons: Iceland vs Each Small Open Economy (Crisis-Excluded)")
@@ -1527,7 +1531,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
             box.set_alpha(0.8)
         else:
-            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for SOEs
             box.set_alpha(0.6)
     
     ax3.set_title('Panel C: Means - Iceland vs Individual SOEs (Crisis-Excluded)', 
@@ -1564,7 +1568,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
             box.set_facecolor(COLORBLIND_SAFE[3])  # Red for Iceland
             box.set_alpha(0.8)
         else:
-            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for Small Open Economies
+            box.set_facecolor(COLORBLIND_SAFE[0])  # Blue for SOEs
             box.set_alpha(0.6)
     
     ax4.set_title('Panel D: Volatility - Iceland vs Individual SOEs (Crisis-Excluded)', 
@@ -1599,7 +1603,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     # 2. Comprehensive Statistical Summary Table (Crisis-Excluded)
     st.header("2. Comprehensive Statistical Summary Table (Crisis-Excluded)")
     
-    st.markdown("**All Indicators - Iceland vs Small Open Economies Statistics (Crisis-Excluded)**")
+    st.markdown("**All Indicators - Iceland vs SOEs Statistics (Crisis-Excluded)**")
     
     # Create a clean table with one row per indicator (both groups side-by-side)
     sorted_indicators = sort_indicators_by_type(analysis_indicators)
@@ -1680,7 +1684,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
     # 3. Hypothesis Testing Results (Crisis-Excluded)
     st.header("3. Hypothesis Testing Results (Crisis-Excluded)")
     
-    st.markdown("**F-Tests for Variance Equality Between Iceland and Small Open Economies (Crisis-Excluded)** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
+    st.markdown("**F-Tests for Variance Equality Between Iceland and SOEs (Crisis-Excluded)** | H₀: Equal volatility patterns | H₁: Different volatility patterns | α = 0.05")
     
     # Create a clean static table for hypothesis tests
     display_results = test_results.copy()
@@ -1810,7 +1814,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
                       alpha=0.15, color='orange', label='COVID-19 (2020-2022)' if idx == 0 else '')
             
             # Plot data with line breaks at gaps (EXACT CS1 implementation)
-            colors = {'Iceland': COLORBLIND_SAFE[1], 'Small Open Economies': COLORBLIND_SAFE[0]}
+            colors = {'Iceland': COLORBLIND_SAFE[1], 'SOEs': COLORBLIND_SAFE[0]}
             
             # Plot Iceland data with line breaks
             iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland'].sort_values('Date')
@@ -1842,7 +1846,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
                         ax.plot(segment['Date'], segment[indicator], 
                                color=colors['Iceland'], label=label, linewidth=2, alpha=0.8)
             
-            # Plot Small Open Economies data with line breaks
+            # Plot SOEs data with line breaks
             soe_data = final_data_copy[final_data_copy['GROUP'] == 'Small Open Economies']
             if len(soe_data) > 0:
                 soe_avg = soe_data.groupby('Date')[indicator].mean().reset_index()
@@ -1873,7 +1877,7 @@ def case_study_3_outlier_adjusted_main_crisis_excluded(context="standalone"):
                     if len(segment) > 0:
                         label = 'Small Open Economies' if j == 0 else None
                         ax.plot(segment['Date'], segment[indicator], 
-                               color=colors['Small Open Economies'], label=label, linewidth=2, alpha=0.8)
+                               color=colors['SOEs'], label=label, linewidth=2, alpha=0.8)
             
             ax.set_title(f'{nickname}', fontweight='bold', fontsize=9, pad=12)
             ax.set_xlabel('Time', fontsize=8)
