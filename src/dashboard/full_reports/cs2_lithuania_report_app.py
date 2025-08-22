@@ -130,6 +130,16 @@ def main():
 def show_lithuania_overall_analysis(include_crisis_years=True):
     """Show Lithuania overall capital flows analysis with PDF-optimized formatting"""
     try:
+        import sys
+        from pathlib import Path
+        import os
+        # Add parent directory (main dashboard) and current directory (full_reports) to path
+        current_file_dir = Path(__file__).parent.absolute()
+        parent_dir = current_file_dir.parent
+        if str(parent_dir) not in sys.path:
+            sys.path.insert(0, str(parent_dir))
+        if str(current_file_dir) not in sys.path:
+            sys.path.insert(0, str(current_file_dir))
         from case_study_2_euro_adoption import show_overall_capital_flows_analysis_cs2
         import matplotlib.pyplot as plt
         
@@ -204,6 +214,16 @@ def show_lithuania_overall_analysis(include_crisis_years=True):
 def show_lithuania_indicator_analysis(include_crisis_years=True):
     """Show Lithuania indicator-level analysis with PDF-optimized formatting"""
     try:
+        import sys
+        from pathlib import Path
+        import os
+        # Add parent directory (main dashboard) and current directory (full_reports) to path
+        current_file_dir = Path(__file__).parent.absolute()
+        parent_dir = current_file_dir.parent
+        if str(parent_dir) not in sys.path:
+            sys.path.insert(0, str(parent_dir))
+        if str(current_file_dir) not in sys.path:
+            sys.path.insert(0, str(current_file_dir))
         from case_study_2_euro_adoption import show_indicator_level_analysis_cs2
         import matplotlib.pyplot as plt
         
