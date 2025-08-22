@@ -380,7 +380,6 @@ def perform_temporal_volatility_tests(data, country, indicators, period_column='
 def load_overall_capital_flows_data_cs2(include_crisis_years=True):
     """Load data specifically for Case Study 2 Overall Capital Flows Analysis"""
     try:
-        print(f"🔍 DEBUG: load_overall_capital_flows_data_cs2 called with include_crisis_years={include_crisis_years}")
         
         # Use comprehensive dataset with robust path finding
         current_dir = Path(__file__).parent
@@ -389,33 +388,20 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         data_dir = project_root / "updated_data" / "Clean"
         comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled.csv"
         
-        print(f"🔍 DEBUG: Looking for file at: {comprehensive_file}")
-        print(f"🔍 DEBUG: File exists: {comprehensive_file.exists()}")
-        
         if not comprehensive_file.exists():
-            print("❌ DEBUG: Comprehensive file not found, returning None")
             return None, None, None
         
         # Load comprehensive labeled data
-        print("🔍 DEBUG: Loading comprehensive dataset...")
         comprehensive_df = pd.read_csv(comprehensive_file)
-        print(f"🔍 DEBUG: Loaded comprehensive dataset with shape: {comprehensive_df.shape}")
-        print(f"🔍 DEBUG: Columns: {list(comprehensive_df.columns)}")
         
         # Filter for Case Study 2 data (CS2_GROUP not null)
-        print(f"🔍 DEBUG: Filtering for CS2_GROUP not null...")
         if 'CS2_GROUP' not in comprehensive_df.columns:
-            print("❌ DEBUG: CS2_GROUP column not found in dataset")
             return None, None, None
             
         case_two_data = comprehensive_df[comprehensive_df['CS2_GROUP'].notna()].copy()
-        print(f"🔍 DEBUG: CS2 filtered data shape: {case_two_data.shape}")
-        print(f"🔍 DEBUG: Countries in CS2 data: {sorted(case_two_data['COUNTRY'].unique())}")
         
         # Create Euro adoption timeline with full 1999-2025 periods
-        print("🔍 DEBUG: Creating Euro adoption timeline...")
         timeline = create_expanded_euro_adoption_timeline()
-        print(f"🔍 DEBUG: Timeline countries: {list(timeline.keys())}")
         
         # Add period classification using CS1 methodology
         def classify_period(row, timeline):
@@ -432,16 +418,12 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
                     return 'Post-Euro'
             return 'Unknown'
         
-        print("🔍 DEBUG: Classifying Euro periods...")
         case_two_data['EURO_PERIOD'] = case_two_data.apply(
             lambda row: classify_period(row, timeline), axis=1
         )
-        print(f"🔍 DEBUG: Euro period classification completed")
-        print(f"🔍 DEBUG: Euro periods: {case_two_data['EURO_PERIOD'].value_counts().to_dict()}")
         
         # Apply crisis filtering using country-specific crisis periods
         if not include_crisis_years:
-            print("🔍 DEBUG: Applying crisis year filtering...")
             # Filter data based on country-specific crisis years
             rows_to_keep = []
             
@@ -498,39 +480,25 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
             'include_crisis_years': include_crisis_years
         }
         
-        print(f"✅ DEBUG: Successfully processed data, final shape: {case_two_data.shape}")
-        print(f"✅ DEBUG: Returning data with {len(overall_indicators_mapping)} indicators")
         return case_two_data, overall_indicators_mapping, metadata
         
     except Exception as e:
-        print(f"❌ DEBUG: Exception in load_overall_capital_flows_data_cs2: {str(e)}")
-        import traceback
-        print(f"❌ DEBUG: Full traceback:")
-        traceback.print_exc()
         st.error(f"Error loading Case Study 2 overall capital flows data: {str(e)}")
         return None, None, None
 
 def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_country, include_crisis_years=True):
     """Display Overall Capital Flows Analysis section for Case Study 2 - country-specific version"""
     study_version = "Full Series" if include_crisis_years else "Crisis-Excluded"
-    print(f"🚀 DEBUG: show_overall_capital_flows_analysis_cs2 called for {selected_country} ({study_version})")
     st.markdown(f"*Aggregate net capital flows summary - {study_version}*")
     
     # Load data and filter for selected country
-    print(f"🔍 DEBUG: Calling load_overall_capital_flows_data_cs2...")
     overall_data, indicators_mapping, metadata = load_overall_capital_flows_data_cs2(include_crisis_years)
-    print(f"🔍 DEBUG: Data loading returned: data={overall_data is not None}, indicators={indicators_mapping is not None}, metadata={metadata is not None}")
     
     if overall_data is not None:
-        print(f"🔍 DEBUG: Data loaded successfully, shape before country filter: {overall_data.shape}")
         # Filter for selected country only
         overall_data = overall_data[overall_data['COUNTRY'] == selected_country].copy()
-        print(f"🔍 DEBUG: Data after filtering for {selected_country}: {overall_data.shape}")
-    else:
-        print("❌ DEBUG: overall_data is None")
     
     if overall_data is None or indicators_mapping is None:
-        print(f"❌ DEBUG: Failed condition - overall_data is None: {overall_data is None}, indicators_mapping is None: {indicators_mapping is None}")
         st.error("Failed to load overall capital flows data.")
         return
     

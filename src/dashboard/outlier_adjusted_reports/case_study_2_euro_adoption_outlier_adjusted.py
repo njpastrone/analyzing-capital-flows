@@ -388,7 +388,8 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
         # Use comprehensive dataset with robust path finding
         current_dir = Path(__file__).parent
         # Navigate up to find the project root (contains updated_data)
-        project_root = current_dir.parent.parent
+        # Need 3 levels up: outlier_adjusted_reports -> dashboard -> src -> project_root
+        project_root = current_dir.parent.parent.parent
         data_dir = project_root / "updated_data" / "Clean"
         comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled_winsorized.csv"
         

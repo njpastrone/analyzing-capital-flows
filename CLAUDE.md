@@ -26,19 +26,32 @@ analyzing-capital-flows/
 │   │   └── [other analysis modules]
 │   ├── dashboard/                 # Streamlit web applications (MAIN INTERFACE)
 │   │   ├── main_app.py          # Multi-tab master dashboard (11 tabs)
-│   │   ├── simple_report_app.py # Case Study 1: Iceland vs Eurozone
 │   │   ├── case_study_2_euro_adoption.py  # CS2 Master: Baltic Euro Adoption
-│   │   ├── cs2_[country]_report_app.py    # Individual Baltic country reports
-│   │   ├── cs3_report_app.py    # CS3: Small Open Economies
-│   │   ├── cs4_report_app.py    # CS4: Statistical Analysis Framework
-│   │   └── cs5_report_app.py    # CS5: Capital Controls & Exchange Rate Regimes
+│   │   ├── full_reports/        # Standalone reports for PDF export
+│   │   │   ├── cs1_report_app.py        # CS1: Iceland vs Eurozone
+│   │   │   ├── cs2_[country]_report_app.py  # Individual Baltic country reports
+│   │   │   ├── cs3_report_app.py        # CS3: Small Open Economies
+│   │   │   ├── cs4_report_app.py        # CS4: Statistical Analysis Framework
+│   │   │   └── cs5_report_app.py        # CS5: Capital Controls & Exchange Rate Regimes
+│   │   ├── outlier_adjusted_reports/    # Winsorized data analysis versions
+│   │   │   ├── cs1_report_outlier_adjusted.py  # CS1: Outlier-adjusted analysis
+│   │   │   ├── case_study_2_euro_adoption_outlier_adjusted.py  # CS2: Winsorized master
+│   │   │   ├── cs2_[country]_report_outlier_adjusted.py  # CS2: Individual country outlier-adjusted
+│   │   │   ├── cs3_report_outlier_adjusted.py  # CS3: Outlier-adjusted analysis
+│   │   │   ├── cs4_report_outlier_adjusted.py  # CS4: Outlier-adjusted analysis
+│   │   │   └── cs5_report_outlier_adjusted.py  # CS5: Outlier-adjusted analysis
+│   │   └── pdfs/               # Generated PDF reports
 │   └── case_study_one/           # Legacy notebooks and early analysis
 ├── updated_data/                  # ACTIVE DATA PIPELINE (R-based cleaning)
 │   ├── Clean/                     # Python-ready processed datasets
 │   │   ├── comprehensive_df_PGDP_labeled.csv  # Master dataset
+│   │   ├── comprehensive_df_PGDP_labeled_winsorized.csv  # Outlier-adjusted master dataset
 │   │   ├── CS4_Statistical_Modeling/          # CS4 advanced analysis data
+│   │   ├── CS4_Statistical_Modeling_winsorized/  # CS4 outlier-adjusted data
 │   │   ├── CS5_Capital_Controls/               # Capital controls correlation data
-│   │   └── CS5_Regime_Analysis/                # Exchange rate regime data
+│   │   ├── CS5_Capital_Controls_winsorized/    # CS5 outlier-adjusted capital controls data
+│   │   ├── CS5_Regime_Analysis/                # Exchange rate regime data
+│   │   └── CS5_Regime_Analysis_winsorized/     # CS5 outlier-adjusted regime data
 │   ├── Raw/                       # Raw IMF API downloads
 │   ├── Metadata/                  # Data definitions and sources
 │   ├── Other Data (Not IMF)/      # External data sources
@@ -57,7 +70,7 @@ analyzing-capital-flows/
   - Professional boxplots and time series visualizations
   - Comprehensive statistical testing framework
   - Export functionality for charts and data
-- **File**: `simple_report_app.py`
+- **Files**: `full_reports/cs1_report_app.py`, `outlier_adjusted_reports/cs1_report_outlier_adjusted.py`
 
 ### ✅ **Case Study 2: Baltic Euro Adoption**
 - **Status**: Complete with dual analysis versions
@@ -67,7 +80,7 @@ analyzing-capital-flows/
   - **Full Series**: Complete time windows with asymmetric periods
   - **Crisis-Excluded**: Removes 2008-2010 GFC and 2020-2022 COVID periods
 - **Features**: Individual country reports + master comparative analysis
-- **Files**: `case_study_2_euro_adoption.py`, `cs2_[country]_report_app.py`
+- **Files**: `case_study_2_euro_adoption.py`, `full_reports/cs2_[country]_report_app.py`, `outlier_adjusted_reports/case_study_2_euro_adoption_outlier_adjusted.py`
 
 ### ✅ **Case Study 3: Small Open Economies**
 - **Status**: Complete implementation
@@ -75,7 +88,7 @@ analyzing-capital-flows/
 - **Countries Analyzed**: Aruba, Bahamas, Brunei Darussalam, Malta, Mauritius, Seychelles
 - **Data Limitation**: Bermuda excluded due to missing GDP data (required for % GDP normalization)
 - **Focus**: Size-adjusted volatility analysis beyond currency union effects
-- **File**: `cs3_report_app.py`
+- **Files**: `full_reports/cs3_report_app.py`, `outlier_adjusted_reports/cs3_report_outlier_adjusted.py`
 
 ### ✅ **Case Study 4: Statistical Analysis Framework**
 - **Status**: Complete with advanced methodologies
@@ -86,7 +99,7 @@ analyzing-capital-flows/
 - **Data**: 6 indicators (including portfolio investment disaggregation)
 - **Comparators**: Eurozone, Small Open Economies, Baltics (weighted & simple averages)
 - **Features**: Professional table generation with color coding, ACF analysis
-- **Files**: `cs4_report_app.py`, `src/core/cs4_statistical_analysis.py`
+- **Files**: `full_reports/cs4_report_app.py`, `outlier_adjusted_reports/cs4_report_outlier_adjusted.py`, `src/core/cs4_statistical_analysis.py`
 
 ### ✅ **Case Study 5: Capital Controls & Exchange Rate Regimes**
 - **Status**: Complete implementation
@@ -97,7 +110,24 @@ analyzing-capital-flows/
   - Fernández et al. (2016) Capital Control Measures Database
   - Ilzetzki, Reinhart, and Rogoff (2019) Exchange Rate Classification
 - **Features**: Iceland-highlighted scatter plots, F-test regime comparison table
-- **File**: `cs5_report_app.py`
+- **Files**: `full_reports/cs5_report_app.py`, `outlier_adjusted_reports/cs5_report_outlier_adjusted.py`
+
+## ✅ **Winsorized Analysis Implementation**
+- **Status**: Complete robust outlier-adjusted framework
+- **Methodology**: 
+  - **Winsorization**: 5th-95th percentile capping for outlier mitigation
+  - **Dual Analysis**: All case studies available in both full and outlier-adjusted versions
+  - **Consistent Framework**: Parallel processing pipeline for statistical robustness
+- **Data Pipeline**:
+  - **Winsorized Datasets**: `comprehensive_df_PGDP_labeled_winsorized.csv` and specialized case study datasets
+  - **R Processing**: `winsorize_datasets.R` for systematic outlier treatment
+  - **Quality Assurance**: Comparison between full and winsorized results
+- **Features**:
+  - Complete outlier-adjusted report suite (`outlier_adjusted_reports/` directory)
+  - Statistical methodology documentation and validation
+  - Export capabilities for academic rigor and reproducibility
+- **Known Issues**: 
+  - ✅ **CS2 outlier-adjusted data loading**: Fixed path resolution issue (resolved)
 
 ## Data Pipeline Architecture
 
@@ -115,8 +145,10 @@ analyzing-capital-flows/
 
 ### **Python Analysis Layer**
 - **Data Loading**: Uses pre-cleaned CSV files from `updated_data/Clean/`
+- **Dual Data Access**: Both full and winsorized datasets available through consistent API
 - **Statistical Processing**: Advanced analysis, hypothesis testing, visualization
 - **No Raw Data Processing**: Python focuses purely on analysis, not cleaning
+- **Robust Analysis**: Automated comparison between full and outlier-adjusted results
 
 ### **External Data Integration (CS5)**
 - **Capital Controls**: Processed in dedicated R scripts
@@ -152,16 +184,34 @@ streamlit run main_app.py
 ```
 **Features**: 11-tab comprehensive interface with all case studies integrated
 
-### **Individual Case Studies**
+### **Individual Case Studies (Full Reports)**
 ```bash
 # Case Study 1: Iceland vs Eurozone
-streamlit run simple_report_app.py
+streamlit run full_reports/cs1_report_app.py
+
+# Case Study 2: Estonia, Latvia, Lithuania
+streamlit run full_reports/cs2_estonia_report_app.py
+streamlit run full_reports/cs2_latvia_report_app.py
+streamlit run full_reports/cs2_lithuania_report_app.py
+
+# Case Study 3: Small Open Economies
+streamlit run full_reports/cs3_report_app.py
 
 # Case Study 4: Statistical Analysis
-streamlit run cs4_report_app.py
+streamlit run full_reports/cs4_report_app.py
 
 # Case Study 5: Capital Controls & Regimes
-streamlit run cs5_report_app.py
+streamlit run full_reports/cs5_report_app.py
+```
+
+### **Outlier-Adjusted Reports**
+```bash
+# Run outlier-adjusted versions using winsorized data
+streamlit run outlier_adjusted_reports/cs1_report_outlier_adjusted.py
+streamlit run outlier_adjusted_reports/cs2_estonia_report_outlier_adjusted.py
+streamlit run outlier_adjusted_reports/cs3_report_outlier_adjusted.py
+streamlit run outlier_adjusted_reports/cs4_report_outlier_adjusted.py
+streamlit run outlier_adjusted_reports/cs5_report_outlier_adjusted.py
 ```
 
 ### **Data Processing (R)**
