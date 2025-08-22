@@ -380,7 +380,7 @@ def case_study_3_main(context="standalone"):
                 
                 # Color the boxes
                 bp['boxes'][0].set_facecolor(colors['Iceland'])
-                bp['boxes'][1].set_facecolor(colors['Small Open Economies'])
+                bp['boxes'][1].set_facecolor(colors['SOEs'])
                 for box in bp['boxes']:
                     box.set_alpha(0.7)
                 
