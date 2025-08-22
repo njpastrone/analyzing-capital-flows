@@ -362,7 +362,7 @@ This project is developed for academic research purposes. Please cite appropriat
 
 **Repository**: Capital Flows Research Analysis  
 **Maintainer**: Research Team  
-**Last Updated**: December 2024  
+**Last Updated**: August 2025  
 **Version**: 3.0 (comprehensive 5-case-study framework with robust outlier-adjusted analysis)
 
 ### Recent Updates (v3.0)
