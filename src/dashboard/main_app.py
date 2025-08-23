@@ -4277,12 +4277,14 @@ def show_country_indicator_analysis(country, include_crisis_years=True):
         st.error(f"Error loading indicator analysis: {str(e)}")
 
 def show_robust_analysis():
-    """Display robust analysis - outlier-adjusted case study reports"""
+    """Display robust analysis - outlier-adjusted results with static PDF downloads only"""
     
     st.header("🛡️ Robust Analysis - Outlier-Adjusted Results")
     st.markdown("""
     Access comprehensive outlier-adjusted analysis reports that provide robust statistical conclusions 
     by addressing the influence of extreme values through systematic winsorization.
+    
+    **All reports are available as pre-generated PDF downloads for immediate access.**
     """)
     
     # Winsorization methodology explanation
@@ -4305,84 +4307,24 @@ def show_robust_analysis():
     - Meet academic standards for methodological rigor
     """)
     
-    # Launch buttons section
-    st.subheader("🚀 Launch Outlier-Adjusted Reports")
-    st.markdown("""
-    Each report is a **complete functional replica** of its original counterpart with identical 
-    analysis depth, visualizations, and export capabilities - using winsorized data for robust conclusions.
-    
-    **Quick Access:** Click any button below to get the command for launching that specific outlier-adjusted report.
-    Each report runs on a separate port for parallel access.
-    """)
-    
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        st.markdown("#### **Case Study 1 & 2 Reports**")
-        
-        if st.button("🚀 Launch CS1 - Iceland vs Eurozone (Outlier-Adjusted)", key="dl_cs1", use_container_width=True):
-            st.success("✅ **CS1 Report Available**")
-            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
-            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs1_report_outlier_adjusted.py --server.port 8502", language="bash")
-            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8502")
-        
-        if st.button("🚀 Launch CS2 - Estonia Euro Adoption (Outlier-Adjusted)", key="dl_cs2_est", use_container_width=True):
-            st.success("✅ **CS2 Estonia Report Available**")
-            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
-            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs2_estonia_report_outlier_adjusted.py --server.port 8503", language="bash")
-            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8503")
-        
-        if st.button("🚀 Launch CS2 - Latvia Euro Adoption (Outlier-Adjusted)", key="dl_cs2_lat", use_container_width=True):
-            st.success("✅ **CS2 Latvia Report Available**")
-            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
-            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs2_latvia_report_outlier_adjusted.py --server.port 8504", language="bash")
-            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8504")
-        
-        if st.button("🚀 Launch CS2 - Lithuania Euro Adoption (Outlier-Adjusted)", key="dl_cs2_lit", use_container_width=True):
-            st.success("✅ **CS2 Lithuania Report Available**")
-            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
-            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs2_lithuania_report_outlier_adjusted.py --server.port 8505", language="bash")
-            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8505")
-    
-    with col2:
-        st.markdown("#### **Case Study 3, 4 & 5 Reports**")
-        
-        if st.button("🚀 Launch CS3 - Iceland vs Small Open Economies (Outlier-Adjusted)", key="dl_cs3", use_container_width=True):
-            st.success("✅ **CS3 Report Available**")
-            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
-            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs3_report_outlier_adjusted.py --server.port 8506", language="bash")
-            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8506")
-        
-        if st.button("🚀 Launch CS4 - Statistical Analysis (Outlier-Adjusted)", key="dl_cs4", use_container_width=True):
-            st.success("✅ **CS4 Report Available**")
-            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
-            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs4_report_outlier_adjusted.py --server.port 8507", language="bash")
-            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8507")
-        
-        if st.button("🚀 Launch CS5 - Capital Controls & Exchange Rates (Outlier-Adjusted)", key="dl_cs5", use_container_width=True):
-            st.success("✅ **CS5 Report Available**")
-            st.markdown("**Direct Access:** Open in new browser tab for immediate access")
-            st.code("streamlit run src/dashboard/outlier_adjusted_reports/cs5_report_outlier_adjusted.py --server.port 8508", language="bash")
-            st.info("💡 **Tip**: Copy command above and run in terminal, then open http://localhost:8508")
-    
-    # Static PDF Downloads Section
+    # PDF Downloads Section
     st.markdown("---")
-    st.subheader("📄 Static PDF Downloads")
+    st.subheader("📄 Outlier-Adjusted Analysis Reports")
     st.markdown("""
-    **Quick Reference:** Download pre-generated PDF reports for offline viewing and sharing. 
-    These static reports provide complete analysis summaries with key findings and visualizations.
+    **Complete Analysis PDFs:** Download comprehensive outlier-adjusted reports with full statistical analysis, 
+    visualizations, and findings. Each report provides identical structure to the original with winsorized data.
     """)
     
     # PDF Download Helper Function
     def create_pdf_download_button(report_name, file_name, button_key):
         """Create a PDF download button with error handling"""
-        pdf_path = Path(__file__).parent / "pdfs" / file_name
+        pdf_path = Path(__file__).parent / "pdfs" / "outlier_adjusted_reports" / file_name
         if pdf_path.exists():
             try:
                 with open(pdf_path, "rb") as pdf_file:
                     pdf_data = pdf_file.read()
                     st.download_button(
-                        label=f"📄 {report_name}",
+                        label=f"📄 Download {report_name}",
                         data=pdf_data,
                         file_name=file_name,
                         mime="application/pdf",
@@ -4394,36 +4336,24 @@ def show_robust_analysis():
                 st.error(f"Error loading {report_name}: {str(e)}")
                 return False
         else:
-            st.warning(f"📄 {report_name} not yet available")
-            st.info("💡 Use interactive version above or check back later")
+            st.warning(f"📄 {report_name} - File not found")
             return False
     
-    # PDF Download Buttons
-    pdf_col1, pdf_col2, pdf_col3 = st.columns(3)
+    # PDF Download Buttons - organized in grid layout
+    col1, col2 = st.columns(2)
     
-    with pdf_col1:
-        st.markdown("**Case Studies 1-2**")
-        create_pdf_download_button("CS1 - Iceland vs Eurozone", "CS1_Iceland_vs_Eurozone_Outlier_Adjusted.pdf", "pdf_cs1")
-        create_pdf_download_button("CS2 - Estonia Euro Adoption", "CS2_Estonia_Euro_Adoption_Outlier_Adjusted.pdf", "pdf_cs2_est")
-        create_pdf_download_button("CS2 - Latvia Euro Adoption", "CS2_Latvia_Euro_Adoption_Outlier_Adjusted.pdf", "pdf_cs2_lat")
+    with col1:
+        st.markdown("**📊 Cross-Sectional Studies**")
+        create_pdf_download_button("CS1 - Iceland vs Eurozone", "cs1_outlier_adjusted.pdf", "pdf_cs1")
+        create_pdf_download_button("CS3 - Small Open Economies", "cs3_outlier_adjusted.pdf", "pdf_cs3")
+        create_pdf_download_button("CS4 - Statistical Analysis", "cs4_outlier_adjusted.pdf", "pdf_cs4")
+        create_pdf_download_button("CS5 - Capital Controls & Exchange Rates", "cs5_outlier_adjusted.pdf", "pdf_cs5")
     
-    with pdf_col2:
-        st.markdown("**Case Studies 3-4**")
-        create_pdf_download_button("CS2 - Lithuania Euro Adoption", "CS2_Lithuania_Euro_Adoption_Outlier_Adjusted.pdf", "pdf_cs2_lit")
-        create_pdf_download_button("CS3 - Iceland vs Small Economies", "CS3_Iceland_vs_Small_Open_Economies_Outlier_Adjusted.pdf", "pdf_cs3")
-        create_pdf_download_button("CS4 - Statistical Analysis", "CS4_Statistical_Analysis_Outlier_Adjusted.pdf", "pdf_cs4")
-    
-    with pdf_col3:
-        st.markdown("**Case Study 5 & Methodology**")
-        create_pdf_download_button("CS5 - Capital Controls & Exchange Rates", "CS5_Capital_Controls_Exchange_Rates_Outlier_Adjusted.pdf", "pdf_cs5")
-        create_pdf_download_button("Winsorization Methodology Report", "Winsorization_Methodology_Report.pdf", "pdf_methodology")
-        
-        # Bulk download option
-        st.markdown("**Bulk Download**")
-        if st.button("📦 Prepare All Reports Archive", key="bulk_pdf", use_container_width=True):
-            st.info("🔄 Preparing complete archive... This may take a moment.")
-            # Note: This would trigger archive creation in a real implementation
-            st.success("Archive preparation initiated. Check downloads folder in ~30 seconds.")
+    with col2:
+        st.markdown("**🇪🇺 Euro Adoption Studies (CS2)**")
+        create_pdf_download_button("CS2 - Estonia Euro Adoption", "cs2_estonia_outlier_adjusted.pdf", "pdf_cs2_est")
+        create_pdf_download_button("CS2 - Latvia Euro Adoption", "cs2_latvia_outlier_adjusted.pdf", "pdf_cs2_lat")
+        create_pdf_download_button("CS2 - Lithuania Euro Adoption", "cs2_lithuania_outlier_adjusted.pdf", "pdf_cs2_lit")
     
     # Technical implementation details
     st.markdown("---")
@@ -4433,7 +4363,7 @@ def show_robust_analysis():
     
     with col1:
         st.markdown("""
-        **Data Sources Used:**
+        **Winsorized Data Sources:**
         - `comprehensive_df_PGDP_labeled_winsorized.csv`
         - `CS4_Statistical_Modeling_winsorized/` directory
         - `CS5_Capital_Controls_winsorized/` directory  
@@ -4442,30 +4372,30 @@ def show_robust_analysis():
     
     with col2:
         st.markdown("""
-        **Report Features:**
+        **Report Content Features:**
         - Identical structure to original reports
         - Complete statistical analysis (F-tests, charts, tables)
-        - Professional PDF export capabilities
-        - Data download functionality preserved
+        - Professional visualization and formatting
+        - Academic-quality findings and conclusions
         """)
     
     # Usage guidance
-    with st.expander("💡 Usage Guidance", expanded=False):
+    with st.expander("📋 Research Usage Guide", expanded=False):
         st.markdown("""
-        **For Research Applications:**
-        1. **Compare Results**: Run both original and outlier-adjusted versions
-        2. **Document Differences**: Note any changes in statistical significance
-        3. **Use Conservative Findings**: When results differ, prefer outlier-adjusted conclusions
-        4. **Report Methodology**: Include winsorization details in publications
+        **For Academic Research:**
+        1. **Robustness Check**: Compare results with original (full-data) reports
+        2. **Document Methodology**: Include winsorization details in publications
+        3. **Conservative Conclusions**: When results differ, prefer outlier-adjusted findings
+        4. **Statistical Rigor**: Use for peer-review quality analysis
         
         **Quality Assurance:**
-        - All reports maintain identical functionality to originals
-        - Statistical rigor preserved with appropriate outlier handling
-        - Professional presentation suitable for academic and policy contexts
-        - Reproducible methodology with documented parameters
+        - All PDFs generated using identical analysis frameworks as originals
+        - Professional formatting optimized for academic publication
+        - Statistical significance properly adjusted for outlier treatment
+        - Consistent methodology across all case studies
         """)
     
-    st.info("💡 **Note**: Each outlier-adjusted report runs independently and provides the same comprehensive analysis as its original counterpart, using winsorized data for robust statistical conclusions.")
+    st.info("💡 **Academic Standard**: These outlier-adjusted reports provide robust statistical conclusions suitable for peer-reviewed publication by systematically addressing extreme value influence.")
 
 
 if __name__ == "__main__":
