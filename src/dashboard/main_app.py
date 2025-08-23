@@ -42,9 +42,10 @@ def main():
     st.markdown("### Comprehensive Analysis of International Capital Flow Volatility")
     
     # Create tabs
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11, tab12 = st.tabs([
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9, tab10, tab11, tab12, tab13 = st.tabs([
         "📋 Project Overview",
-        "⚙️ Data Processing Pipeline", 
+        "⚙️ Data Processing Pipeline",
+        "📥 Download Case Study Reports",
         "🇮🇸 Case Study 1 – Iceland vs Eurozone",
         "🇪🇪 Case Study 2 – Estonia",
         "🇱🇻 Case Study 2 – Latvia", 
@@ -64,33 +65,36 @@ def main():
         show_data_processing_pipeline()
     
     with tab3:
-        show_case_study_1_restructured()
+        show_download_reports()
     
     with tab4:
-        show_case_study_2_estonia_restructured()
+        show_case_study_1_restructured()
     
     with tab5:
-        show_case_study_2_latvia_restructured()
+        show_case_study_2_estonia_restructured()
     
     with tab6:
-        show_case_study_2_lithuania_restructured()
+        show_case_study_2_latvia_restructured()
     
     with tab7:
-        show_case_study_3_restructured()
+        show_case_study_2_lithuania_restructured()
     
     with tab8:
-        show_case_study_4_restructured()
+        show_case_study_3_restructured()
     
     with tab9:
-        show_case_study_5_restructured()
+        show_case_study_4_restructured()
     
     with tab10:
-        show_robust_analysis()
+        show_case_study_5_restructured()
     
     with tab11:
-        show_comparative_analysis_placeholder()
+        show_robust_analysis()
     
     with tab12:
+        show_comparative_analysis_placeholder()
+    
+    with tab13:
         show_methodology_and_data()
 
 def show_project_overview():
@@ -2111,6 +2115,172 @@ def show_interactive_general_processor():
                 if key in st.session_state:
                     del st.session_state[key]
             st.rerun()
+
+def show_download_reports():
+    """Display comprehensive download hub for all case study reports"""
+    
+    st.header("📥 Download Case Study Reports")
+    st.markdown("### Central Repository for All Research Reports and Analysis")
+    
+    # Research methodology overview
+    st.subheader("📚 Research Methodology Overview")
+    
+    with st.expander("🔍 Understanding the Capital Flows Research Framework", expanded=True):
+        st.markdown("""
+        **Research Objective:** This comprehensive research project examines capital flow volatility patterns 
+        across different monetary regimes to provide evidence-based insights for monetary policy decisions, 
+        with Iceland as the primary focus country.
+        
+        **Core Research Questions:**
+        - How does capital flow volatility vary across different monetary regimes?
+        - What are the implications of Euro adoption for small open economies?
+        - How do capital controls and exchange rate regimes affect financial stability?
+        - What lessons emerge from the Baltic countries' Euro adoption experience?
+        
+        **5-Case Study Framework:**
+        
+        1. **CS1 - Iceland vs Eurozone (Cross-Sectional Analysis)**
+           - Compares Iceland's capital flow volatility with Eurozone countries
+           - Key finding: Iceland shows significantly higher volatility (10/13 indicators)
+           
+        2. **CS2 - Baltic Euro Adoption (Temporal Analysis)**
+           - Examines Estonia (2011), Latvia (2014), and Lithuania (2015)
+           - Before/after analysis of Euro adoption effects on volatility
+           
+        3. **CS3 - Small Open Economies (Comparative Analysis)**
+           - Iceland compared to 6 similar small open economies
+           - Size-adjusted volatility patterns beyond currency union effects
+           
+        4. **CS4 - Statistical Analysis Framework (Advanced Methods)**
+           - F-tests, AR(4) models, RMSE analysis
+           - Portfolio investment disaggregation and impulse response analysis
+           
+        5. **CS5 - Policy Regime Analysis (External Factors)**
+           - Capital controls correlation (1999-2017)
+           - Exchange rate regime classification (1999-2019)
+        
+        **Data Sources:**
+        - **Primary:** IMF Balance of Payments (quarterly, 1999-2025)
+        - **GDP:** IMF World Economic Outlook (annual normalization)
+        - **External:** Fernández et al. (2016) capital controls, Ilzetzki et al. (2019) exchange rates
+        
+        **Statistical Methodology:**
+        - **F-tests** for variance equality with multiple significance levels
+        - **Crisis period handling** (GFC 2008-2010, COVID 2020-2022)
+        - **Winsorization** (5th-95th percentile) for outlier robustness
+        - **Professional visualization** optimized for academic publication
+        """)
+    
+    # Helper function for PDF downloads
+    def create_download_button(report_name, file_path, key_suffix):
+        """Create a styled download button for PDF reports"""
+        pdf_path = Path(__file__).parent / "pdfs" / file_path
+        if pdf_path.exists():
+            try:
+                with open(pdf_path, "rb") as pdf_file:
+                    pdf_data = pdf_file.read()
+                    file_size = len(pdf_data) / (1024 * 1024)  # Convert to MB
+                    st.download_button(
+                        label=f"📄 {report_name} ({file_size:.1f} MB)",
+                        data=pdf_data,
+                        file_name=file_path.split('/')[-1],
+                        mime="application/pdf",
+                        key=f"dl_{key_suffix}",
+                        use_container_width=True
+                    )
+                return True
+            except Exception as e:
+                st.error(f"Error accessing {report_name}: {str(e)}")
+                return False
+        else:
+            st.warning(f"⚠️ {report_name} not available")
+            return False
+    
+    # Full Analysis Reports Section
+    st.markdown("---")
+    st.subheader("📊 Full Analysis Reports")
+    st.markdown("""
+    **Complete statistical analysis using all available data.** These reports include comprehensive 
+    visualizations, statistical tests, and findings using the full dataset without outlier adjustments.
+    """)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("**Cross-Sectional Studies**")
+        create_download_button("CS1: Iceland vs Eurozone", "full_reports/cs1_full.pdf", "cs1_full")
+        create_download_button("CS3: Small Open Economies", "full_reports/cs3_full.pdf", "cs3_full")
+    
+    with col2:
+        st.markdown("**Euro Adoption Analysis**")
+        create_download_button("CS2: Estonia Report", "full_reports/cs2_estonia_full.pdf", "cs2_est_full")
+        create_download_button("CS2: Latvia Report", "full_reports/cs2_latvia_full.pdf", "cs2_lat_full")
+        create_download_button("CS2: Lithuania Report", "full_reports/cs2_lithuania_full.pdf", "cs2_lit_full")
+    
+    with col3:
+        st.markdown("**Advanced Analysis**")
+        create_download_button("CS4: Statistical Framework", "full_reports/cs4_full.pdf", "cs4_full")
+        create_download_button("CS5: Policy Regimes", "full_reports/cs5_full.pdf", "cs5_full")
+    
+    # Outlier-Adjusted Analysis Reports Section
+    st.markdown("---")
+    st.subheader("🛡️ Outlier-Adjusted Analysis Reports")
+    st.markdown("""
+    **Robust statistical analysis using winsorized data (5th-95th percentile).** These reports provide 
+    conservative conclusions by systematically addressing the influence of extreme values.
+    """)
+    
+    col1, col2, col3 = st.columns(3)
+    
+    with col1:
+        st.markdown("**Cross-Sectional Studies**")
+        create_download_button("CS1: Iceland vs Eurozone (Robust)", "outlier_adjusted_reports/cs1_outlier_adjusted.pdf", "cs1_robust")
+        create_download_button("CS3: Small Open Economies (Robust)", "outlier_adjusted_reports/cs3_outlier_adjusted.pdf", "cs3_robust")
+    
+    with col2:
+        st.markdown("**Euro Adoption Analysis**")
+        create_download_button("CS2: Estonia (Robust)", "outlier_adjusted_reports/cs2_estonia_outlier_adjusted.pdf", "cs2_est_robust")
+        create_download_button("CS2: Latvia (Robust)", "outlier_adjusted_reports/cs2_latvia_outlier_adjusted.pdf", "cs2_lat_robust")
+        create_download_button("CS2: Lithuania (Robust)", "outlier_adjusted_reports/cs2_lithuania_outlier_adjusted.pdf", "cs2_lit_robust")
+    
+    with col3:
+        st.markdown("**Advanced Analysis**")
+        create_download_button("CS4: Statistical (Robust)", "outlier_adjusted_reports/cs4_outlier_adjusted.pdf", "cs4_robust")
+        create_download_button("CS5: Policy Regimes (Robust)", "outlier_adjusted_reports/cs5_outlier_adjusted.pdf", "cs5_robust")
+    
+    # Usage guidance
+    st.markdown("---")
+    with st.expander("📋 Report Usage Guide", expanded=False):
+        st.markdown("""
+        **For Academic Research:**
+        - **Full Reports:** Use when you need complete data representation including all observations
+        - **Outlier-Adjusted Reports:** Preferred for peer-reviewed publication and policy recommendations
+        - **Comparison:** Review both versions to assess sensitivity to extreme values
+        
+        **Report Contents:**
+        - Executive summary with key findings
+        - Comprehensive statistical analysis (F-tests, descriptive statistics)
+        - Professional visualizations (time series, boxplots, distributions)
+        - Technical appendices with methodological details
+        - Data tables suitable for further analysis
+        
+        **Citation:**
+        When using these reports in academic work, please cite:
+        ```
+        Capital Flows Research Analysis (2025). 
+        Comprehensive Analysis of International Capital Flow Volatility.
+        Version 3.0. [Specific Case Study Number and Type].
+        ```
+        """)
+    
+    # Summary statistics
+    st.markdown("---")
+    st.info("""
+    💡 **Quick Summary:** This download hub provides access to **14 comprehensive research reports** 
+    (7 full analysis + 7 outlier-adjusted) covering all aspects of capital flow volatility analysis 
+    across different monetary regimes, with Iceland as the primary focus. Each report is optimized 
+    for academic publication with professional formatting and rigorous statistical methodology.
+    """)
 
 def show_case_study_1():
     """Display Case Study 1 - Iceland vs Eurozone (preserved exactly)"""
