@@ -1,14 +1,42 @@
+# R Project files
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
 
-# Python cache files
+# Python
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
+env/
+venv/
+ENV/
+
+# Jupyter Notebooks
+.ipynb_checkpoints
+*.ipynb_checkpoints/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
 
 # macOS
 .DS_Store
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+
+# Streamlit
+.streamlit/secrets.toml
+*.log
+
+# Output files (keep PDFs in repo for documentation)
+# output/
+# *.pdf

@@ -83,8 +83,6 @@ def main():
         - **Crisis Exclusion:** Global Financial Crisis (2008-2010), Latvian Banking Crisis (2011-2012), and COVID-19 (2020-2022)
         """)
     
-    # Add PDF export tip (matching cs1_report_app.py)
-    st.info("💡 **Tip:** You can print this page to PDF using your browser's print function for a professional document with proper margins.")
     
     # Add PDF-specific CSS styling (matching cs1_report_app.py margins)
     st.markdown("""
