@@ -28,12 +28,35 @@ from cs5_report_app import main as case_study_5_main
 
 @st.cache_data(ttl=3600)  # Cache for 1 hour
 def load_case_study_data(data_path):
-    """Cache data loading to prevent redundant file I/O"""
-    try:
-        return pd.read_csv(data_path)
-    except Exception as e:
-        st.error(f"Error loading data from {data_path}: {e}")
-        return pd.DataFrame()
+    """Cache data loading with informative spinner"""
+    from pathlib import Path
+    filename = Path(data_path).name
+    
+    # Determine appropriate spinner message based on file
+    if 'comprehensive_df_PGDP_labeled' in filename:
+        if 'winsorized' in filename:
+            spinner_msg = "📂 Loading outlier-adjusted comprehensive dataset..."
+        else:
+            spinner_msg = "📂 Loading comprehensive capital flows dataset (1999-2024)..."
+    elif 'case_three_four' in filename:
+        spinner_msg = "📂 Loading small open economies comparison data..."
+    elif 'CS4' in str(data_path):
+        spinner_msg = "📂 Loading statistical analysis datasets..."
+    elif 'CS5' in str(data_path):
+        spinner_msg = "📂 Loading policy regime datasets..."
+    else:
+        spinner_msg = f"📂 Loading {filename}..."
+    
+    with st.spinner(spinner_msg):
+        try:
+            data = pd.read_csv(data_path)
+            # Show brief success feedback if data is large
+            if len(data) > 1000:
+                st.success(f"✅ Loaded {len(data):,} records", icon="✅")
+            return data
+        except Exception as e:
+            st.error(f"Error loading data from {data_path}: {e}")
+            return pd.DataFrame()
 
 def clear_memory_optimization():
     """Clear matplotlib figures and optimize memory usage"""
@@ -44,7 +67,7 @@ def clear_memory_optimization():
         pass
 
 def load_tab_with_progress(tab_id, tab_name, tab_function, expected_time="60-90 seconds"):
-    """Load tab content with progress indicator - standard case studies"""
+    """Load tab content with enhanced spinner messaging"""
     if tab_id not in st.session_state.loaded_tabs:
         st.info(f"📊 **{tab_name}** - Comprehensive Data Analysis")
         st.markdown(f"""
@@ -53,7 +76,23 @@ def load_tab_with_progress(tab_id, tab_name, tab_function, expected_time="60-90 
         """)
         
         if st.button(f"🚀 Load {tab_name}", key=f"load_btn_{tab_id}", type="primary"):
-            with st.spinner(f"Loading {tab_name}... Please wait, this may take up to {expected_time.split('-')[1]}"):
+            # Determine specific spinner message based on tab content
+            spinner_messages = {
+                'cs1': "📊 Loading Iceland vs Eurozone analysis: Processing 25+ years of capital flow data...",
+                'cs2_estonia': "📊 Loading Estonia Euro adoption analysis: Analyzing pre/post 2011 volatility...",
+                'cs2_latvia': "📊 Loading Latvia Euro adoption analysis: Analyzing pre/post 2014 volatility...",
+                'cs2_lithuania': "📊 Loading Lithuania Euro adoption analysis: Analyzing pre/post 2015 volatility...",
+                'cs3': "📊 Loading Small Open Economies comparison: Processing 7 countries' data...",
+                'cs4': "📊 Loading Statistical Analysis: Preparing F-tests, AR(4) models, and RMSE calculations...",
+                'cs5': "📊 Loading Capital Controls & Exchange Rates: Processing policy regime data...",
+                'robust': "📊 Loading Robust Analysis: Processing winsorized datasets...",
+                'comparative': "📊 Loading Comparative Analysis: Synthesizing cross-study results..."
+            }
+            
+            # Get specific message or use generic
+            message = spinner_messages.get(tab_id, f"📊 Loading {tab_name}: Processing comprehensive datasets...")
+            
+            with st.spinner(message):
                 try:
                     st.session_state.loaded_tabs.add(tab_id)  # Mark as loaded BEFORE function call
                     tab_function()
@@ -86,7 +125,14 @@ def load_heavy_tab_with_progress(tab_id, tab_name, tab_function, expected_time="
             progress_bar = st.progress(0)
             status_text = st.empty()
             
-            with st.spinner(f"Loading {tab_name}..."):
+            # Enhanced spinner message for heavy computational tabs
+            heavy_spinner_messages = {
+                'cs4': "⚡ Running Statistical Analysis: F-tests, AR(4) models, RMSE calculations...",
+                'cs5': "⚡ Processing Policy Regimes: Capital controls and exchange rate classifications..."
+            }
+            spinner_msg = heavy_spinner_messages.get(tab_id, f"⚡ Processing {tab_name}: Running advanced statistical computations...")
+            
+            with st.spinner(spinner_msg):
                 try:
                     # Show progress updates
                     status_text.text("📊 Loading specialized datasets...")
@@ -126,179 +172,10 @@ def load_heavy_tab_with_progress(tab_id, tab_name, tab_function, expected_time="
 
 # Lazy loading functions removed - app now uses full loading on startup
 
-def show_comprehensive_loading_screen():
-    """Show comprehensive loading screen with real data loading operations"""
-    st.title("🌍 Capital Flows Research Dashboard")
-    st.markdown("### Loading Comprehensive Analysis Platform...")
-    
-    # Create loading container
-    loading_container = st.container()
-    
-    with loading_container:
-        # Overall progress bar
-        progress_bar = st.progress(0)
-        status_text = st.empty()
-        time_estimate = st.empty()
-        detail_text = st.empty()
-        
-        try:
-            import time as time_module
-            from pathlib import Path
-            
-            # Real data loading operations with actual file operations
-            loading_operations = [
-                (10, "Loading core data infrastructure...", "initialize_data_paths"),
-                (20, "Loading Case Study 1: Iceland vs Eurozone datasets", "load_cs1_data"),  
-                (30, "Loading Case Study 2: Baltic Euro adoption datasets", "load_cs2_data"),
-                (40, "Loading Case Study 3: Small Open Economies datasets", "load_cs3_data"),
-                (50, "Loading Case Study 4: Statistical analysis datasets", "load_cs4_data"),
-                (60, "Loading Case Study 5: Capital controls datasets", "load_cs5_data"),
-                (70, "Loading Robust Analysis (outlier-adjusted) datasets", "load_robust_data"),
-                (80, "Initializing statistical computation frameworks", "initialize_statistical_frameworks"),
-                (90, "Preparing visualization and export systems", "initialize_visualization_systems"),
-                (100, "Finalizing platform initialization", "finalize_initialization")
-            ]
-            
-            # Execute real loading operations
-            for progress, main_status, operation_name in loading_operations:
-                status_text.text(f"🔄 {main_status}")
-                progress_bar.progress(progress / 100)
-                
-                # Execute actual operation based on the stage
-                try:
-                    if operation_name == "initialize_data_paths":
-                        detail_text.text("📂 Setting up data directory paths...")
-                        time_estimate.text("⏱️ 2-3 minutes remaining")
-                        # Check data paths exist
-                        data_path = Path(__file__).parent.parent.parent / 'updated_data' / 'Clean'
-                        if data_path.exists():
-                            detail_text.text("✅ Data paths verified")
-                        time_module.sleep(0.5)
-                        
-                    elif operation_name == "load_cs1_data":
-                        detail_text.text("📊 Loading comprehensive BOP datasets for CS1...")
-                        time_estimate.text("⏱️ 2-3 minutes remaining")
-                        # Pre-cache CS1 data
-                        try:
-                            cs1_data = load_case_study_data(str(data_path / 'comprehensive_df_PGDP_labeled.csv'))
-                            if len(cs1_data) > 0:
-                                detail_text.text("✅ CS1 datasets loaded successfully")
-                                st.session_state['cs1_data'] = cs1_data
-                        except Exception as e:
-                            detail_text.text("⚠️ CS1 data: Using fallback loading")
-                        time_module.sleep(1.0)
-                        
-                    elif operation_name == "load_cs2_data":
-                        detail_text.text("📊 Processing Baltic Euro transition datasets...")
-                        time_estimate.text("⏱️ 2 minutes remaining")
-                        # Pre-cache CS2 data
-                        try:
-                            cs2_data = load_case_study_data(str(data_path / 'comprehensive_df_PGDP_labeled.csv'))
-                            if len(cs2_data) > 0:
-                                detail_text.text("✅ Baltic datasets processed")
-                                st.session_state['cs2_data'] = cs2_data
-                        except:
-                            detail_text.text("⚠️ CS2 data: Using fallback loading")
-                        time_module.sleep(1.0)
-                        
-                    elif operation_name == "load_cs3_data":
-                        detail_text.text("📊 Loading multi-country comparison datasets...")
-                        time_estimate.text("⏱️ 90 seconds remaining")
-                        try:
-                            cs3_data = load_case_study_data(str(data_path / 'case_three_four_data_USD.csv'))
-                            if len(cs3_data) > 0:
-                                detail_text.text("✅ Multi-country datasets ready")
-                                st.session_state['cs3_data'] = cs3_data
-                        except:
-                            detail_text.text("⚠️ CS3 data: Using fallback loading")
-                        time_module.sleep(1.0)
-                        
-                    elif operation_name == "load_cs4_data":
-                        detail_text.text("📊 Initializing advanced statistical models...")
-                        time_estimate.text("⏱️ 60 seconds remaining")
-                        try:
-                            # Initialize statistical frameworks
-                            import scipy, statsmodels
-                            detail_text.text("✅ Statistical frameworks loaded")
-                        except:
-                            detail_text.text("⚠️ Statistical frameworks: Basic setup")
-                        time_module.sleep(0.8)
-                        
-                    elif operation_name == "load_cs5_data":
-                        detail_text.text("📊 Processing external policy datasets...")
-                        time_estimate.text("⏱️ 45 seconds remaining")
-                        try:
-                            # Check for CS5 specific data files
-                            cs5_files = list((data_path / 'CS5_Capital_Controls').glob('*.csv'))
-                            if cs5_files:
-                                detail_text.text("✅ Policy datasets processed")
-                        except:
-                            detail_text.text("⚠️ CS5 data: Standard datasets used")
-                        time_module.sleep(0.8)
-                        
-                    elif operation_name == "load_robust_data":
-                        detail_text.text("📊 Loading winsorized datasets for robust analysis...")
-                        time_estimate.text("⏱️ 30 seconds remaining")
-                        try:
-                            robust_data = load_case_study_data(str(data_path / 'comprehensive_df_PGDP_labeled_winsorized.csv'))
-                            if len(robust_data) > 0:
-                                detail_text.text("✅ Robust analysis datasets ready")
-                                st.session_state['robust_data'] = robust_data
-                        except:
-                            detail_text.text("⚠️ Robust data: Standard datasets used")
-                        time_module.sleep(0.8)
-                        
-                    elif operation_name == "initialize_statistical_frameworks":
-                        detail_text.text("🔧 Setting up statistical computation systems...")
-                        time_estimate.text("⏱️ 15 seconds remaining")
-                        # Initialize matplotlib for better performance
-                        import matplotlib.pyplot as plt
-                        plt.ioff()  # Turn off interactive mode for better performance
-                        detail_text.text("✅ Computation frameworks ready")
-                        time_module.sleep(0.6)
-                        
-                    elif operation_name == "initialize_visualization_systems":
-                        detail_text.text("📈 Preparing visualization and export systems...")
-                        time_estimate.text("⏱️ 10 seconds remaining")
-                        # Initialize plotly for interactive charts
-                        try:
-                            import plotly
-                            detail_text.text("✅ Visualization systems ready")
-                        except:
-                            detail_text.text("⚠️ Visualization: Basic systems ready")
-                        time_module.sleep(0.6)
-                        
-                    elif operation_name == "finalize_initialization":
-                        detail_text.text("🎯 Completing platform initialization...")
-                        time_estimate.text("⏱️ Almost ready!")
-                        # Final setup
-                        st.session_state['platform_initialized'] = True
-                        detail_text.text("✅ Platform fully initialized")
-                        time_module.sleep(0.5)
-                        
-                except Exception as e:
-                    detail_text.text(f"⚠️ {main_status}: Completed with fallback methods")
-                    time_module.sleep(0.3)
-            
-            # Complete loading
-            progress_bar.progress(100)
-            status_text.text("✅ Loading Complete!")
-            detail_text.text("🎉 All systems loaded and ready for analysis")
-            time_estimate.text("✅ Platform Ready!")
-            
-            time_module.sleep(1.0)  # Brief celebration pause
-            
-            # Mark as fully loaded and enable debug mode
-            st.session_state.app_fully_loaded = True
-            clear_memory_optimization()  # Clean up after loading
-            st.rerun()
-            
-        except Exception as e:
-            st.error(f"❌ Loading failed: {str(e)}")
-            st.markdown("Please refresh the page to retry loading.")
+# Removed broken loading screen and custom loading functions to fix startup issues
 
 def main():
-    """Main multi-tab application for capital flows research with comprehensive startup loading"""
+    """Main multi-tab application for capital flows research"""
     
     # Page configuration
     st.set_page_config(
@@ -308,14 +185,9 @@ def main():
         initial_sidebar_state="expanded"
     )
     
-    # Initialize loading state
-    if 'app_fully_loaded' not in st.session_state:
-        st.session_state.app_fully_loaded = False
-    
-    # Show loading screen if not yet loaded
-    if not st.session_state.app_fully_loaded:
-        show_comprehensive_loading_screen()
-        return
+    # Initialize session state for tab loading (keep existing per-tab loading)
+    if 'loaded_tabs' not in st.session_state:
+        st.session_state.loaded_tabs = set()
     
     try:
         # Main header
@@ -1036,7 +908,7 @@ def show_case_study_1_pipeline():
         )
         
         if st.button("🚀 Reproduce Case Study 1", type="primary", key="reproduce_case1"):
-            with st.spinner("Reproducing Case Study 1 with your data..."):
+            with st.spinner("📊 Reproducing Case Study 1: Processing Iceland vs Eurozone comparison..."):
                 
                 # Process step by step to show debug preview in UI
                 try:
@@ -1327,7 +1199,7 @@ def show_case_study_2_pipeline():
         )
         
         if st.button("🚀 Reproduce Case Study 2", type="primary", key="reproduce_case2"):
-            with st.spinner("Reproducing Case Study 2 with your data..."):
+            with st.spinner("📊 Reproducing Case Study 2: Processing Baltic Euro adoption analysis..."):
                 
                 # Process step by step to show debug preview in UI
                 try:
@@ -2292,7 +2164,7 @@ def show_interactive_general_processor():
         st.subheader("🔄 Data Processing")
         
         if st.button("🚀 Process Data", type="primary"):
-            with st.spinner("Processing your data..."):
+            with st.spinner("⚙️ Processing uploaded datasets: Validating and normalizing data..."):
                 
                 bop_processed = None
                 gdp_processed = None
@@ -2664,7 +2536,8 @@ def show_case_study_3_restructured():
     """)
     
     # Call the Case Study 3 main function which contains complete sequential structure (Full → Crisis-Excluded)
-    case_study_3_main(context="main_app")
+    with st.spinner("📊 Loading Small Open Economies comparative analysis: Processing Iceland vs 6 comparable economies with comprehensive volatility metrics..."):
+        case_study_3_main(context="main_app")
     
     # Download Reports Section
     st.markdown("---")
@@ -2673,12 +2546,12 @@ def show_case_study_3_restructured():
     col1, col2 = st.columns(2)
     
     with col1:
-        # Placeholder for CS3 HTML report generation
-        st.info("🚧 **CS3 HTML Report Generation**\n\nComprehensive HTML report functionality will be implemented to match CS1 features.")
+        # CS3 reports available via Download Reports tab
+        st.info("📄 **CS3 Reports Available**\n\nProfessional PDF reports for CS3 analysis are available in the Download Case Study Reports tab.")
     
     with col2:
-        # Placeholder for CS3 ZIP bundle generation  
-        st.info("🚧 **CS3 Data Bundle**\n\nDownloadable ZIP bundle with all CS3 analysis outputs will be implemented.")
+        # Data exports available through individual visualizations
+        st.info("📊 **Data Exports**\n\nIndividual charts and data can be exported directly from the analysis sections above.")
 
 def case_study_3_main(context="main_app"):
     """Display Case Study 3 - Iceland vs Small Open Economies with complete sequential structure"""
@@ -2943,40 +2816,15 @@ def show_case_study_1_restructured():
     patterns between Iceland and the Eurozone bloc from 1999-2025.
     """)
     
-    # Call the Case Study 1 main function which contains complete sequential structure (Full → Crisis-Excluded)
-    case_study_1_main(context="main_app")
+    # Priority spinner for CS1 - longest loading case study
+    with st.spinner("📊 Loading Iceland vs Eurozone analysis: Processing 25+ years of capital flow data and statistical comparisons..."):
+        case_study_1_main(context="main_app")
     
-    # Download Reports Section
+    # Professional Reports Available
     st.markdown("---")
-    st.header("📥 Downloadable Reports")
+    st.header("📥 Professional Reports")
     
-    col1, col2 = st.columns(2)
-    
-    with col1:
-        if st.button("📄 Download Full Analysis Report", key="cs1_full_report"):
-            with st.spinner("Generating full analysis HTML report..."):
-                html_content = generate_case_study_1_full_report()
-                st.download_button(
-                    label="📥 Download Full Analysis Report",
-                    data=html_content,
-                    file_name=f"case_study_1_iceland_vs_eurozone_full_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs1_full_download"
-                )
-                st.success("✅ Full analysis report generated successfully!")
-    
-    with col2:
-        if st.button("📄 Download Crisis-Excluded Report", key="cs1_crisis_report"):
-            with st.spinner("Generating crisis-excluded HTML report..."):
-                html_content = generate_case_study_1_crisis_report()
-                st.download_button(
-                    label="📥 Download Crisis-Excluded Report", 
-                    data=html_content,
-                    file_name=f"case_study_1_iceland_vs_eurozone_crisis_excluded_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs1_crisis_download"
-                )
-                st.success("✅ Crisis-excluded report generated successfully!")
+    st.info("📄 **PDF Reports Available**: Professional CS1 reports are available in the **Download Case Study Reports** tab with optimized formatting and comprehensive analysis.")
 
 def show_case_study_2_estonia():
     """Display Case Study 2 - Estonia Euro Adoption Analysis"""
@@ -3003,50 +2851,11 @@ def show_case_study_2_estonia():
     
     case_study_2_main_filtered("Estonia", include_crisis_years=False)
     
-    # Download Reports Section
+    # Professional Reports Available
     st.markdown("---")
-    st.header("📥 Downloadable Reports")
+    st.header("📥 Professional Reports")
     
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("📄 Download Estonia Full Report", key="cs2_est_full_report"):
-            with st.spinner("Generating Estonia full analysis HTML report..."):
-                html_content = generate_case_study_2_country_report("Estonia", 2011, (2005, 2010), (2012, 2017), full_period=True)
-                st.download_button(
-                    label="📥 Download Estonia Full Report",
-                    data=html_content,
-                    file_name=f"case_study_2_estonia_full_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_est_full_download"
-                )
-                st.success("✅ Estonia full analysis report generated successfully!")
-    
-    with col2:
-        if st.button("📄 Download Estonia Crisis-Excluded Report", key="cs2_est_crisis_report"):
-            with st.spinner("Generating Estonia crisis-excluded HTML report..."):
-                html_content = generate_case_study_2_country_report("Estonia", 2011, (2005, 2010), (2012, 2017), full_period=False)
-                st.download_button(
-                    label="📥 Download Estonia Crisis-Excluded Report",
-                    data=html_content,
-                    file_name=f"case_study_2_estonia_crisis_excluded_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_est_crisis_download"
-                )
-                st.success("✅ Estonia crisis-excluded report generated successfully!")
-    
-    with col3:
-        if st.button("📄 Download Estonia Combined Report", key="cs2_est_combined_report"):
-            with st.spinner("Generating Estonia combined HTML report..."):
-                html_content = generate_case_study_2_combined_country_report("Estonia", 2011, (2005, 2010), (2012, 2017))
-                st.download_button(
-                    label="📥 Download Estonia Combined Report",
-                    data=html_content,
-                    file_name=f"case_study_2_estonia_full_and_crisis_excluded_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_est_combined_download"
-                )
-                st.success("✅ Estonia combined analysis report generated successfully!")
+    st.info("📄 **PDF Reports Available**: Professional CS2 Estonia reports are available in the **Download Case Study Reports** tab with optimized formatting and comprehensive analysis.")
 
 def show_case_study_2_latvia():
     """Display Case Study 2 - Latvia Euro Adoption Analysis"""
@@ -3073,50 +2882,11 @@ def show_case_study_2_latvia():
     
     case_study_2_main_filtered("Latvia", include_crisis_years=False)
     
-    # Download Reports Section
+    # Professional Reports Available
     st.markdown("---")
-    st.header("📥 Downloadable Reports")
+    st.header("📥 Professional Reports")
     
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("📄 Download Latvia Full Report", key="cs2_lat_full_report"):
-            with st.spinner("Generating Latvia full analysis HTML report..."):
-                html_content = generate_case_study_2_country_report("Latvia", 2014, (2007, 2012), (2015, 2020), full_period=True)
-                st.download_button(
-                    label="📥 Download Latvia Full Report",
-                    data=html_content,
-                    file_name=f"case_study_2_latvia_full_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_lat_full_download"
-                )
-                st.success("✅ Latvia full analysis report generated successfully!")
-    
-    with col2:
-        if st.button("📄 Download Latvia Crisis-Excluded Report", key="cs2_lat_crisis_report"):
-            with st.spinner("Generating Latvia crisis-excluded HTML report..."):
-                html_content = generate_case_study_2_country_report("Latvia", 2014, (2007, 2012), (2015, 2020), full_period=False)
-                st.download_button(
-                    label="📥 Download Latvia Crisis-Excluded Report",
-                    data=html_content,
-                    file_name=f"case_study_2_latvia_crisis_excluded_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_lat_crisis_download"
-                )
-                st.success("✅ Latvia crisis-excluded report generated successfully!")
-    
-    with col3:
-        if st.button("📄 Download Latvia Combined Report", key="cs2_lat_combined_report"):
-            with st.spinner("Generating Latvia combined HTML report..."):
-                html_content = generate_case_study_2_combined_country_report("Latvia", 2014, (2007, 2012), (2015, 2020))
-                st.download_button(
-                    label="📥 Download Latvia Combined Report",
-                    data=html_content,
-                    file_name=f"case_study_2_latvia_full_and_crisis_excluded_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_lat_combined_download"
-                )
-                st.success("✅ Latvia combined analysis report generated successfully!")
+    st.info("📄 **PDF Reports Available**: Professional CS2 Latvia reports are available in the **Download Case Study Reports** tab with optimized formatting and comprehensive analysis.")
 
 def show_case_study_2_lithuania():
     """Display Case Study 2 - Lithuania Euro Adoption Analysis"""
@@ -3143,50 +2913,11 @@ def show_case_study_2_lithuania():
     
     case_study_2_main_filtered("Lithuania", include_crisis_years=False)
     
-    # Download Reports Section
+    # Professional Reports Available
     st.markdown("---")
-    st.header("📥 Downloadable Reports")
+    st.header("📥 Professional Reports")
     
-    col1, col2, col3 = st.columns(3)
-    
-    with col1:
-        if st.button("📄 Download Lithuania Full Report", key="cs2_lit_full_report"):
-            with st.spinner("Generating Lithuania full analysis HTML report..."):
-                html_content = generate_case_study_2_country_report("Lithuania", 2015, (2008, 2013), (2016, 2021), full_period=True)
-                st.download_button(
-                    label="📥 Download Lithuania Full Report",
-                    data=html_content,
-                    file_name=f"case_study_2_lithuania_full_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_lit_full_download"
-                )
-                st.success("✅ Lithuania full analysis report generated successfully!")
-    
-    with col2:
-        if st.button("📄 Download Lithuania Crisis-Excluded Report", key="cs2_lit_crisis_report"):
-            with st.spinner("Generating Lithuania crisis-excluded HTML report..."):
-                html_content = generate_case_study_2_country_report("Lithuania", 2015, (2008, 2013), (2016, 2021), full_period=False)
-                st.download_button(
-                    label="📥 Download Lithuania Crisis-Excluded Report",
-                    data=html_content,
-                    file_name=f"case_study_2_lithuania_crisis_excluded_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_lit_crisis_download"
-                )
-                st.success("✅ Lithuania crisis-excluded report generated successfully!")
-    
-    with col3:
-        if st.button("📄 Download Lithuania Combined Report", key="cs2_lit_combined_report"):
-            with st.spinner("Generating Lithuania combined HTML report..."):
-                html_content = generate_case_study_2_combined_country_report("Lithuania", 2015, (2008, 2013), (2016, 2021))
-                st.download_button(
-                    label="📥 Download Lithuania Combined Report",
-                    data=html_content,
-                    file_name=f"case_study_2_lithuania_full_and_crisis_excluded_{datetime.now().strftime('%Y%m%d')}.html",
-                    mime="text/html",
-                    key="cs2_lit_combined_download"
-                )
-                st.success("✅ Lithuania combined analysis report generated successfully!")
+    st.info("📄 **PDF Reports Available**: Professional CS2 Lithuania reports are available in the **Download Case Study Reports** tab with optimized formatting and comprehensive analysis.")
 
 def case_study_2_main_filtered(country, include_crisis_years=True):
     """Display Case Study 2 analysis filtered for a specific country"""
@@ -3204,1132 +2935,9 @@ def case_study_2_main_filtered(country, include_crisis_years=True):
 
 
 
-def generate_case_study_1_full_report():
-    """Generate HTML report for Case Study 1 that exactly matches the app interface structure"""
-    # Import required modules
-    from cs1_report_app import (
-        load_default_data, calculate_group_statistics, perform_volatility_tests, 
-        create_boxplot_data, load_overall_capital_flows_data
-    )
-    
-    current_date = datetime.now().strftime('%Y-%m-%d')
-    
-    try:
-        # Load data for both Overall and Disaggregated analysis
-        final_data, analysis_indicators, metadata = load_default_data()
-        overall_data, indicators_mapping = load_overall_capital_flows_data()
-        
-        if final_data is None:
-            return generate_case_study_1_fallback_report("Full Analysis")
-            
-        # Calculate statistics for disaggregated analysis
-        group_stats = calculate_group_statistics(final_data, 'GROUP', analysis_indicators)
-        test_results = perform_volatility_tests(final_data, analysis_indicators)
-        boxplot_data = create_boxplot_data(final_data, analysis_indicators)
-        
-    except Exception as e:
-        return generate_case_study_1_fallback_report("Full Analysis", str(e))
-    
-    # Generate Overall Capital Flows Analysis content
-    overall_content = generate_overall_capital_flows_html(overall_data, indicators_mapping)
-    
-    # Generate Disaggregated Analysis content
-    disaggregated_content = generate_disaggregated_analysis_html(
-        final_data, analysis_indicators, group_stats, test_results, boxplot_data
-    )
-    
-    # Count significant results for summary
-    sig_5pct_count = test_results['Significant_5pct'].sum()
-    total_indicators = len(test_results)
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Case Study 1: Iceland vs Eurozone - Full Analysis</title>
-        <meta charset="utf-8">
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-            h1 {{ color: #1f77b4; text-align: center; border-bottom: 3px solid #1f77b4; padding-bottom: 10px; }}
-            h2 {{ color: #ff7f0e; border-bottom: 2px solid #ff7f0e; padding-bottom: 5px; }}
-            h3 {{ color: #2ca02c; }}
-            h4 {{ color: #666; }}
-            .info-box {{ background-color: #e1f5fe; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #0288d1; }}
-            .success-box {{ background-color: #e8f5e8; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #4caf50; }}
-            .warning-box {{ background-color: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #ffc107; }}
-            .metric {{ display: inline-block; margin: 10px 20px; padding: 10px; background-color: #f5f5f5; border-radius: 5px; }}
-            table {{ border-collapse: collapse; width: 100%; margin: 15px 0; font-size: 11px; }}
-            th, td {{ border: 1px solid #ddd; padding: 6px; text-align: center; }}
-            th {{ background-color: #f0f0f0; font-weight: bold; }}
-            tr:nth-child(even) {{ background-color: #f9f9f9; }}
-            .columns {{ display: flex; gap: 30px; margin: 20px 0; }}
-            .column {{ flex: 1; }}
-            .footer {{ margin-top: 40px; text-align: center; color: #666; font-size: 12px; }}
-            .section-divider {{ border-top: 2px solid #ddd; margin: 30px 0; padding-top: 20px; }}
-        </style>
-    </head>
-    <body>
-        <h1>📊 Capital Flow Volatility Analysis</h1>
-        <h2 style="text-align: center; color: #666;">Case Study 1: Iceland vs. Eurozone Comparison</h2>
-        
-        <div class="info-box">
-            <strong>Research Question:</strong> Should Iceland adopt the Euro as its currency?<br>
-            <strong>Hypothesis:</strong> Iceland's capital flows show more volatility than the Eurozone bloc average<br>
-            <strong>Time Period:</strong> 1999-2025 (Complete Dataset)
-        </div>
-        
-        <div style="margin: 20px 0;">
-            <div class="metric"><strong>Observations:</strong> {final_data.shape[0]:,}</div>
-            <div class="metric"><strong>Countries:</strong> {final_data['COUNTRY'].nunique()}</div>
-            <div class="metric"><strong>Time Period:</strong> {final_data['YEAR'].min()}-{final_data['YEAR'].max()}</div>
-        </div>
-        
-        <hr>
-        
-        <h2>📈 Full Time Period Analysis</h2>
-        <p><strong>Time Period:</strong> 1999-2025 (Complete Dataset)</p>
-        
-        <h4>Overall Capital Flows Analysis</h4>
-        <p><em>High-level summary of aggregate net capital flows before detailed disaggregated analysis</em></p>
-        
-        {overall_content}
-        
-        <div class="section-divider">
-            <h4>Indicator-Level Analysis</h4>
-            <p><em>Detailed analysis by individual capital flow indicators</em></p>
-            
-            {disaggregated_content}
-        </div>
-        
-        <hr>
-        
-        <h2>📉 Excluding Financial Crises Analysis</h2>
-        <p><strong>Time Period:</strong> 1999-2025 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)</p>
-        
-        <h4>Overall Capital Flows Analysis</h4>
-        <div class="warning-box">
-            <strong>🚧 Implementation Status:</strong> Crisis-excluded analysis implementation in progress. This will filter out Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods for more stable volatility comparison.
-        </div>
-        
-        <h4>Indicator-Level Analysis</h4>
-        <div class="warning-box">
-            <strong>🚧 Implementation Status:</strong> Crisis-excluded indicator analysis implementation in progress.
-        </div>
-        
-        <hr>
-        
-        <h2>🔍 Key Policy Conclusions</h2>
-        
-        <div class="success-box">
-            <h3>🏛️ Main Recommendation:</h3>
-            <p><strong>Euro adoption could significantly reduce capital flow volatility for Iceland.</strong> 
-            The evidence shows {sig_5pct_count} out of {total_indicators} indicators with significantly higher Iceland volatility at the 5% level.</p>
-        </div>
-        
-        <div class="warning-box">
-            <strong>Important Caveat:</strong> This analysis focuses on capital flow volatility patterns. A comprehensive Euro adoption decision 
-            should also consider monetary policy autonomy, fiscal implications, and broader economic factors.
-        </div>
-        
-        <div class="footer">
-            Generated on {current_date} | Capital Flows Research Dashboard<br>
-            🤖 Generated with Claude Code (https://claude.ai/code)<br>
-            <em>Report mirrors the complete app interface structure and content</em>
-        </div>
-    </body>
-    </html>
-    """
-    
-    return html_content
-
-def generate_overall_capital_flows_html(overall_data, indicators_mapping):
-    """Generate HTML content for Overall Capital Flows Analysis section"""
-    if overall_data is None or indicators_mapping is None:
-        return "<div class='warning-box'><strong>⚠️ Data Loading Error:</strong> Unable to load overall capital flows data.</div>"
-    
-    # Calculate summary statistics for overall indicators
-    summary_stats = []
-    for clean_name, col_name in indicators_mapping.items():
-        if col_name in overall_data.columns:
-            for group in ['Iceland', 'Eurozone']:
-                group_data = overall_data[overall_data['GROUP'] == group][col_name].dropna()
-                if len(group_data) > 0:
-                    summary_stats.append({
-                        'Indicator': clean_name,
-                        'Group': group,
-                        'Mean': group_data.mean(),
-                        'Std Dev': group_data.std(),
-                        'Median': group_data.median(),
-                        'Count': len(group_data)
-                    })
-    
-    if not summary_stats:
-        return "<div class='warning-box'><strong>⚠️ No Data:</strong> No overall capital flows statistics available.</div>"
-    
-    # Create summary table
-    summary_rows = []
-    iceland_stats = {s['Indicator']: s for s in summary_stats if s['Group'] == 'Iceland'}
-    eurozone_stats = {s['Indicator']: s for s in summary_stats if s['Group'] == 'Eurozone'}
-    
-    for indicator in iceland_stats.keys():
-        if indicator in eurozone_stats:
-            ice = iceland_stats[indicator]
-            eur = eurozone_stats[indicator]
-            volatility_ratio = ice['Std Dev'] / eur['Std Dev'] if eur['Std Dev'] > 0 else 0
-            
-            summary_rows.append(f"""
-                <tr>
-                    <td style="text-align: left; font-weight: bold;">{indicator}</td>
-                    <td>{ice['Mean']:.2f}</td>
-                    <td>{ice['Std Dev']:.2f}</td>
-                    <td>{ice['Median']:.2f}</td>
-                    <td>{eur['Mean']:.2f}</td>
-                    <td>{eur['Std Dev']:.2f}</td>
-                    <td>{eur['Median']:.2f}</td>
-                    <td><strong>{volatility_ratio:.2f}x</strong></td>
-                </tr>
-            """)
-    
-    overall_html = f"""
-    <h3>📊 Summary Statistics by Group</h3>
-    <p><em>Analysis of 4 aggregate capital flow indicators: 3 base net flows plus 1 computed total</em></p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Overall Indicator</th>
-                <th colspan="3">Iceland</th>
-                <th colspan="3">Eurozone</th>
-                <th>Volatility Ratio</th>
-            </tr>
-            <tr>
-                <th></th>
-                <th>Mean</th>
-                <th>Std Dev</th>
-                <th>Median</th>
-                <th>Mean</th>
-                <th>Std Dev</th>
-                <th>Median</th>
-                <th>(Ice/Euro)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {''.join(summary_rows)}
-        </tbody>
-    </table>
-    
-    <div class="info-box">
-        <strong>Overall Analysis Summary:</strong> This section examines high-level aggregate capital flow patterns 
-        before diving into detailed disaggregated analysis. The 4 overall indicators provide a macro-level view 
-        of net capital flows by major investment category.
-    </div>
-    
-    <h3>🔍 Key Insights from Overall Analysis</h3>
-    <div class="success-box">
-        <ul>
-            <li><strong>Systematic Volatility Pattern:</strong> Iceland shows higher volatility across aggregate capital flow measures</li>
-            <li><strong>Policy Relevance:</strong> Overall indicators suggest structural differences in capital flow stability</li>
-            <li><strong>Consistent Direction:</strong> Higher Iceland volatility is observed at both aggregate and disaggregated levels</li>
-        </ul>
-    </div>
-    """
-    
-    return overall_html
-
-def generate_disaggregated_analysis_html(final_data, analysis_indicators, group_stats, test_results, boxplot_data):
-    """Generate HTML content for Disaggregated Indicator-Level Analysis section"""
-    
-    # Count significant results
-    sig_1pct_count = test_results['Significant_1pct'].sum()
-    sig_5pct_count = test_results['Significant_5pct'].sum()
-    sig_10pct_count = test_results['Significant_10pct'].sum()
-    total_indicators = len(test_results)
-    
-    # Generate summary statistics table for disaggregated indicators
-    table_rows = []
-    grouped_stats = {}
-    
-    for _, row in group_stats.iterrows():
-        indicator = row['Indicator']
-        if indicator not in grouped_stats:
-            grouped_stats[indicator] = {}
-        grouped_stats[indicator][row['Group']] = row
-    
-    for indicator, groups in grouped_stats.items():
-        if 'Iceland' in groups and 'Eurozone' in groups:
-            iceland_row = groups['Iceland']
-            eurozone_row = groups['Eurozone']
-            cv_ratio = iceland_row['CV_Percent'] / eurozone_row['CV_Percent'] if eurozone_row['CV_Percent'] > 0 else 0
-            
-            # Get significance for this indicator
-            indicator_test = test_results[test_results['Indicator'] == indicator]
-            sig_marker = ""
-            if not indicator_test.empty:
-                if indicator_test.iloc[0]['Significant_1pct']:
-                    sig_marker = "***"
-                elif indicator_test.iloc[0]['Significant_5pct']:
-                    sig_marker = "**"
-                elif indicator_test.iloc[0]['Significant_10pct']:
-                    sig_marker = "*"
-            
-            table_rows.append(f"""
-                <tr>
-                    <td style="text-align: left;">{indicator[:35]}{'...' if len(indicator) > 35 else ''}</td>
-                    <td>{iceland_row['Mean']:.2f}</td>
-                    <td>{iceland_row['Std_Dev']:.2f}</td>
-                    <td>{iceland_row['CV_Percent']:.1f}%</td>
-                    <td>{eurozone_row['Mean']:.2f}</td>
-                    <td>{eurozone_row['Std_Dev']:.2f}</td>
-                    <td>{eurozone_row['CV_Percent']:.1f}%</td>
-                    <td><strong>{cv_ratio:.2f}x {sig_marker}</strong></td>
-                </tr>
-            """)
-    
-    disaggregated_html = f"""
-    <h3>1. Summary Statistics and Boxplots</h3>
-    <div class="info-box">
-        <strong>Analysis Overview:</strong> Detailed statistical comparison of {len(analysis_indicators)} individual capital flow indicators 
-        between Iceland and Eurozone countries.
-    </div>
-    
-    <h3>2. Comprehensive Statistical Summary Table</h3>
-    <p><strong>All Indicators - Iceland vs Eurozone Statistics</strong></p>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>Indicator</th>
-                <th colspan="3">Iceland</th>
-                <th colspan="3">Eurozone</th>
-                <th>CV Ratio</th>
-            </tr>
-            <tr>
-                <th></th>
-                <th>Mean</th>
-                <th>Std Dev</th>
-                <th>CV%</th>
-                <th>Mean</th>
-                <th>Std Dev</th>
-                <th>CV%</th>
-                <th>(Ice/Euro)</th>
-            </tr>
-        </thead>
-        <tbody>
-            {''.join(table_rows)}
-        </tbody>
-    </table>
-    
-    <div class="info-box">
-        <strong>Table Notes:</strong> CV% = Coefficient of Variation (Std Dev / |Mean| × 100). 
-        Significance markers: *** = 1%, ** = 5%, * = 10%. CV Ratio > 1.0 indicates higher Iceland volatility.
-    </div>
-    
-    <h3>3. Hypothesis Testing Results</h3>
-    <div class="success-box">
-        <h4>🎯 F-Test Results Summary:</h4>
-        <ul>
-            <li><strong>{sig_1pct_count} out of {total_indicators} indicators</strong> show significantly higher Iceland volatility at <strong>1% level</strong></li>
-            <li><strong>{sig_5pct_count} out of {total_indicators} indicators</strong> show significantly higher Iceland volatility at <strong>5% level</strong></li>
-            <li><strong>{sig_10pct_count} out of {total_indicators} indicators</strong> show significantly higher Iceland volatility at <strong>10% level</strong></li>
-        </ul>
-    </div>
-    
-    <div class="warning-box">
-        <strong>Statistical Method:</strong> F-tests compare variances (volatility measures) between Iceland and Eurozone 
-        for each capital flow indicator. Higher F-statistics indicate greater Iceland volatility.
-    </div>
-    
-    <h3>4. Time Series Analysis</h3>
-    <div class="info-box">
-        <strong>Time Series Visualization:</strong> Individual time series plots for each indicator would appear here in the interactive dashboard, 
-        showing Iceland vs Eurozone average patterns over the full 1999-2025 period with F-statistics for each indicator.
-    </div>
-    
-    <h3>5. Key Findings Summary</h3>
-    <div class="success-box">
-        <h4>📊 Disaggregated Analysis Conclusions:</h4>
-        <ul>
-            <li><strong>Broad-Based Pattern:</strong> Iceland volatility exceeds Eurozone across {sig_5pct_count}/{total_indicators} indicators (5% level)</li>
-            <li><strong>Statistical Robustness:</strong> Results consistent across multiple investment categories</li>
-            <li><strong>Economic Significance:</strong> Volatility differences are both statistically significant and economically meaningful</li>
-            <li><strong>Policy Consistency:</strong> Disaggregated findings support aggregate analysis conclusions</li>
-        </ul>
-    </div>
-    """
-    
-    return disaggregated_html
-
-def generate_case_study_1_fallback_report(analysis_type, error_msg=""):
-    """Generate fallback HTML report when data loading fails"""
-    current_date = datetime.now().strftime('%Y-%m-%d')
-    
-    html_content = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <title>Case Study 1: Iceland vs Eurozone - {analysis_type}</title>
-        <meta charset="utf-8">
-        <style>
-            body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-            h1 {{ color: #1f77b4; text-align: center; border-bottom: 3px solid #1f77b4; padding-bottom: 10px; }}
-            .error-box {{ background-color: #ffebee; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #f44336; }}
-            .info-box {{ background-color: #e1f5fe; padding: 10px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #0288d1; }}
-            .footer {{ margin-top: 40px; text-align: center; color: #666; font-size: 12px; }}
-        </style>
-    </head>
-    <body>
-        <h1>🇮🇸 Case Study 1: Iceland vs Eurozone Capital Flow Volatility Analysis</h1>
-        <h2 style="text-align: center; color: #666;">{analysis_type} (1999-2025)</h2>
-        
-        <div class="error-box">
-            <strong>⚠️ Data Loading Error:</strong> Unable to load analysis data for the HTML report generation.
-            {f'<br><strong>Error Details:</strong> {error_msg}' if error_msg else ''}
-        </div>
-        
-        <div class="info-box">
-            <strong>Please Note:</strong> This is a template report. The full analysis with actual data and statistics 
-            is available in the interactive dashboard. Use the dashboard for complete analysis results.
-        </div>
-        
-        <div class="footer">
-            Generated on {current_date} | Capital Flows Research Dashboard<br>
-            🤖 Generated with Claude Code (https://claude.ai/code)
-        </div>
-    </body>
-    </html>
-    """
-    
-    return html_content
-
-def generate_case_study_1_crisis_report():
-    """Generate HTML report for Case Study 1 crisis-excluded analysis that matches the template structure"""
-    try:
-        # For now, generate a placeholder report that follows the same structure as the main template
-        # In a full implementation, this would load crisis-excluded data and generate actual analysis
-        
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Case Study 1: Iceland vs Eurozone - Crisis-Excluded Analysis</title>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                h1 {{ color: #1f77b4; text-align: center; border-bottom: 3px solid #1f77b4; padding-bottom: 10px; }}
-                h2 {{ color: #ff7f0e; border-bottom: 2px solid #ff7f0e; padding-bottom: 5px; }}
-                h3 {{ color: #2ca02c; }}
-                h4 {{ color: #666; }}
-                .info-box {{ background-color: #e1f5fe; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #0288d1; }}
-                .warning-box {{ background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #ffc107; }}
-                .success-box {{ background-color: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #4caf50; }}
-                .metric {{ display: inline-block; margin: 10px 15px; padding: 12px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; }}
-                .footer {{ margin-top: 50px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }}
-                table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                th {{ background-color: #f2f2f2; font-weight: bold; }}
-                .section-divider {{ border-top: 2px solid #ddd; margin: 40px 0; padding-top: 30px; }}
-                .chart-container {{ text-align: center; margin: 20px 0; }}
-            </style>
-        </head>
-        <body>
-            <h1>🇮🇸 Case Study 1: Iceland vs Eurozone Capital Flow Volatility Analysis</h1>
-            <h2 style="text-align: center; color: #666;">Crisis-Excluded Analysis (1999-2025)</h2>
-            
-            <div class="info-box">
-                <strong>🔍 Research Question:</strong> Should Iceland adopt the Euro based on capital flow volatility patterns during normal economic times?<br>
-                <strong>📊 Hypothesis:</strong> Iceland's capital flows show more volatility than the Eurozone bloc average, even excluding crisis periods<br>
-                <strong>⏱️ Time Period:</strong> 1999-2025 (Excluding Global Financial Crisis 2008-2010 and COVID-19 2020-2022)<br>
-                <strong>🎯 Focus:</strong> Structural volatility differences in normal economic conditions
-            </div>
-            
-            <div class="metric"><strong>Analysis Type:</strong> Crisis-Excluded</div>
-            <div class="metric"><strong>Excluded Periods:</strong> 2008-2010, 2020-2022</div>
-            <div class="metric"><strong>Remaining Years:</strong> ~18 years</div>
-            <div class="metric"><strong>Focus:</strong> Normal Times</div>
-            
-            <div class="section-divider"></div>
-            
-            <h2>1. Overall Capital Flows Analysis</h2>
-            
-            <div class="info-box">
-                <h3>📈 Crisis-Excluded Summary Statistics</h3>
-                <p>This section analyzes the four main capital flow indicators during normal economic periods, 
-                excluding the Global Financial Crisis (2008-2010) and COVID-19 pandemic (2020-2022):</p>
-                <ul>
-                    <li><strong>Net Direct Investment (% of GDP)</strong></li>
-                    <li><strong>Net Portfolio Investment (% of GDP)</strong></li>
-                    <li><strong>Net Other Investment (% of GDP)</strong></li>
-                    <li><strong>Net Capital Flows Total (% of GDP)</strong></li>
-                </ul>
-            </div>
-            
-            <div class="warning-box">
-                <h3>⚠️ Implementation Status</h3>
-                <p><strong>Crisis-excluded analysis is currently in development.</strong> This report shows the planned 
-                methodology and expected structure. The actual implementation would:</p>
-                <ol>
-                    <li>Filter out crisis period data (2008-2010, 2020-2022)</li>
-                    <li>Recalculate all volatility statistics using remaining data</li>
-                    <li>Generate time series charts for normal periods only</li>
-                    <li>Perform statistical tests on crisis-excluded data</li>
-                    <li>Compare results with full-period analysis for robustness</li>
-                </ol>
-            </div>
-            
-            <h4>Expected Crisis-Excluded Time Series Analysis</h4>
-            <div class="chart-container">
-                <p><em>📊 Four-panel time series charts would appear here showing:</em></p>
-                <ul style="text-align: left; display: inline-block;">
-                    <li>Net Direct Investment flows (crisis periods excluded)</li>
-                    <li>Net Portfolio Investment flows (crisis periods excluded)</li>
-                    <li>Net Other Investment flows (crisis periods excluded)</li>
-                    <li>Net Capital Flows Total (crisis periods excluded)</li>
-                </ul>
-            </div>
-            
-            <div class="section-divider"></div>
-            
-            <h2>2. Indicator-Level Analysis</h2>
-            
-            <h3>📊 Expected Crisis-Excluded Results</h3>
-            
-            <div class="success-box">
-                <h4>🎯 Anticipated Key Findings:</h4>
-                <p>Based on economic theory and the full-period analysis, the crisis-excluded version is expected to show:</p>
-                <ul>
-                    <li><strong>Persistent Volatility Gap:</strong> Iceland likely maintains significantly higher volatility than Eurozone countries even during normal times</li>
-                    <li><strong>Structural Differences:</strong> Volatility differentials reflect structural monetary policy framework differences rather than crisis sensitivity</li>
-                    <li><strong>Lower Absolute Volatility:</strong> Both regions show reduced volatility when extreme crisis periods are excluded</li>
-                    <li><strong>Robust Statistical Significance:</strong> F-test results remain significant across multiple indicators</li>
-                </ul>
-            </div>
-            
-            <h4>Expected Statistical Test Results (Crisis-Excluded)</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Capital Flow Indicator</th>
-                        <th>Expected F-Statistic</th>
-                        <th>Expected P-Value</th>
-                        <th>Expected Significance</th>
-                        <th>Expected Conclusion</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Net Direct Investment</td>
-                        <td>~15-25</td>
-                        <td>&lt; 0.001</td>
-                        <td>***</td>
-                        <td>Iceland significantly more volatile</td>
-                    </tr>
-                    <tr>
-                        <td>Net Portfolio Investment</td>
-                        <td>~20-35</td>
-                        <td>&lt; 0.001</td>
-                        <td>***</td>
-                        <td>Iceland significantly more volatile</td>
-                    </tr>
-                    <tr>
-                        <td>Net Other Investment</td>
-                        <td>~10-20</td>
-                        <td>&lt; 0.01</td>
-                        <td>**</td>
-                        <td>Iceland significantly more volatile</td>
-                    </tr>
-                    <tr>
-                        <td>Net Capital Flows Total</td>
-                        <td>~12-22</td>
-                        <td>&lt; 0.01</td>
-                        <td>**</td>
-                        <td>Iceland significantly more volatile</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            <div class="info-box">
-                <h4>📈 Expected Volatility Patterns</h4>
-                <ul>
-                    <li><strong>Coefficient of Variation:</strong> Iceland expected to show 2-4x higher volatility than Eurozone across indicators</li>
-                    <li><strong>Standard Deviation:</strong> Substantial differences maintained even without crisis periods</li>
-                    <li><strong>Range Analysis:</strong> Iceland's capital flows expected to show wider ranges in normal times</li>
-                    <li><strong>Consistency:</strong> Volatility ranking (Iceland > Eurozone) expected to be consistent across indicators</li>
-                </ul>
-            </div>
-            
-            <h3>🏛️ Policy Implications (Crisis-Excluded Analysis)</h3>
-            
-            <div class="success-box">
-                <h4>💡 Expected Policy Insights:</h4>
-                <p>The crisis-excluded analysis is anticipated to strengthen the Euro adoption recommendation by demonstrating:</p>
-                
-                <ul>
-                    <li><strong>Structural Volatility:</strong> Iceland's higher capital flow volatility persists during normal economic conditions</li>
-                    <li><strong>Monetary Framework Impact:</strong> Differences reflect fundamental monetary policy framework effects, not just crisis sensitivity</li>
-                    <li><strong>Stabilization Benefits:</strong> Euro adoption could provide volatility reduction benefits in typical economic conditions</li>
-                    <li><strong>Robustness:</strong> Policy conclusions remain consistent across different time period specifications</li>
-                </ul>
-                
-                <p><strong>🎯 Enhanced Policy Confidence:</strong> By excluding crisis periods, this analysis isolates the 
-                structural benefits of currency union membership for capital flow stability.</p>
-            </div>
-            
-            <div class="warning-box">
-                <h4>⚠️ Implementation Requirements</h4>
-                <p>To complete this analysis, the following steps are needed:</p>
-                <ol>
-                    <li><strong>Data Filtering:</strong> Remove observations from 2008-2010 and 2020-2022</li>
-                    <li><strong>Statistical Recalculation:</strong> Recompute all descriptive statistics and F-tests</li>
-                    <li><strong>Chart Generation:</strong> Create time series visualizations for crisis-excluded periods</li>
-                    <li><strong>Comparative Analysis:</strong> Compare full-period vs crisis-excluded results</li>
-                    <li><strong>Robustness Testing:</strong> Verify consistency of conclusions across specifications</li>
-                </ol>
-            </div>
-            
-            <div class="info-box">
-                <h4>🔄 Expected Methodological Benefits</h4>
-                <ul>
-                    <li><strong>Cleaner Signal:</strong> Remove noise from extraordinary global events</li>
-                    <li><strong>Structural Focus:</strong> Isolate fundamental monetary regime differences</li>
-                    <li><strong>Policy Clarity:</strong> Provide guidance for typical economic conditions</li>
-                    <li><strong>Academic Rigor:</strong> Standard robustness check in volatility literature</li>
-                </ul>
-            </div>
-            
-            <div class="footer">
-                Generated on {current_date} | Capital Flows Research Dashboard<br>
-                🤖 Generated with <a href="https://claude.ai/code" target="_blank">Claude Code</a><br>
-                <em>Crisis-excluded analysis template - implementation in progress</em>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return html_content
-        
-    except Exception as e:
-        # Return error page with same styling
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Case Study 1: Crisis-Excluded Analysis - Error</title>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                .error-box {{ background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #dc3545; }}
-            </style>
-        </head>
-        <body>
-            <h1>🇮🇸 Case Study 1: Crisis-Excluded Analysis</h1>
-            <div class="error-box">
-                <strong>⚠️ Error generating report:</strong> {str(e)}
-            </div>
-            <p>Generated on {current_date}</p>
-        </body>
-        </html>
-        """
-
-def generate_case_study_2_country_report(country, adoption_year, pre_period, post_period, full_period=True):
-    """Generate HTML report for Case Study 2 that exactly matches the template structure and quality"""
-    try:
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        period_type = "Full Time Period" if full_period else "Crisis-Excluded"
-        
-        country_flags = {
-            "Estonia": "🇪🇪",
-            "Latvia": "🇱🇻", 
-            "Lithuania": "🇱🇹"
-        }
-        
-        flag = country_flags.get(country, "🇪🇺")
-        
-        # Country-specific context information
-        country_contexts = {
-            "Estonia": {
-                "adoption_context": "Estonia was the first Baltic country to adopt the Euro, demonstrating strong fiscal discipline and convergence criteria compliance.",
-                "economic_profile": "Small, open economy with strong financial sector integration and export-oriented growth model.",
-                "expected_benefits": "Enhanced monetary credibility, reduced exchange rate risk, deeper financial integration with EU partners."
-            },
-            "Latvia": {
-                "adoption_context": "Latvia adopted the Euro following economic recovery from the 2008-2009 crisis, showing commitment to European integration.",
-                "economic_profile": "Transit economy with significant financial sector reforms and growing service sector integration.",
-                "expected_benefits": "Improved macroeconomic stability, reduced currency risk premium, enhanced investor confidence."
-            },
-            "Lithuania": {
-                "adoption_context": "Lithuania was the last Baltic country to adopt the Euro, completing the region's monetary integration process.",
-                "economic_profile": "Diverse economy with strong manufacturing base and increasing focus on technology and innovation sectors.",
-                "expected_benefits": "Completed monetary union integration, reduced transaction costs, enhanced regional economic coordination."
-            }
-        }
-        
-        context = country_contexts.get(country, {
-            "adoption_context": f"{country} adopted the Euro as part of its European integration strategy.",
-            "economic_profile": f"{country} represents a small open economy in the Baltic region.",
-            "expected_benefits": "Enhanced monetary stability and deeper European integration."
-        })
-        
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Case Study 2: {country} Euro Adoption Analysis - {period_type}</title>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                h1 {{ color: #1f77b4; text-align: center; border-bottom: 3px solid #1f77b4; padding-bottom: 10px; }}
-                h2 {{ color: #ff7f0e; border-bottom: 2px solid #ff7f0e; padding-bottom: 5px; }}
-                h3 {{ color: #2ca02c; }}
-                h4 {{ color: #666; }}
-                .info-box {{ background-color: #e1f5fe; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #0288d1; }}
-                .warning-box {{ background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #ffc107; }}
-                .success-box {{ background-color: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #4caf50; }}
-                .metric {{ display: inline-block; margin: 10px 15px; padding: 12px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; }}
-                .footer {{ margin-top: 50px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }}
-                table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                th {{ background-color: #f2f2f2; font-weight: bold; }}
-                .section-divider {{ border-top: 2px solid #ddd; margin: 40px 0; padding-top: 30px; }}
-                .chart-container {{ text-align: center; margin: 20px 0; }}
-                .timeline {{ background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; }}
-            </style>
-        </head>
-        <body>
-            <h1>{flag} Case Study 2: {country} Euro Adoption Capital Flow Analysis</h1>
-            <h2 style="text-align: center; color: #666;">{period_type} Analysis - Temporal Volatility Comparison</h2>
-            
-            <div class="info-box">
-                <strong>🔍 Research Question:</strong> How did Euro adoption affect capital flow volatility patterns in {country}?<br>
-                <strong>📊 Hypothesis:</strong> Euro adoption reduced capital flow volatility through enhanced monetary credibility and financial integration<br>
-                <strong>⏱️ Analysis Period:</strong> Pre-Euro ({pre_period[0]}-{pre_period[1]}) vs Post-Euro ({post_period[0]}-{post_period[1]})<br>
-                <strong>🎯 Methodology:</strong> Before-after temporal comparison of capital flow volatility measures
-            </div>
-            
-            <div class="metric"><strong>Country:</strong> {country} {flag}</div>
-            <div class="metric"><strong>Euro Adoption:</strong> January 1, {adoption_year}</div>
-            <div class="metric"><strong>Analysis Type:</strong> {period_type}</div>
-            <div class="metric"><strong>Methodology:</strong> Temporal Comparison</div>
-            
-            <div class="timeline">
-                <h4>📅 {country} Euro Adoption Timeline</h4>
-                <p><strong>Pre-Euro Period:</strong> {pre_period[0]}-{pre_period[1]} ({pre_period[1] - pre_period[0] + 1} years) | 
-                <strong>Post-Euro Period:</strong> {post_period[0]}-{post_period[1]} ({post_period[1] - post_period[0] + 1} years)</p>
-                <p><strong>Transition Date:</strong> January 1, {adoption_year} - {country} officially adopted the Euro</p>
-            </div>
-            
-            <div class="section-divider"></div>
-            
-            <h2>1. Overall Capital Flows Analysis</h2>
-            
-            <div class="info-box">
-                <h3>📈 {country} Aggregate Capital Flow Summary</h3>
-                <p>This section analyzes aggregate capital flow volatility patterns for {country} before and after Euro adoption, 
-                examining the overall impact of monetary union membership on financial stability:</p>
-                <ul>
-                    <li><strong>Net Direct Investment (% of GDP)</strong> - FDI and cross-border M&A flows</li>
-                    <li><strong>Net Portfolio Investment (% of GDP)</strong> - Debt and equity securities flows</li>
-                    <li><strong>Net Other Investment (% of GDP)</strong> - Banking and lending flows</li>
-                    <li><strong>Net Capital Flows Total (% of GDP)</strong> - Aggregate capital account balance</li>
-                </ul>
-            </div>
-            
-            <div class="warning-box">
-                <h3>⚠️ Implementation Status</h3>
-                <p><strong>Country-specific analysis for {country} is currently in development.</strong> This report shows the planned 
-                methodology and expected structure. The actual implementation would:</p>
-                <ol>
-                    <li>Filter Case Study 2 data specifically for {country}</li>
-                    <li>Split data into pre-Euro and post-Euro periods</li>
-                    <li>Calculate volatility measures for each period and indicator</li>
-                    <li>Generate time series charts showing the Euro adoption transition</li>
-                    <li>Perform statistical tests comparing pre vs post-Euro volatility</li>
-                </ol>
-            </div>
-            
-            <h4>Expected {country} Time Series Analysis</h4>
-            <div class="chart-container">
-                <p><em>📊 Four-panel time series charts would appear here showing:</em></p>
-                <ul style="text-align: left; display: inline-block;">
-                    <li>{country} Net Direct Investment flows with Euro adoption marker</li>
-                    <li>{country} Net Portfolio Investment flows with Euro adoption marker</li>
-                    <li>{country} Net Other Investment flows with Euro adoption marker</li>
-                    <li>{country} Net Capital Flows Total with Euro adoption marker</li>
-                </ul>
-                <p><em>Each chart would include a vertical line marking January {adoption_year} (Euro adoption)</em></p>
-            </div>
-            
-            <div class="section-divider"></div>
-            
-            <h2>2. Indicator-Level Analysis</h2>
-            
-            <h3>📊 Expected {country} Euro Adoption Impact Results</h3>
-            
-            <div class="success-box">
-                <h4>🎯 Anticipated Key Findings for {country}:</h4>
-                <p>Based on Euro adoption theory and {country}'s economic characteristics, the analysis is expected to show:</p>
-                <ul>
-                    <li><strong>Volatility Reduction:</strong> Decreased capital flow volatility post-Euro adoption due to enhanced monetary credibility</li>
-                    <li><strong>Financial Integration:</strong> Smoother capital flows reflecting deeper integration with Eurozone financial markets</li>
-                    <li><strong>Risk Premium Reduction:</strong> Lower country-specific risk premium leading to more stable capital flows</li>
-                    <li><strong>Structural Break:</strong> Clear statistical break in volatility patterns around the {adoption_year} adoption date</li>
-                </ul>
-            </div>
-            
-            <h4>Expected Statistical Test Results ({country} - {period_type})</h4>
-            <table>
-                <thead>
-                    <tr>
-                        <th>Capital Flow Indicator</th>
-                        <th>Pre-Euro Volatility</th>
-                        <th>Post-Euro Volatility</th>
-                        <th>Expected Change</th>
-                        <th>Expected Significance</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>Net Direct Investment</td>
-                        <td>Higher baseline</td>
-                        <td>Reduced volatility</td>
-                        <td>-20% to -40%</td>
-                        <td>Significant **</td>
-                    </tr>
-                    <tr>
-                        <td>Net Portfolio Investment</td>
-                        <td>Higher baseline</td>
-                        <td>Reduced volatility</td>
-                        <td>-30% to -50%</td>
-                        <td>Significant ***</td>
-                    </tr>
-                    <tr>
-                        <td>Net Other Investment</td>
-                        <td>Higher baseline</td>
-                        <td>Reduced volatility</td>
-                        <td>-15% to -35%</td>
-                        <td>Significant **</td>
-                    </tr>
-                    <tr>
-                        <td>Net Capital Flows Total</td>
-                        <td>Higher baseline</td>
-                        <td>Reduced volatility</td>
-                        <td>-25% to -45%</td>
-                        <td>Significant ***</td>
-                    </tr>
-                </tbody>
-            </table>
-            
-            <div class="info-box">
-                <h4>📈 Expected {country} Volatility Patterns</h4>
-                <ul>
-                    <li><strong>Temporal Consistency:</strong> Volatility reduction expected across multiple indicators post-Euro adoption</li>
-                    <li><strong>Integration Effects:</strong> Smoother capital flows reflecting deeper Eurozone financial integration</li>
-                    <li><strong>Crisis Resilience:</strong> Different crisis response patterns pre vs post-Euro (if including crisis periods)</li>
-                    <li><strong>Structural Break:</strong> Clear statistical evidence of regime change around {adoption_year}</li>
-                </ul>
-            </div>
-            
-            <h3>🏛️ Policy Implications for {country}</h3>
-            
-            <div class="success-box">
-                <h4>💡 Expected Policy Insights:</h4>
-                <p>The completed analysis is anticipated to demonstrate that Euro adoption provided {country} with:</p>
-                
-                <ul>
-                    <li><strong>Enhanced Monetary Credibility:</strong> ECB policy framework reduced country-specific monetary policy uncertainty</li>
-                    <li><strong>Financial Integration Benefits:</strong> Deeper integration with Eurozone capital markets improved flow stability</li>
-                    <li><strong>Risk Premium Reduction:</strong> Elimination of exchange rate risk reduced capital flow volatility</li>
-                    <li><strong>Crisis Mitigation:</strong> Better crisis resilience through monetary union membership benefits</li>
-                </ul>
-                
-                <p><strong>🎯 {country}-Specific Context:</strong> {context['adoption_context']}</p>
-            </div>
-            
-            <div class="info-box">
-                <h4>🌍 {country} Economic Profile</h4>
-                <p><strong>Economic Characteristics:</strong> {context['economic_profile']}</p>
-                <p><strong>Euro Adoption Benefits:</strong> {context['expected_benefits']}</p>
-                <p><strong>Integration Timeline:</strong> Euro adoption in {adoption_year} represented a major milestone in {country}'s European integration process</p>
-            </div>
-            
-            <div class="warning-box">
-                <h4>⚠️ Implementation Requirements</h4>
-                <p>To complete this {country}-specific analysis, the following steps are needed:</p>
-                <ol>
-                    <li><strong>Data Filtering:</strong> Extract {country}-specific data from Case Study 2 dataset</li>
-                    <li><strong>Period Splitting:</strong> Separate pre-Euro ({pre_period[0]}-{pre_period[1]}) and post-Euro ({post_period[0]}-{post_period[1]}) periods</li>
-                    <li><strong>Statistical Analysis:</strong> Calculate volatility measures and perform significance tests</li>
-                    <li><strong>Chart Generation:</strong> Create time series visualizations with Euro adoption markers</li>
-                    <li><strong>Comparative Analysis:</strong> Compare {country} results with other Baltic countries and EU patterns</li>
-                </ol>
-            </div>
-            
-            <div class="info-box">
-                <h4>🔄 Expected Methodological Benefits</h4>
-                <ul>
-                    <li><strong>Temporal Focus:</strong> Isolate Euro adoption effects through before-after comparison</li>
-                    <li><strong>Country Specificity:</strong> Account for {country}'s unique economic characteristics and integration timeline</li>
-                    <li><strong>Policy Relevance:</strong> Provide evidence on monetary union membership benefits for small open economies</li>
-                    <li><strong>Regional Context:</strong> Contribute to broader understanding of Baltic Euro adoption experiences</li>
-                </ul>
-            </div>
-            
-            <div class="footer">
-                Generated on {current_date} | Capital Flows Research Dashboard<br>
-                🤖 Generated with <a href="https://claude.ai/code" target="_blank">Claude Code</a><br>
-                <em>{country} Euro adoption analysis template - matches app interface structure</em>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return html_content
-        
-    except Exception as e:
-        # Return error page with same styling
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Case Study 2: {country} Analysis - Error</title>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                .error-box {{ background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #dc3545; }}
-            </style>
-        </head>
-        <body>
-            <h1>{country_flags.get(country, "🇪🇺")} Case Study 2: {country} Analysis</h1>
-            <div class="error-box">
-                <strong>⚠️ Error generating report:</strong> {str(e)}
-            </div>
-            <p>Generated on {current_date}</p>
-        </body>
-        </html>
-        """
-
-def generate_case_study_2_combined_country_report(country, adoption_year, pre_period, post_period):
-    """Generate combined HTML report for Case Study 2 that includes both Full and Crisis-Excluded analysis"""
-    try:
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        
-        country_flags = {
-            "Estonia": "🇪🇪",
-            "Latvia": "🇱🇻", 
-            "Lithuania": "🇱🇹"
-        }
-        
-        flag = country_flags.get(country, "🇪🇺")
-        
-        # Get both individual reports
-        full_report_content = generate_case_study_2_country_report(country, adoption_year, pre_period, post_period, full_period=True)
-        crisis_report_content = generate_case_study_2_country_report(country, adoption_year, pre_period, post_period, full_period=False)
-        
-        # Extract the body content from each report (remove HTML wrapper)
-        import re
-        
-        # Extract content between <body> tags for both reports
-        def extract_body_content(html_content):
-            body_match = re.search(r'<body>(.*?)</body>', html_content, re.DOTALL)
-            if body_match:
-                content = body_match.group(1)
-                # Remove the title and header (keep content after first hr or section-divider)
-                content = re.sub(r'^.*?<div class="section-divider"></div>', '', content, flags=re.DOTALL)
-                return content.strip()
-            return ""
-        
-        full_content = extract_body_content(full_report_content)
-        crisis_content = extract_body_content(crisis_report_content)
-        
-        # Combined HTML report
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Case Study 2: {country} Euro Adoption - Combined Analysis</title>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                h1 {{ color: #1f77b4; text-align: center; border-bottom: 3px solid #1f77b4; padding-bottom: 10px; }}
-                h2 {{ color: #ff7f0e; border-bottom: 2px solid #ff7f0e; padding-bottom: 5px; }}
-                h3 {{ color: #2ca02c; }}
-                h4 {{ color: #666; }}
-                .info-box {{ background-color: #e1f5fe; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #0288d1; }}
-                .warning-box {{ background-color: #fff3cd; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #ffc107; }}
-                .success-box {{ background-color: #e8f5e8; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #4caf50; }}
-                .metric {{ display: inline-block; margin: 10px 15px; padding: 12px; background-color: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6; }}
-                .footer {{ margin-top: 50px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }}
-                table {{ width: 100%; border-collapse: collapse; margin: 20px 0; }}
-                th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
-                th {{ background-color: #f2f2f2; font-weight: bold; }}
-                .section-divider {{ border-top: 2px solid #ddd; margin: 40px 0; padding-top: 30px; }}
-                .chart-container {{ text-align: center; margin: 20px 0; }}
-                .timeline {{ background-color: #f8f9fa; padding: 15px; border-radius: 8px; margin: 15px 0; }}
-                .analysis-section {{ margin: 30px 0; padding: 20px; border: 2px solid #ddd; border-radius: 10px; }}
-                .full-analysis {{ border-color: #1f77b4; }}
-                .crisis-analysis {{ border-color: #ff7f0e; }}
-            </style>
-        </head>
-        <body>
-            <h1>{flag} Case Study 2: {country} Euro Adoption Capital Flow Analysis</h1>
-            <h2 style="text-align: center; color: #666;">Combined Full Time Period & Crisis-Excluded Analysis</h2>
-            
-            <div class="info-box">
-                <strong>🔍 Research Question:</strong> How did Euro adoption affect capital flow volatility patterns in {country}?<br>
-                <strong>📊 Hypothesis:</strong> Euro adoption reduced capital flow volatility through enhanced monetary credibility and financial integration<br>
-                <strong>⏱️ Analysis Period:</strong> Pre-Euro ({pre_period[0]}-{pre_period[1]}) vs Post-Euro ({post_period[0]}-{post_period[1]})<br>
-                <strong>🎯 Report Type:</strong> Combined analysis with both full-period and crisis-excluded perspectives
-            </div>
-            
-            <div class="metric"><strong>Country:</strong> {country} {flag}</div>
-            <div class="metric"><strong>Euro Adoption:</strong> January 1, {adoption_year}</div>
-            <div class="metric"><strong>Report Type:</strong> Combined Analysis</div>
-            <div class="metric"><strong>Methodology:</strong> Temporal Comparison</div>
-            
-            <div class="timeline">
-                <h4>📅 {country} Euro Adoption Timeline</h4>
-                <p><strong>Pre-Euro Period:</strong> {pre_period[0]}-{pre_period[1]} ({pre_period[1] - pre_period[0] + 1} years) | 
-                <strong>Post-Euro Period:</strong> {post_period[0]}-{post_period[1]} ({post_period[1] - post_period[0] + 1} years)</p>
-                <p><strong>Transition Date:</strong> January 1, {adoption_year} - {country} officially adopted the Euro</p>
-            </div>
-            
-            <div class="section-divider"></div>
-            
-            <div class="analysis-section full-analysis">
-                <h2>📈 Part 1: Full Time Period Analysis</h2>
-                <p><strong>Methodology:</strong> Complete dataset using all available pre-Euro and post-Euro data for {country}</p>
-                <p><strong>Advantage:</strong> Maximizes data usage and captures the complete Euro adoption experience</p>
-                
-                <div class="warning-box">
-                    <h3>⚠️ Note: Full Implementation Required</h3>
-                    <p>The full time period analysis section would contain the complete {country}-specific statistical analysis, 
-                    time series charts, and detailed volatility comparisons. This combined report demonstrates the intended 
-                    structure for comprehensive country-specific Euro adoption impact analysis.</p>
-                </div>
-                
-                <div class="info-box">
-                    <h4>Expected Full-Period Findings for {country}:</h4>
-                    <ul>
-                        <li><strong>Overall Capital Flow Volatility:</strong> Comparison of aggregate measures pre vs post-Euro</li>
-                        <li><strong>Indicator-Level Analysis:</strong> Detailed statistical tests for individual flow types</li>
-                        <li><strong>Time Series Visualization:</strong> Charts showing transition around {adoption_year}</li>
-                        <li><strong>Crisis Period Impact:</strong> How major global events affected volatility patterns</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="analysis-section crisis-analysis">
-                <h2>📉 Part 2: Crisis-Excluded Analysis</h2>
-                <p><strong>Methodology:</strong> Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods</p>
-                <p><strong>Advantage:</strong> Isolates Euro adoption effects during normal economic conditions</p>
-                
-                <div class="warning-box">
-                    <h3>⚠️ Note: Full Implementation Required</h3>
-                    <p>The crisis-excluded analysis section would contain the same comprehensive statistical analysis as the 
-                    full-period version, but with crisis periods removed to focus on structural Euro adoption effects for {country}.</p>
-                </div>
-                
-                <div class="success-box">
-                    <h4>Expected Crisis-Excluded Benefits for {country}:</h4>
-                    <ul>
-                        <li><strong>Cleaner Signal:</strong> Structural Euro adoption effects without extreme global event noise</li>
-                        <li><strong>Policy Clarity:</strong> Normal-times guidance for {country}'s Euro membership benefits</li>
-                        <li><strong>Robustness Check:</strong> Consistency of findings across different time specifications</li>
-                        <li><strong>Academic Rigor:</strong> Standard approach in volatility and currency union literature</li>
-                    </ul>
-                </div>
-            </div>
-            
-            <div class="section-divider"></div>
-            
-            <h2>🔄Comparative Summary</h2>
-            
-            <div class="success-box">
-                <h3>💡 Expected Combined Analysis Insights for {country}:</h3>
-                <p>When both analyses are implemented, this combined report would demonstrate:</p>
-                
-                <ul>
-                    <li><strong>Consistency Check:</strong> Whether Euro adoption benefits persist across different analytical approaches</li>
-                    <li><strong>Crisis Sensitivity:</strong> How much of the volatility reduction is driven by crisis vs normal periods</li>
-                    <li><strong>Structural Benefits:</strong> Core Euro adoption effects that are robust to time period specification</li>
-                    <li><strong>Policy Confidence:</strong> Strength of evidence for {country}'s Euro membership benefits</li>
-                </ul>
-                
-                <p><strong>🎯 {country} Context:</strong> As one of the three Baltic countries to adopt the Euro, {country}'s 
-                experience provides valuable insights into the capital flow stability benefits of monetary union membership 
-                for small open economies in the European periphery.</p>
-            </div>
-            
-            <div class="info-box">
-                <h4>🔬 Methodological Comparison</h4>
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Analysis Type</th>
-                            <th>Data Coverage</th>
-                            <th>Key Advantage</th>
-                            <th>Interpretation Focus</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>Full Time Period</td>
-                            <td>Complete dataset</td>
-                            <td>Maximum data usage</td>
-                            <td>Complete Euro experience</td>
-                        </tr>
-                        <tr>
-                            <td>Crisis-Excluded</td>
-                            <td>Normal periods only</td>
-                            <td>Cleaner signal</td>
-                            <td>Structural Euro effects</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="footer">
-                Generated on {current_date} | Capital Flows Research Dashboard<br>
-                🤖 Generated with <a href="https://claude.ai/code" target="_blank">Claude Code</a><br>
-                <em>{country} combined Euro adoption analysis - matches app interface structure</em>
-            </div>
-        </body>
-        </html>
-        """
-        
-        return html_content
-        
-    except Exception as e:
-        # Return error page with same styling
-        current_date = datetime.now().strftime('%Y-%m-%d')
-        return f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Case Study 2: {country} Combined Analysis - Error</title>
-            <meta charset="utf-8">
-            <style>
-                body {{ font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }}
-                .error-box {{ background-color: #f8d7da; color: #721c24; padding: 15px; border-radius: 8px; margin: 15px 0; border-left: 5px solid #dc3545; }}
-            </style>
-        </head>
-        <body>
-            <h1>{country_flags.get(country, "🇪🇺")} Case Study 2: {country} Combined Analysis</h1>
-            <div class="error-box">
-                <strong>⚠️ Error generating combined report:</strong> {str(e)}
-            </div>
-            <p>Generated on {current_date}</p>
-        </body>
-        </html>
-        """
+# HTML generation functions removed to streamline main app for deployment
 
 # ================================
-# Case Study 2 Restructured Functions
-# ================================
-
 def show_case_study_2_estonia_restructured():
     """Show Estonia analysis following Case Study 1 template structure"""
     st.title("🇪🇪 Estonia Euro Adoption Analysis")
@@ -4343,31 +2951,33 @@ def show_case_study_2_estonia_restructured():
     **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
     """)
     
-    # Full Time Period Section
-    st.markdown("---")
-    st.header("📊 Full Time Period Analysis")
-    st.markdown("*Complete temporal analysis using all available data*")
-    
-    # Overall Capital Flows Analysis
-    st.subheader("📈 Overall Capital Flows Analysis")
-    show_estonia_overall_analysis(include_crisis_years=True)
-    
-    # Indicator-Level Analysis  
-    st.subheader("🔍 Indicator-Level Analysis")
-    show_estonia_indicator_analysis(include_crisis_years=True)
-    
-    # Crisis-Excluded Section
-    st.markdown("---")
-    st.header("🚫 Excluding Financial Crises")
-    st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
-    
-    # Overall Capital Flows Analysis - Crisis Excluded
-    st.subheader("📈 Overall Capital Flows Analysis")
-    show_estonia_overall_analysis(include_crisis_years=False)
-    
-    # Indicator-Level Analysis - Crisis Excluded
-    st.subheader("🔍 Indicator-Level Analysis") 
-    show_estonia_indicator_analysis(include_crisis_years=False)
+    # Priority spinner for CS2 Estonia - long loading analysis  
+    with st.spinner("📊 Loading Estonia Euro adoption analysis: Processing pre/post 2011 volatility patterns and temporal comparisons..."):
+        # Full Time Period Section
+        st.markdown("---")
+        st.header("📊 Full Time Period Analysis")
+        st.markdown("*Complete temporal analysis using all available data*")
+        
+        # Overall Capital Flows Analysis
+        st.subheader("📈 Overall Capital Flows Analysis")
+        show_estonia_overall_analysis(include_crisis_years=True)
+        
+        # Indicator-Level Analysis  
+        st.subheader("🔍 Indicator-Level Analysis")
+        show_estonia_indicator_analysis(include_crisis_years=True)
+        
+        # Crisis-Excluded Section
+        st.markdown("---")
+        st.header("🚫 Excluding Financial Crises")
+        st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
+        
+        # Overall Capital Flows Analysis - Crisis Excluded
+        st.subheader("📈 Overall Capital Flows Analysis")
+        show_estonia_overall_analysis(include_crisis_years=False)
+        
+        # Indicator-Level Analysis - Crisis Excluded
+        st.subheader("🔍 Indicator-Level Analysis") 
+        show_estonia_indicator_analysis(include_crisis_years=False)
 
 def show_case_study_2_latvia_restructured():
     """Show Latvia analysis following Case Study 1 template structure"""
@@ -4382,31 +2992,33 @@ def show_case_study_2_latvia_restructured():
     **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
     """)
     
-    # Full Time Period Section
-    st.markdown("---")
-    st.header("📊 Full Time Period Analysis")
-    st.markdown("*Complete temporal analysis using all available data*")
-    
-    # Overall Capital Flows Analysis
-    st.subheader("📈 Overall Capital Flows Analysis")
-    show_latvia_overall_analysis(include_crisis_years=True)
-    
-    # Indicator-Level Analysis  
-    st.subheader("🔍 Indicator-Level Analysis")
-    show_latvia_indicator_analysis(include_crisis_years=True)
-    
-    # Crisis-Excluded Section
-    st.markdown("---")
-    st.header("🚫 Excluding Financial Crises")
-    st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
-    
-    # Overall Capital Flows Analysis - Crisis Excluded
-    st.subheader("📈 Overall Capital Flows Analysis")
-    show_latvia_overall_analysis(include_crisis_years=False)
-    
-    # Indicator-Level Analysis - Crisis Excluded
-    st.subheader("🔍 Indicator-Level Analysis") 
-    show_latvia_indicator_analysis(include_crisis_years=False)
+    # Priority spinner for CS2 Latvia - long loading analysis
+    with st.spinner("📊 Loading Latvia Euro adoption analysis: Processing pre/post 2014 volatility patterns and temporal comparisons..."):
+        # Full Time Period Section
+        st.markdown("---")
+        st.header("📊 Full Time Period Analysis")
+        st.markdown("*Complete temporal analysis using all available data*")
+        
+        # Overall Capital Flows Analysis
+        st.subheader("📈 Overall Capital Flows Analysis")
+        show_latvia_overall_analysis(include_crisis_years=True)
+        
+        # Indicator-Level Analysis  
+        st.subheader("🔍 Indicator-Level Analysis")
+        show_latvia_indicator_analysis(include_crisis_years=True)
+        
+        # Crisis-Excluded Section
+        st.markdown("---")
+        st.header("🚫 Excluding Financial Crises")
+        st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
+        
+        # Overall Capital Flows Analysis - Crisis Excluded
+        st.subheader("📈 Overall Capital Flows Analysis")
+        show_latvia_overall_analysis(include_crisis_years=False)
+        
+        # Indicator-Level Analysis - Crisis Excluded
+        st.subheader("🔍 Indicator-Level Analysis") 
+        show_latvia_indicator_analysis(include_crisis_years=False)
 
 def show_case_study_2_lithuania_restructured():
     """Show Lithuania analysis following Case Study 1 template structure"""
@@ -4421,31 +3033,33 @@ def show_case_study_2_lithuania_restructured():
     **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
     """)
     
-    # Full Time Period Section
-    st.markdown("---")
-    st.header("📊 Full Time Period Analysis")
-    st.markdown("*Complete temporal analysis using all available data*")
-    
-    # Overall Capital Flows Analysis
-    st.subheader("📈 Overall Capital Flows Analysis")
-    show_lithuania_overall_analysis(include_crisis_years=True)
-    
-    # Indicator-Level Analysis  
-    st.subheader("🔍 Indicator-Level Analysis")
-    show_lithuania_indicator_analysis(include_crisis_years=True)
-    
-    # Crisis-Excluded Section
-    st.markdown("---")
-    st.header("🚫 Excluding Financial Crises")
-    st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
-    
-    # Overall Capital Flows Analysis - Crisis Excluded
-    st.subheader("📈 Overall Capital Flows Analysis")
-    show_lithuania_overall_analysis(include_crisis_years=False)
-    
-    # Indicator-Level Analysis - Crisis Excluded
-    st.subheader("🔍 Indicator-Level Analysis") 
-    show_lithuania_indicator_analysis(include_crisis_years=False)
+    # Priority spinner for CS2 Lithuania - long loading analysis  
+    with st.spinner("📊 Loading Lithuania Euro adoption analysis: Processing pre/post 2015 volatility patterns and temporal comparisons..."):
+        # Full Time Period Section
+        st.markdown("---")
+        st.header("📊 Full Time Period Analysis")
+        st.markdown("*Complete temporal analysis using all available data*")
+        
+        # Overall Capital Flows Analysis
+        st.subheader("📈 Overall Capital Flows Analysis")
+        show_lithuania_overall_analysis(include_crisis_years=True)
+        
+        # Indicator-Level Analysis  
+        st.subheader("🔍 Indicator-Level Analysis")
+        show_lithuania_indicator_analysis(include_crisis_years=True)
+        
+        # Crisis-Excluded Section
+        st.markdown("---")
+        st.header("🚫 Excluding Financial Crises")
+        st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
+        
+        # Overall Capital Flows Analysis - Crisis Excluded
+        st.subheader("📈 Overall Capital Flows Analysis")
+        show_lithuania_overall_analysis(include_crisis_years=False)
+        
+        # Indicator-Level Analysis - Crisis Excluded
+        st.subheader("🔍 Indicator-Level Analysis") 
+        show_lithuania_indicator_analysis(include_crisis_years=False)
 
 def show_case_study_4_restructured():
     """Display Case Study 4 - Comprehensive Statistical Analysis with new indicator-specific format"""
@@ -4453,9 +3067,9 @@ def show_case_study_4_restructured():
     st.markdown("**New Format:** Indicator-specific sections with integrated Full Period and Crisis-Excluded results")
     st.markdown("**Analysis Framework:** F-tests, AR(4) models, and RMSE prediction using systematic statistical methodologies.")
     
-    # Call the new integrated CS4 analysis function
-    from cs4_report_app import run_cs4_integrated_analysis
-    run_cs4_integrated_analysis()
+    # Call the Case Study 4 main function
+    with st.spinner("📊 Loading Comprehensive Statistical Analysis: Running F-tests, AR(4) models, and RMSE predictions across multiple indicator groups..."):
+        case_study_4_main()
 
 
 def show_case_study_5_restructured():
@@ -4465,7 +3079,8 @@ def show_case_study_5_restructured():
     st.markdown("**External Data Sources:** Fernández et al. (2016) Capital Controls Database & Ilzetzki, Reinhart, Rogoff (2019) Exchange Rate Classifications")
     
     # Call the CS5 analysis function
-    case_study_5_main()
+    with st.spinner("🌐 Loading Capital Controls & Exchange Rate Regime Analysis: Processing external datasets and correlating with capital flow volatility patterns..."):
+        case_study_5_main()
 
 # Country-specific analysis functions
 def show_estonia_overall_analysis(include_crisis_years=True):
@@ -4725,7 +3340,7 @@ def show_country_indicator_analysis(country, include_crisis_years=True):
             return
         
         # Calculate statistics
-        with st.spinner("Calculating temporal statistics..."):
+        with st.spinner(f"🔢 Calculating temporal statistics for {country}..."):
             group_stats_df = calculate_temporal_statistics(final_data, country, analysis_indicators, 'EURO_PERIOD')
             test_results_df = perform_temporal_volatility_tests(final_data, country, analysis_indicators, 'EURO_PERIOD')
         

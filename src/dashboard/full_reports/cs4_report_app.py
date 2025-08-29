@@ -152,12 +152,6 @@ def apply_professional_styling():
         max-width: 70px !important;
     }
     
-    /* Streamlit app container constraints for PDF */
-    .main .block-container {
-        max-width: none !important;
-        padding: 1rem 2rem !important;
-    }
-    
     /* Image and chart constraints */
     img {
         max-width: 100% !important;
@@ -165,23 +159,11 @@ def apply_professional_styling():
         page-break-inside: avoid !important;
     }
     
-    /* Creative Hard Margin Constraints for Bulletproof PDF Export */
-    .main .block-container {
-        max-width: 8.5in !important;  /* Standard US letter width */
-        margin: 0 auto !important;
-    }
-    
     .chart-container { 
         max-width: 100% !important;
         overflow: hidden !important;
         text-align: center !important;
         margin: 20px 0 !important;
-    }
-    
-    /* Dynamic chart sizing constraints */
-    .pyplot-container {
-        max-width: 7.5in !important;  /* Leave margin for PDF */
-        margin: 0 auto !important;
     }
     
     /* Print Media Queries for PDF Export (enhanced from commit 8181df5) */
@@ -656,7 +638,7 @@ def run_cs4_integrated_analysis():
     framework = CS4AnalysisFramework()
     
     # Run both analyses with loading indicator
-    with st.spinner("Running comprehensive statistical analysis for both Full Period and Crisis-Excluded..."):
+    with st.spinner("⚡ Running comprehensive statistical analysis: F-tests, AR(4) models, RMSE calculations..."):
         full_results = framework.run_comprehensive_analysis(include_crisis_years=True)
         crisis_results = framework.run_comprehensive_analysis(include_crisis_years=False)
     

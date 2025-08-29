@@ -125,12 +125,6 @@ def get_professional_css():
             margin: 20px 0 !important;
         }
         
-        /* Main container constraints */
-        .main .block-container {
-            max-width: 8.5in !important;
-            margin: 0 auto !important;
-            padding: 1rem 2rem !important;
-        }
         
         /* Professional table styling (HTML tables) */
         .professional-table { 
