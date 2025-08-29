@@ -266,6 +266,8 @@ analyzing-capital-flows/
 ### Interactive Dashboards
 - **11-Tab Master Dashboard**: Comprehensive interface integrating all case studies
 - **Dual Analysis Modes**: Both full and outlier-adjusted versions for statistical robustness
+- **Smart Loading Feedback**: Operation-specific spinners with informative progress messages
+- **Prioritized User Experience**: Longest-running operations (CS1-3) get detailed loading feedback
 - **Real-time Analysis**: Dynamic parameter adjustment with instant results
 - **Statistical Rigor**: Proper hypothesis testing with multiple significance levels
 - **Export Capabilities**: Download results, visualizations, PDF reports, and HTML exports
@@ -363,9 +365,9 @@ This project is developed for academic research purposes. Please cite appropriat
 **Repository**: Capital Flows Research Analysis  
 **Maintainer**: Nicolo Pastrone (Research Assistant)  
 **Last Updated**: August 2025  
-**Version**: 3.0 (comprehensive 5-case-study framework with robust outlier-adjusted analysis)
+**Version**: 3.1 (enhanced user experience with comprehensive spinner loading system)
 
-### Recent Updates (v3.0)
+### Recent Updates (v3.1)
 - ✅ Complete 5-case-study framework (CS1-CS5)
 - ✅ Winsorized analysis implementation with dual data pipeline
 - ✅ Advanced statistical methods (AR(4), RMSE, comprehensive F-testing)
@@ -374,6 +376,9 @@ This project is developed for academic research purposes. Please cite appropriat
 - ✅ Comprehensive test suite (108 automated tests)
 - ✅ Updated folder structure with full_reports/ and outlier_adjusted_reports/
 - ✅ Enhanced documentation and methodology validation
+- ✅ **NEW**: Comprehensive spinner loading feedback system with operation-specific progress indicators
+- ✅ **NEW**: Smart spinner utilities with informative messages for all CS1-5 case studies
+- ✅ **NEW**: Prioritized loading feedback for longest-running operations (CS1-3)
 
 ### Project Status: **PRODUCTION READY**
 All major functionality operational with comprehensive QA validation and academic-quality statistical framework.
