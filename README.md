@@ -2,6 +2,8 @@
 
 A comprehensive research platform for analyzing capital flow volatility across different monetary regimes, with a focus on small open economies and currency union decisions.
 
+App hosted online (here)[https://analyzing-capital-flows.streamlit.app/].
+
 ## Overview
 
 This project examines how monetary policy frameworks, currency unions, and external shocks affect financial stability through rigorous statistical analysis of IMF Balance of Payments data. The research provides evidence-based insights for monetary policy and currency union decisions.
