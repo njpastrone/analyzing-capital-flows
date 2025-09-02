@@ -2,7 +2,7 @@
 
 A comprehensive research platform for analyzing capital flow volatility across different monetary regimes, with a focus on small open economies and currency union decisions.
 
-App hosted online (here)[https://analyzing-capital-flows.streamlit.app/].
+App hosted online [here](https://analyzing-capital-flows.streamlit.app/).
 
 ## Overview
 
