@@ -51,16 +51,49 @@ SIGNIFICANCE_LEVELS = {
 # DATA PATHS
 # ============================================================================
 
-def get_data_paths():
-    """Get standardized data paths for all applications"""
+def get_data_paths(analysis_type='full'):
+    """
+    Get standardized data paths for all applications.
+
+    Args:
+        analysis_type: Type of analysis data to use
+            - 'full': Complete dataset with all observations (default)
+            - 'winsorized': Outlier-adjusted dataset (5th-95th percentile)
+
+    Returns:
+        Dictionary with standardized data paths for the specified analysis type
+
+    Example:
+        >>> full_paths = get_data_paths('full')
+        >>> winsorized_paths = get_data_paths('winsorized')
+    """
     base_path = Path(__file__).parent.parent.parent
+
+    # Determine dataset suffix based on analysis type
+    if analysis_type == 'winsorized':
+        dataset_suffix = '_winsorized'
+        master_file = 'comprehensive_df_PGDP_labeled_winsorized.csv'
+        cs4_subdir = 'CS4_Statistical_Modeling_winsorized'
+        cs5_controls_subdir = 'CS5_Capital_Controls_winsorized'
+        cs5_regimes_subdir = 'CS5_Regime_Analysis_winsorized'
+    elif analysis_type == 'full':
+        dataset_suffix = ''
+        master_file = 'comprehensive_df_PGDP_labeled.csv'
+        cs4_subdir = 'CS4_Statistical_Modeling'
+        cs5_controls_subdir = 'CS5_Capital_Controls'
+        cs5_regimes_subdir = 'CS5_Regime_Analysis'
+    else:
+        raise ValueError(f"Invalid analysis_type: '{analysis_type}'. Must be 'full' or 'winsorized'.")
+
     return {
         'clean_data': base_path / "updated_data" / "Clean",
-        'master_dataset': base_path / "updated_data" / "Clean" / "comprehensive_df_PGDP_labeled.csv",
-        'cs4_data': base_path / "updated_data" / "Clean" / "CS4_Statistical_Modeling",
-        'cs5_controls': base_path / "updated_data" / "Clean" / "CS5_Capital_Controls",
-        'cs5_regimes': base_path / "updated_data" / "Clean" / "CS5_Regime_Analysis",
-        'output': base_path / "output"
+        'master_dataset': base_path / "updated_data" / "Clean" / master_file,
+        'cs4_data': base_path / "updated_data" / "Clean" / cs4_subdir,
+        'cs5_controls': base_path / "updated_data" / "Clean" / cs5_controls_subdir,
+        'cs5_regimes': base_path / "updated_data" / "Clean" / cs5_regimes_subdir,
+        'output': base_path / "output",
+        'analysis_type': analysis_type,  # Include for reference
+        'dataset_suffix': dataset_suffix  # Include for dynamic file naming
     }
 
 # ============================================================================
