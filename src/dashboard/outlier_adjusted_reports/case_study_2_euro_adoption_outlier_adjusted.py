@@ -20,9 +20,14 @@ import base64
 # Add core modules to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-# Import dashboard configuration for robust data paths
+# Import centralized configuration and constants
 sys.path.append(str(Path(__file__).parent.parent))
 from dashboard_config import get_data_paths
+from config.constants import (
+    CRISIS_YEARS_LIST,
+    get_indicator_nickname,
+    get_investment_type_sort_key
+)
 sys.path.append(str(Path(__file__).parent))
 
 warnings.filterwarnings('ignore')
@@ -30,9 +35,6 @@ warnings.filterwarnings('ignore')
 # Import shared functions from Case Study 1 outlier-adjusted
 import cs1_report_outlier_adjusted
 from cs1_report_outlier_adjusted import (
-    create_indicator_nicknames, 
-    get_nickname,
-    get_investment_type_order,
     sort_indicators_by_type,
     COLORBLIND_SAFE
 )
@@ -98,10 +100,9 @@ def create_euro_periods(data, include_crisis_years=True):
 def load_case_study_2_data(include_crisis_years=True):
     """Load Euro adoption analysis data from comprehensive dataset"""
     try:
-        # Load comprehensive dataset
-        data_paths = get_data_paths()
-        data_dir = data_paths["clean_data"]
-        comprehensive_file = data_dir / "comprehensive_df_PGDP_labeled_winsorized.csv"
+        # Load comprehensive dataset using centralized configuration
+        data_paths = get_data_paths('winsorized')
+        comprehensive_file = data_paths['master_dataset']
         
         if not comprehensive_file.exists():
             st.error(f"Comprehensive dataset not found at {comprehensive_file}")
@@ -441,9 +442,8 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
                     else:
                         rows_to_keep.append(False)
                 else:
-                    # For unknown countries, apply default crisis exclusion
-                    default_crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
-                    rows_to_keep.append(year not in default_crisis_years)
+                    # For unknown countries, apply default crisis exclusion using centralized list
+                    rows_to_keep.append(year not in CRISIS_YEARS_LIST)
             
             case_two_data = case_two_data[rows_to_keep].copy()
         
@@ -746,86 +746,8 @@ def show_overall_capital_flows_analysis_cs2(selected_country, selected_display_c
     fig2.tight_layout()
     st.pyplot(fig2)
 
-# Helper functions for CS1-CS2 consistency
-def create_indicator_nicknames():
-    """Create readable nicknames for indicators"""
-    return {
-        'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct Investment',
-        'Assets - Other investment, Debt instruments': 'Assets - Other Investment (Debt)',
-        'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other Investment (Banks)',
-        'Assets - Portfolio investment, Debt securities': 'Assets - Portfolio (Debt)',
-        'Assets - Portfolio investment, Equity and investment fund shares': 'Assets - Portfolio (Equity)',
-        'Assets - Portfolio investment, Total financial assets/liabilities': 'Assets - Portfolio (Total)',
-        'Liabilities - Direct investment, Total financial assets/liabilities': 'Liabilities - Direct Investment',
-        'Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Liabilities - Other Investment (Banks)',
-        'Liabilities - Portfolio investment, Debt securities': 'Liabilities - Portfolio (Debt)',
-        'Liabilities - Portfolio investment, Equity and investment fund shares': 'Liabilities - Portfolio (Equity)',
-        'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio (Total)',
-        'Net - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net - Other investment, Total financial assets/liabilities': 'Net - Other Investment'
-    }
-
-def get_nickname(indicator_name):
-    """Get nickname for indicator, fallback to shortened version"""
-    nicknames = create_indicator_nicknames()
-    nickname = nicknames.get(indicator_name, indicator_name[:25] + '...' if len(indicator_name) > 25 else indicator_name)
-    # Truncate for table display while maintaining readability
-    return nickname[:35] + '...' if len(nickname) > 35 else nickname
-
-def get_investment_type_order(indicator_name):
-    """
-    Extract sorting key for indicators: Type of Investment -> Disaggregation -> Accounting Entry
-    Returns tuple for sorting: (investment_type_order, disaggregation_order, accounting_entry_order)
-    """
-    # Investment type mapping
-    if 'Direct investment' in indicator_name:
-        inv_type = 0  # Direct
-    elif 'Portfolio investment' in indicator_name:
-        inv_type = 1  # Portfolio  
-    elif 'Other investment' in indicator_name:
-        inv_type = 2  # Other
-    else:
-        inv_type = 9  # Unknown
-    
-    # Disaggregation mapping (for Portfolio and Other)
-    if 'Total financial assets/liabilities' in indicator_name:
-        disagg = 0  # Total (comes first)
-    elif 'Debt' in indicator_name:
-        if 'Deposit taking corporations' in indicator_name:
-            disagg = 2  # Debt - Banks (more specific)
-        else:
-            disagg = 1  # Debt - General
-    elif 'Equity' in indicator_name:
-        disagg = 3  # Equity
-    else:
-        disagg = 9  # No disaggregation or other
-    
-    # Accounting entry mapping
-    if indicator_name.startswith('Assets'):
-        acc_entry = 0
-    elif indicator_name.startswith('Liabilities'):
-        acc_entry = 1
-    elif indicator_name.startswith('Net'):
-        acc_entry = 2
-    else:
-        acc_entry = 9
-    
-    return (inv_type, disagg, acc_entry)
-
-def sort_indicators_by_type(indicators):
-    """Sort indicators by investment type, disaggregation, then accounting entry"""
-    # Convert to clean names if they have _PGDP suffix
-    clean_indicators = [ind.replace('_PGDP', '') if ind.endswith('_PGDP') else ind for ind in indicators]
-    
-    # Sort using the custom key
-    sorted_clean = sorted(clean_indicators, key=get_investment_type_order)
-    
-    # Convert back to original format if needed
-    if any(ind.endswith('_PGDP') for ind in indicators):
-        return [ind + '_PGDP' for ind in sorted_clean]
-    else:
-        return sorted_clean
+# Note: Helper functions now imported from centralized config.constants module
+# and from cs1_report_outlier_adjusted (sort_indicators_by_type, COLORBLIND_SAFE)
 
 def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=True):
     """Show indicator-level analysis for a specific country - sections 1-6"""
@@ -1009,7 +931,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
     table_data = []
     for indicator in sorted_indicators:
         clean_name = indicator.replace('_PGDP', '')
-        nickname = get_nickname(clean_name)
+        nickname = get_indicator_nickname(clean_name)
         
         # Get statistics from country_stats
         indicator_stats = country_stats[country_stats['Indicator'] == clean_name]
@@ -1150,7 +1072,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
     
     test_table_data = []
     for _, row in results_display.iterrows():
-        nickname = get_nickname(row['Indicator'])
+        nickname = get_indicator_nickname(row['Indicator'])
         
         # Significance symbols
         if row['P_Value'] < 0.001:
@@ -1628,7 +1550,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
         - **{most_significant_indicators} indicators** show highly significant differences (p<0.01)
         - **Average volatility change** of {abs(1-1/volatility_ratio)*100:.1f}% after Euro adoption in {adoption_year}
         
-        **Most significant flow types:** {', '.join([get_nickname(row['Indicator']) for _, row in test_results.nsmallest(3, 'P_Value').iterrows()])}
+        **Most significant flow types:** {', '.join([get_indicator_nickname(row['Indicator']) for _, row in test_results.nsmallest(3, 'P_Value').iterrows()])}
         """)
     
     with col2:
@@ -1820,7 +1742,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
         ax = axes[i]
         
         clean_name = indicator.replace('_PGDP', '')
-        nickname = get_nickname(clean_name)
+        nickname = get_indicator_nickname(clean_name)
         
         # Plot pre-Euro and post-Euro data
         pre_data = df_filtered[df_filtered[period_col] == 'Pre-Euro'].sort_values('Date')
@@ -2001,7 +1923,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
     significant_count = 0
     for _, row in test_results.iterrows():
         clean_name = row['Indicator']
-        nickname = get_nickname(clean_name)
+        nickname = get_indicator_nickname(clean_name)
         
         sig_class = "significant" if row['Significant_5pct'] else ""
         if row['Significant_5pct']:
