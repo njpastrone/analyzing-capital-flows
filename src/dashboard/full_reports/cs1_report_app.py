@@ -20,89 +20,26 @@ import zipfile
 # Add core modules to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-# Import dashboard configuration for robust data paths
+# Import centralized configuration and constants
 sys.path.append(str(Path(__file__).parent.parent))
 from dashboard_config import get_data_paths
+from config.constants import (
+    CRISIS_YEARS_LIST,
+    get_indicator_nickname,
+    get_investment_type_sort_key
+)
 
 warnings.filterwarnings('ignore')
 
-def create_indicator_nicknames():
-    """Create readable nicknames for indicators"""
-    return {
-        'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct Investment',
-        'Assets - Other investment, Debt instruments': 'Assets - Other Investment (Debt)',
-        'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other Investment (Banks)',
-        'Assets - Portfolio investment, Debt securities': 'Assets - Portfolio (Debt)',
-        'Assets - Portfolio investment, Equity and investment fund shares': 'Assets - Portfolio (Equity)',
-        'Assets - Portfolio investment, Total financial assets/liabilities': 'Assets - Portfolio (Total)',
-        'Liabilities - Direct investment, Total financial assets/liabilities': 'Liabilities - Direct Investment',
-        'Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Liabilities - Other Investment (Banks)',
-        'Liabilities - Portfolio investment, Debt securities': 'Liabilities - Portfolio (Debt)',
-        'Liabilities - Portfolio investment, Equity and investment fund shares': 'Liabilities - Portfolio (Equity)',
-        'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio (Total)',
-        'Net - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net - Other investment, Total financial assets/liabilities': 'Net - Other Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities': 'Net - Other Investment'
-    }
-
-def get_nickname(indicator_name):
-    """Get nickname for indicator, fallback to shortened version"""
-    nicknames = create_indicator_nicknames()
-    nickname = nicknames.get(indicator_name, indicator_name[:25] + '...' if len(indicator_name) > 25 else indicator_name)
-    # Truncate for table display while maintaining readability
-    return nickname[:35] + '...' if len(nickname) > 35 else nickname
-
-def get_investment_type_order(indicator_name):
-    """
-    Extract sorting key for indicators: Type of Investment -> Disaggregation -> Accounting Entry
-    Returns tuple for sorting: (investment_type_order, disaggregation_order, accounting_entry_order)
-    """
-    # Investment type mapping
-    if 'Direct investment' in indicator_name:
-        inv_type = 0  # Direct
-    elif 'Portfolio investment' in indicator_name:
-        inv_type = 1  # Portfolio  
-    elif 'Other investment' in indicator_name:
-        inv_type = 2  # Other
-    else:
-        inv_type = 9  # Unknown
-    
-    # Disaggregation mapping (for Portfolio and Other)
-    if 'Total financial assets/liabilities' in indicator_name:
-        disagg = 0  # Total (comes first)
-    elif 'Debt' in indicator_name:
-        if 'Deposit taking corporations' in indicator_name:
-            disagg = 2  # Debt - Banks (more specific)
-        else:
-            disagg = 1  # Debt - General
-    elif 'Equity' in indicator_name:
-        disagg = 3  # Equity
-    else:
-        disagg = 9  # No disaggregation or other
-    
-    # Accounting entry mapping
-    if indicator_name.startswith('Assets'):
-        acc_entry = 0
-    elif indicator_name.startswith('Liabilities'):
-        acc_entry = 1
-    elif indicator_name.startswith('Net'):
-        acc_entry = 2
-    else:
-        acc_entry = 9
-    
-    return (inv_type, disagg, acc_entry)
-
+# Helper function maintained for _PGDP suffix handling (file-specific logic)
 def sort_indicators_by_type(indicators):
     """Sort indicators by investment type, disaggregation, then accounting entry"""
     # Convert to clean names if they have _PGDP suffix
     clean_indicators = [ind.replace('_PGDP', '') if ind.endswith('_PGDP') else ind for ind in indicators]
-    
-    # Sort using the custom key
-    sorted_clean = sorted(clean_indicators, key=get_investment_type_order)
-    
+
+    # Sort using the centralized sorting key function
+    sorted_clean = sorted(clean_indicators, key=get_investment_type_sort_key)
+
     # Convert back to original format if needed
     if any(ind.endswith('_PGDP') for ind in indicators):
         return [ind + '_PGDP' for ind in sorted_clean]
@@ -154,9 +91,9 @@ def load_default_data(include_crisis_years=True):
         
         # Apply crisis filtering if requested
         if not include_crisis_years:
-            # Define crisis years: GFC (2008-2010) + COVID (2020-2022)
-            crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
-            
+            # Use centralized crisis years definition: GFC (2008-2010) + COVID (2020-2022)
+            crisis_years = CRISIS_YEARS_LIST
+
             # Filter out crisis years
             original_count = len(final_data)
             final_data = final_data[~final_data['YEAR'].isin(crisis_years)].copy()
@@ -208,7 +145,7 @@ def load_default_data(include_crisis_years=True):
         
         if not include_crisis_years:
             metadata['excluded_observations'] = excluded_count
-            metadata['crisis_years'] = [2008, 2009, 2010, 2020, 2021, 2022]
+            metadata['crisis_years'] = CRISIS_YEARS_LIST
         
         return final_data, analysis_indicators, metadata
         
@@ -359,9 +296,9 @@ def load_overall_capital_flows_data(include_crisis_years=True):
         
         # Apply crisis filtering if requested
         if not include_crisis_years:
-            # Define crisis years: GFC (2008-2010) + COVID (2020-2022)
-            crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
-            
+            # Use centralized crisis years definition: GFC (2008-2010) + COVID (2020-2022)
+            crisis_years = CRISIS_YEARS_LIST
+
             # Filter out crisis years
             final_data = final_data[~final_data['YEAR'].isin(crisis_years)].copy()
             
@@ -1013,7 +950,7 @@ def main(context="standalone"):
     table_data = []
     for indicator in sorted_indicators:
         clean_name = indicator.replace('_PGDP', '')
-        nickname = get_nickname(clean_name)
+        nickname = get_indicator_nickname(clean_name)
         indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
         
         # Get stats for both groups
@@ -1327,7 +1264,7 @@ def main(context="standalone"):
             i = group_idx + idx  # Overall index
             
             clean_name = indicator.replace('_PGDP', '')
-            nickname = get_nickname(clean_name)
+            nickname = get_indicator_nickname(clean_name)
             
             # Plot Iceland
             iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland']
@@ -1385,7 +1322,7 @@ def main(context="standalone"):
             for col_idx, indicator in enumerate(batch_indicators):
                 i = batch_idx + col_idx
                 clean_name = indicator.replace('_PGDP', '')
-                nickname = get_nickname(clean_name)
+                nickname = get_indicator_nickname(clean_name)
                 
                 # Create individual figure
                 fig_ind, ax_ind = plt.subplots(1, 1, figsize=(6, 3))
@@ -1610,7 +1547,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
         table_rows = []
         for indicator in sorted_indicators:
             clean_name = indicator.replace('_PGDP', '')
-            nickname = get_nickname(clean_name)
+            nickname = get_indicator_nickname(clean_name)
             indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
             
             iceland_stats = indicator_stats[indicator_stats['Group'] == 'Iceland'].iloc[0] if len(indicator_stats[indicator_stats['Group'] == 'Iceland']) > 0 else None
@@ -1638,7 +1575,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
         
         test_table_rows = []
         for _, row in results_display.iterrows():
-            nickname = get_nickname(row['Indicator'])
+            nickname = get_indicator_nickname(row['Indicator'])
             significance = '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else ''
             higher_vol = 'Iceland' if row['Iceland_Higher_Volatility'] else 'Eurozone'
             
@@ -1664,7 +1601,7 @@ def generate_html_report(final_data, analysis_indicators, test_results, group_st
             fig_ts, ax = plt.subplots(1, 1, figsize=(6, 2.5))
             
             clean_name = indicator.replace('_PGDP', '')
-            nickname = get_nickname(clean_name)
+            nickname = get_indicator_nickname(clean_name)
             
             # Plot data exactly like app
             iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland']
@@ -2526,7 +2463,7 @@ def case_study_1_main_crisis_excluded(context="standalone"):
     table_data = []
     for indicator in sorted_indicators:
         clean_name = indicator.replace('_PGDP', '')
-        nickname = get_nickname(clean_name)
+        nickname = get_indicator_nickname(clean_name)
         indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
         
         # Get stats for both groups
@@ -2820,7 +2757,7 @@ def case_study_1_main_crisis_excluded(context="standalone"):
             i = group_idx + idx  # Overall index
             
             clean_name = indicator.replace('_PGDP', '')
-            nickname = get_nickname(clean_name)
+            nickname = get_indicator_nickname(clean_name)
             
             # Add shaded regions for excluded crisis periods (only on first plot of group)
             if idx == 0:
@@ -2948,7 +2885,7 @@ def case_study_1_main_crisis_excluded(context="standalone"):
             for col_idx, indicator in enumerate(batch_indicators):
                 i = batch_idx + col_idx
                 clean_name = indicator.replace('_PGDP', '')
-                nickname = get_nickname(clean_name)
+                nickname = get_indicator_nickname(clean_name)
                 
                 # Create individual figure
                 fig_ind, ax_ind = plt.subplots(1, 1, figsize=(6, 3))
