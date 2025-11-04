@@ -24,9 +24,13 @@ import zipfile
 # Add core modules to path
 sys.path.append(str(Path(__file__).parent.parent.parent))
 
-# Import dashboard configuration for robust data paths
+# Import centralized configuration and constants
 sys.path.append(str(Path(__file__).parent.parent))
 from dashboard_config import get_data_paths
+from config.constants import (
+    CRISIS_YEARS_LIST,
+    get_indicator_nickname
+)
 
 warnings.filterwarnings('ignore')
 
@@ -48,33 +52,7 @@ plt.rcParams.update({
 COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
 sns.set_palette(COLORBLIND_SAFE)
 
-def create_indicator_nicknames():
-    """Create readable nicknames for indicators"""
-    return {
-        'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct Investment',
-        'Assets - Other investment, Debt instruments': 'Assets - Other Investment (Debt)',
-        'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other Investment (Banks)',
-        'Assets - Portfolio investment, Debt securities': 'Assets - Portfolio (Debt)',
-        'Assets - Portfolio investment, Equity and investment fund shares': 'Assets - Portfolio (Equity)',
-        'Assets - Portfolio investment, Total financial assets/liabilities': 'Assets - Portfolio (Total)',
-        'Liabilities - Direct investment, Total financial assets/liabilities': 'Liabilities - Direct Investment',
-        'Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Liabilities - Other Investment (Banks)',
-        'Liabilities - Portfolio investment, Debt securities': 'Liabilities - Portfolio (Debt)',
-        'Liabilities - Portfolio investment, Equity and investment fund shares': 'Liabilities - Portfolio (Equity)',
-        'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio (Total)',
-        'Net - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net - Other investment, Total financial assets/liabilities': 'Net - Other Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities': 'Net - Other Investment'
-    }
-
-def get_nickname(indicator_name):
-    """Get nickname for indicator, fallback to shortened version"""
-    nicknames = create_indicator_nicknames()
-    nickname = nicknames.get(indicator_name, indicator_name[:25] + '...' if len(indicator_name) > 25 else indicator_name)
-    return nickname
+# Note: Indicator nickname functions now imported from centralized config.constants module
 
 def load_case_study_3_data():
     """Load Case Study 3 data: Iceland vs Small Open Economies"""
@@ -705,7 +683,7 @@ def case_study_3_main(context="standalone"):
     table_data = []
     for indicator in sorted_indicators:
         clean_name = indicator.replace('_PGDP', '')
-        nickname = get_nickname(clean_name)
+        nickname = get_indicator_nickname(clean_name)
         indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
         
         # Get stats for both groups (adapted for CS3)
@@ -978,7 +956,7 @@ def case_study_3_main(context="standalone"):
             i = group_idx + idx  # Overall index
             
             clean_name = indicator.replace('_PGDP', '')
-            nickname = get_nickname(clean_name)
+            nickname = get_indicator_nickname(clean_name)
             
             # Plot Iceland
             iceland_data = final_data_copy[final_data_copy['GROUP'] == 'Iceland']
@@ -1603,7 +1581,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
     table_data = []
     for indicator in sorted_indicators:
         clean_name = indicator.replace('_PGDP', '')
-        nickname = get_nickname(clean_name)
+        nickname = get_indicator_nickname(clean_name)
         indicator_stats = group_stats[group_stats['Indicator'] == clean_name]
         
         # Get stats for both groups (adapted for CS3)
@@ -1798,7 +1776,7 @@ def case_study_3_main_crisis_excluded(context="standalone"):
             ax = axes[idx]
             
             clean_name = indicator.replace('_PGDP', '')
-            nickname = get_nickname(clean_name)
+            nickname = get_indicator_nickname(clean_name)
             
             # Add shaded regions for excluded crisis periods FIRST (EXACT CS1)
             ax.axvspan(pd.Timestamp('2008-01-01'), pd.Timestamp('2010-12-31'), 
