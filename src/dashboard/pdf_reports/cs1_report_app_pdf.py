@@ -59,10 +59,7 @@ plt.rcParams.update({
     'axes.facecolor': 'white'
 })
 
-# Colorblind-friendly econometrics palette (blues, oranges, teals)
-ECON_COLORS = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b']
-# More accessible: blue, orange, green, red, purple, brown
-COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
+# Set colorblind-friendly palette from centralized config
 sns.set_palette(COLORBLIND_SAFE)
 
 # Page configuration - removed to avoid conflicts when imported into main_app.py
