@@ -19,6 +19,10 @@ from datetime import datetime
 import base64
 import zipfile
 
+# Add dashboard path to sys.path for centralized imports
+sys.path.append(str(Path(__file__).parent))
+from config.constants import sort_indicators_by_type
+
 # Import all CS1 utility functions
 def create_indicator_nicknames():
     """Create readable nicknames for indicators"""
@@ -231,20 +235,6 @@ def create_plot_base64(fig):
     img_base64 = base64.b64encode(buf.read()).decode()
     plt.close(fig)
     return img_base64
-
-def sort_indicators_by_type(indicators):
-    """Sort indicators by investment type (Assets, Liabilities, Net)"""
-    # Define sorting order
-    order = ['Assets', 'Liabilities', 'Net']
-    
-    def get_sort_key(indicator):
-        clean_name = indicator.replace('_PGDP', '')
-        for i, prefix in enumerate(order):
-            if clean_name.startswith(prefix):
-                return (i, clean_name)  # Primary sort by type, secondary by name
-        return (999, clean_name)  # Unknown types go last
-    
-    return sorted(indicators, key=get_sort_key)
 
 def get_investment_type_order(indicator_name):
     """Get sorting order for investment types"""

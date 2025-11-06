@@ -22,28 +22,14 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Import dashboard configuration for robust data paths
 sys.path.append(str(Path(__file__).parent.parent))
-from dashboard_config import get_data_paths
+from dashboard_config import get_data_paths, COLORBLIND_SAFE
 from config.constants import (
     CRISIS_YEARS_LIST,
     get_indicator_nickname,
-    get_investment_type_sort_key
+    sort_indicators_by_type
 )
 
 warnings.filterwarnings('ignore')
-
-def sort_indicators_by_type(indicators):
-    """Sort indicators by investment type, disaggregation, then accounting entry"""
-    # Convert to clean names if they have _PGDP suffix
-    clean_indicators = [ind.replace('_PGDP', '') if ind.endswith('_PGDP') else ind for ind in indicators]
-
-    # Sort using the centralized sorting key function
-    sorted_clean = sorted(clean_indicators, key=get_investment_type_sort_key)
-
-    # Convert back to original format if needed
-    if any(ind.endswith('_PGDP') for ind in indicators):
-        return [ind + '_PGDP' for ind in sorted_clean]
-    else:
-        return sorted_clean
 
 # Set styling for econometrics (clean, academic style)
 plt.style.use('default')
