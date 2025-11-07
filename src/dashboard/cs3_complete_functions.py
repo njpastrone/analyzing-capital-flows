@@ -19,50 +19,27 @@ from datetime import datetime
 import base64
 import zipfile
 
-# Add dashboard path to sys.path for centralized imports
+# Import centralized configuration and constants
 sys.path.append(str(Path(__file__).parent))
-from config.constants import sort_indicators_by_type
-
-# Import all CS1 utility functions
-def create_indicator_nicknames():
-    """Create readable nicknames for indicators"""
-    return {
-        'Assets - Direct investment, Total financial assets/liabilities': 'Assets - Direct Investment',
-        'Assets - Other investment, Debt instruments': 'Assets - Other Investment (Debt)',
-        'Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Assets - Other Investment (Banks)',
-        'Assets - Portfolio investment, Debt securities': 'Assets - Portfolio (Debt)',
-        'Assets - Portfolio investment, Equity and investment fund shares': 'Assets - Portfolio (Equity)',
-        'Assets - Portfolio investment, Total financial assets/liabilities': 'Assets - Portfolio (Total)',
-        'Liabilities - Direct investment, Total financial assets/liabilities': 'Liabilities - Direct Investment',
-        'Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank': 'Liabilities - Other Investment (Banks)',
-        'Liabilities - Portfolio investment, Debt securities': 'Liabilities - Portfolio (Debt)',
-        'Liabilities - Portfolio investment, Equity and investment fund shares': 'Liabilities - Portfolio (Equity)',
-        'Liabilities - Portfolio investment, Total financial assets/liabilities': 'Liabilities - Portfolio (Total)',
-        'Net - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net - Other investment, Total financial assets/liabilities': 'Net - Other Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities': 'Net - Direct Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities': 'Net - Portfolio Investment',
-        'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities': 'Net - Other Investment'
-    }
-
-def get_nickname(indicator_name):
-    """Get nickname for indicator, fallback to shortened version"""
-    nicknames = create_indicator_nicknames()
-    nickname = nicknames.get(indicator_name, indicator_name[:25] + '...' if len(indicator_name) > 25 else indicator_name)
-    return nickname
+from dashboard_config import get_data_paths
+from config.constants import (
+    CRISIS_YEARS_LIST,
+    get_indicator_nickname,
+    INDICATOR_NICKNAMES,
+    sort_indicators_by_type
+)
 
 def load_cs3_data(include_crisis_years=True):
     """Load CS3 data: Iceland vs SOEs"""
     try:
-        # Load the comprehensive labeled dataset
-        data_dir = Path(__file__).parent.parent.parent / "updated_data" / "Clean"
-        file_path = data_dir / "comprehensive_df_PGDP_labeled.csv"
-        
+        # Load the comprehensive labeled dataset using centralized paths
+        data_paths = get_data_paths()
+        file_path = data_paths['master_dataset']
+
         if not file_path.exists():
             st.error(f"❌ Data file not found: {file_path}")
             return None, None, None
-        
+
         # Load data
         df = pd.read_csv(file_path)
         
@@ -76,8 +53,8 @@ def load_cs3_data(include_crisis_years=True):
         # Apply crisis filtering if requested (matching CS1 methodology)
         if not include_crisis_years:
             # Define crisis years: GFC (2008-2010) + COVID (2020-2022)
-            crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
-            
+            crisis_years = CRISIS_YEARS_LIST
+
             # Filter out crisis years
             original_count = len(cs3_data)
             cs3_data = cs3_data[~cs3_data['YEAR'].isin(crisis_years)].copy()
@@ -129,7 +106,7 @@ def load_cs3_data(include_crisis_years=True):
         
         if not include_crisis_years:
             metadata['excluded_observations'] = excluded_count
-            metadata['crisis_years'] = [2008, 2009, 2010, 2020, 2021, 2022]
+            metadata['crisis_years'] = CRISIS_YEARS_LIST
         
         st.success(f"✅ Loaded CS3 data: {len(cs3_data)} observations, {len(analysis_indicators)} indicators")
         

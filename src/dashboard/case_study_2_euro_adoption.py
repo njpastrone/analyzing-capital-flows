@@ -23,9 +23,10 @@ sys.path.append(str(Path(__file__).parent))
 
 warnings.filterwarnings('ignore')
 
-# Import centralized configuration
-from dashboard_config import COLORBLIND_SAFE
+# Import centralized configuration and constants
+from dashboard_config import get_data_paths, COLORBLIND_SAFE
 from config.constants import (
+    CRISIS_YEARS_LIST,
     get_indicator_nickname,
     get_investment_type_sort_key,
     sort_indicators_by_type
@@ -438,8 +439,7 @@ def load_overall_capital_flows_data_cs2(include_crisis_years=True):
                         rows_to_keep.append(False)
                 else:
                     # For unknown countries, apply default crisis exclusion
-                    default_crisis_years = [2008, 2009, 2010, 2020, 2021, 2022]
-                    rows_to_keep.append(year not in default_crisis_years)
+                    rows_to_keep.append(year not in CRISIS_YEARS_LIST)
             
             case_two_data = case_two_data[rows_to_keep].copy()
         

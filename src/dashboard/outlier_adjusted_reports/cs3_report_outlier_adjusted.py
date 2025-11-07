@@ -27,7 +27,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 
 # Import centralized configuration and constants
 sys.path.append(str(Path(__file__).parent.parent))
-from dashboard_config import get_data_paths
+from dashboard_config import get_data_paths, COLORBLIND_SAFE
 from config.constants import (
     CRISIS_YEARS_LIST,
     get_indicator_nickname
@@ -49,8 +49,7 @@ plt.rcParams.update({
     'axes.facecolor': 'white'
 })
 
-# Colorblind-friendly econometrics palette (matching cs1_report_app.py)
-COLORBLIND_SAFE = ['#0173B2', '#DE8F05', '#029E73', '#CC78BC', '#CA9161', '#FBAFE4']
+# Set colorblind-friendly palette from centralized config
 sns.set_palette(COLORBLIND_SAFE)
 
 # Note: Indicator nickname functions now imported from centralized config.constants module
