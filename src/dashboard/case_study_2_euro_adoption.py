@@ -28,11 +28,9 @@ from dashboard_config import get_data_paths, COLORBLIND_SAFE
 from config.constants import (
     CRISIS_YEARS_LIST,
     get_indicator_nickname,
-    get_investment_type_sort_key
+    get_investment_type_sort_key,
+    sort_indicators_by_type
 )
-
-# Import shared sorting function from CS1 report
-from full_reports.cs1_report_app import sort_indicators_by_type
 
 def create_euro_adoption_timeline():
     """Define Euro adoption dates and analysis periods"""
@@ -1062,7 +1060,7 @@ def show_indicator_level_analysis_cs2(selected_country, include_crisis_years=Tru
     
     # Create hypothesis test results table (matching CS1 format)
     results_display = test_results.copy()
-    results_display['Sort_Key'] = results_display['Indicator'].apply(get_investment_type_order)
+    results_display['Sort_Key'] = results_display['Indicator'].apply(get_investment_type_sort_key)
     results_display = results_display.sort_values('Sort_Key')
     
     test_table_data = []
@@ -1735,7 +1733,7 @@ def generate_cs2_html_report(selected_display_country, include_crisis_years, sum
             break
             
         ax = axes[i]
-        
+
         clean_name = indicator.replace('_PGDP', '')
         nickname = get_indicator_nickname(clean_name)
         

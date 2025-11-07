@@ -25,7 +25,8 @@ from dashboard_config import get_data_paths
 from config.constants import (
     CRISIS_YEARS_LIST,
     get_indicator_nickname,
-    INDICATOR_NICKNAMES
+    INDICATOR_NICKNAMES,
+    sort_indicators_by_type
 )
 
 def load_cs3_data(include_crisis_years=True):
@@ -211,20 +212,6 @@ def create_plot_base64(fig):
     img_base64 = base64.b64encode(buf.read()).decode()
     plt.close(fig)
     return img_base64
-
-def sort_indicators_by_type(indicators):
-    """Sort indicators by investment type (Assets, Liabilities, Net)"""
-    # Define sorting order
-    order = ['Assets', 'Liabilities', 'Net']
-    
-    def get_sort_key(indicator):
-        clean_name = indicator.replace('_PGDP', '')
-        for i, prefix in enumerate(order):
-            if clean_name.startswith(prefix):
-                return (i, clean_name)  # Primary sort by type, secondary by name
-        return (999, clean_name)  # Unknown types go last
-    
-    return sorted(indicators, key=get_sort_key)
 
 def get_investment_type_order(indicator_name):
     """Get sorting order for investment types"""

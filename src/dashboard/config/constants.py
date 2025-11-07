@@ -235,6 +235,43 @@ def is_crisis_year(year: int) -> bool:
     return year in CRISIS_YEARS_LIST
 
 
+def sort_indicators_by_type(indicators: list) -> list:
+    """
+    Sort indicators by investment type, disaggregation, then accounting entry.
+
+    Handles indicators with or without _PGDP suffix. Uses get_investment_type_sort_key()
+    for the actual sorting logic.
+
+    Previously duplicated in 7 files: cs1_report_app.py, cs1_report_outlier_adjusted.py,
+    cs1_report_app_pdf.py, cs1_report_outlier_adjusted_pdf.py, and CS2 versions.
+
+    Args:
+        indicators: List of indicator names (with or without _PGDP suffix)
+
+    Returns:
+        Sorted list of indicators in the same format as input
+
+    Examples:
+        >>> indicators = ['Net - Direct investment_PGDP', 'Assets - Portfolio (Total)_PGDP']
+        >>> sort_indicators_by_type(indicators)
+        ['Assets - Portfolio (Total)_PGDP', 'Net - Direct investment_PGDP']
+    """
+    # Convert to clean names if they have _PGDP suffix
+    clean_indicators = [
+        ind.replace('_PGDP', '') if ind.endswith('_PGDP') else ind
+        for ind in indicators
+    ]
+
+    # Sort using the centralized sorting key function
+    sorted_clean = sorted(clean_indicators, key=get_investment_type_sort_key)
+
+    # Convert back to original format if needed
+    if any(ind.endswith('_PGDP') for ind in indicators):
+        return [ind + '_PGDP' for ind in sorted_clean]
+    else:
+        return sorted_clean
+
+
 # ============================================================================
 # NOTES FOR DEVELOPERS
 # ============================================================================

@@ -26,25 +26,14 @@ from dashboard_config import get_data_paths, COLORBLIND_SAFE
 from config.constants import (
     CRISIS_YEARS_LIST,
     get_indicator_nickname,
-    get_investment_type_sort_key
+    sort_indicators_by_type
+)
+from shared_utils.data_loading import (
+    load_case_study_data as _load_cs_data,
+    load_overall_capital_flows_data as _load_overall_data
 )
 
 warnings.filterwarnings('ignore')
-
-# Helper function maintained for _PGDP suffix handling (file-specific logic)
-def sort_indicators_by_type(indicators):
-    """Sort indicators by investment type, disaggregation, then accounting entry"""
-    # Convert to clean names if they have _PGDP suffix
-    clean_indicators = [ind.replace('_PGDP', '') if ind.endswith('_PGDP') else ind for ind in indicators]
-
-    # Sort using the centralized sorting key function
-    sorted_clean = sorted(clean_indicators, key=get_investment_type_sort_key)
-
-    # Convert back to original format if needed
-    if any(ind.endswith('_PGDP') for ind in indicators):
-        return [ind + '_PGDP' for ind in sorted_clean]
-    else:
-        return sorted_clean
 
 # Set styling for econometrics (clean, academic style)
 plt.style.use('default')
@@ -67,85 +56,28 @@ sns.set_palette(COLORBLIND_SAFE)
 # st.set_page_config() is now handled by main_app.py
 
 def load_default_data(include_crisis_years=True):
-    """Load default Case Study 1 data from cleaned datasets with optional crisis filtering"""
-    try:
-        # Use centralized data path configuration
-        data_paths = get_data_paths()
-        comprehensive_file = data_paths['master_dataset']
-        
-        if not comprehensive_file.exists():
-            st.error("Cleaned data file not found. Please check file paths.")
-            return None, None, None
-        
-        # Load comprehensive labeled data
-        comprehensive_df = pd.read_csv(comprehensive_file)
-        
-        # Filter for Case Study 1 data (CS1_GROUP not null)
-        case_one_data = comprehensive_df[comprehensive_df['CS1_GROUP'].notna()].copy()
-        
-        # Remove Luxembourg as per original analysis
-        final_data = case_one_data[case_one_data['COUNTRY'] != 'Luxembourg'].copy()
-        
-        # Apply crisis filtering if requested
-        if not include_crisis_years:
-            # Use centralized crisis years definition: GFC (2008-2010) + COVID (2020-2022)
-            crisis_years = CRISIS_YEARS_LIST
+    """
+    Load default Case Study 1 data from cleaned datasets with optional crisis filtering.
 
-            # Filter out crisis years
-            original_count = len(final_data)
-            final_data = final_data[~final_data['YEAR'].isin(crisis_years)].copy()
-            excluded_count = original_count - len(final_data)
-            
-            if len(final_data) == 0:
-                st.error("No data remaining after crisis period exclusion.")
-                return None, None, None
-        
-        # Create GROUP column using CS1_GROUP mapping
-        final_data['GROUP'] = final_data['COUNTRY'].apply(
-            lambda x: 'Iceland' if x == 'Iceland' else 'Eurozone'
+    This function now uses centralized data loading from shared_utils.data_loading.
+
+    Parameters
+    ----------
+    include_crisis_years : bool, default=True
+        Whether to include crisis periods (GFC 2008-2010, COVID 2020-2022)
+
+    Returns
+    -------
+    tuple
+        (final_data, analysis_indicators, metadata) or (None, None, None) on error
+    """
+    try:
+        # Use centralized data loading for CS1
+        return _load_cs_data(
+            case_study=1,
+            analysis_type='full',
+            include_crisis_years=include_crisis_years
         )
-        
-        # Get analysis indicators (columns ending with _PGDP)
-        all_indicators = [col for col in final_data.columns if col.endswith('_PGDP')]
-        
-        # Remove the last two indicators (Financial derivatives and Financial account balance - now discontinued)
-        indicators_to_exclude = [
-            'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial derivatives (other than reserves) and employee stock options_PGDP',
-            'Net (net acquisition of financial assets less net incurrence of liabilities) - Financial account balance, excluding reserves and related items_PGDP'
-        ]
-        analysis_indicators = [ind for ind in all_indicators if ind not in indicators_to_exclude]
-        
-        # Rename indicators to consistent format
-        indicator_renames = {
-            'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP': 'Net - Direct investment, Total financial assets/liabilities_PGDP',
-            'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP': 'Net - Portfolio investment, Total financial assets/liabilities_PGDP',
-            'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP': 'Net - Other investment, Total financial assets/liabilities_PGDP'
-        }
-        
-        # Apply renames to dataframe
-        final_data = final_data.rename(columns=indicator_renames)
-        
-        # Update indicator list with new names
-        analysis_indicators = [indicator_renames.get(ind, ind) for ind in analysis_indicators]
-        analysis_indicators = sort_indicators_by_type(analysis_indicators)
-        
-        # Create metadata
-        study_version = "Full Time Period" if include_crisis_years else "Crisis-Excluded"
-        metadata = {
-            'original_shape': comprehensive_df.shape,
-            'filtered_shape': case_one_data.shape,
-            'final_shape': final_data.shape,
-            'n_indicators': len(analysis_indicators),
-            'study_version': study_version,
-            'include_crisis_years': include_crisis_years
-        }
-        
-        if not include_crisis_years:
-            metadata['excluded_observations'] = excluded_count
-            metadata['crisis_years'] = CRISIS_YEARS_LIST
-        
-        return final_data, analysis_indicators, metadata
-        
     except Exception as e:
         st.error(f"Error loading data: {str(e)}")
         return None, None, None
@@ -273,68 +205,27 @@ def perform_volatility_tests(data, indicators):
     return pd.DataFrame(test_results)
 
 def load_overall_capital_flows_data(include_crisis_years=True):
-    """Load data specifically for Overall Capital Flows Analysis with optional crisis filtering"""
-    try:
-        # Use centralized data path configuration
-        data_paths = get_data_paths()
-        comprehensive_file = data_paths['master_dataset']
-        
-        if not comprehensive_file.exists():
-            return None, None
-        
-        # Load comprehensive labeled data
-        comprehensive_df = pd.read_csv(comprehensive_file)
-        
-        # Filter for Case Study 1 data (CS1_GROUP not null)
-        case_one_data = comprehensive_df[comprehensive_df['CS1_GROUP'].notna()].copy()
-        
-        # Remove Luxembourg as per original analysis
-        final_data = case_one_data[case_one_data['COUNTRY'] != 'Luxembourg'].copy()
-        
-        # Apply crisis filtering if requested
-        if not include_crisis_years:
-            # Use centralized crisis years definition: GFC (2008-2010) + COVID (2020-2022)
-            crisis_years = CRISIS_YEARS_LIST
+    """
+    Load data specifically for Overall Capital Flows Analysis with optional crisis filtering.
 
-            # Filter out crisis years
-            final_data = final_data[~final_data['YEAR'].isin(crisis_years)].copy()
-            
-            if len(final_data) == 0:
-                st.error("No data remaining after crisis period exclusion.")
-                return None, None
-        
-        # Create GROUP column
-        final_data['GROUP'] = final_data['COUNTRY'].apply(
-            lambda x: 'Iceland' if x == 'Iceland' else 'Eurozone'
+    This function now uses centralized data loading from shared_utils.data_loading.
+
+    Parameters
+    ----------
+    include_crisis_years : bool, default=True
+        Whether to include crisis periods (GFC 2008-2010, COVID 2020-2022)
+
+    Returns
+    -------
+    tuple
+        (final_data, indicators_mapping) or (None, None) on error
+    """
+    try:
+        # Use centralized data loading for overall capital flows
+        return _load_overall_data(
+            analysis_type='full',
+            include_crisis_years=include_crisis_years
         )
-        
-        # Define the 4 overall capital flows indicators (3 base + 1 computed)
-        base_indicators_mapping = {
-            'Net Portfolio Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP',
-            'Net Direct Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP',
-            'Net Other Investment': 'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP'
-        }
-        
-        # Compute the new Net Capital Flows indicator
-        net_direct_col = base_indicators_mapping['Net Direct Investment']
-        net_portfolio_col = base_indicators_mapping['Net Portfolio Investment'] 
-        net_other_col = base_indicators_mapping['Net Other Investment']
-        
-        # Create the computed column
-        final_data['Net Capital Flows (Direct + Portfolio + Other Investment)_PGDP'] = (
-            final_data[net_direct_col].fillna(0) + 
-            final_data[net_portfolio_col].fillna(0) + 
-            final_data[net_other_col].fillna(0)
-        )
-        
-        # Complete indicators mapping including computed indicator
-        overall_indicators_mapping = {
-            **base_indicators_mapping,
-            'Net Capital Flows (Direct + Portfolio + Other Investment)': 'Net Capital Flows (Direct + Portfolio + Other Investment)_PGDP'
-        }
-        
-        return final_data, overall_indicators_mapping
-        
     except Exception as e:
         st.error(f"Error loading overall capital flows data: {str(e)}")
         return None, None
