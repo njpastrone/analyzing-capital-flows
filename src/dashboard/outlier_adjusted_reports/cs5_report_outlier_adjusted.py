@@ -29,73 +29,14 @@ if str(current_file_dir) not in sys.path:
     sys.path.insert(0, str(current_file_dir))
 
 # Import centralized dashboard configuration
-from dashboard_config import COLORBLIND_SAFE, get_data_paths, get_professional_css
+from dashboard_config import COLORBLIND_SAFE, get_data_paths
+from shared_utils import apply_professional_styling
 
 # Page configuration - removed to avoid conflicts when imported into main_app.py
 # st.set_page_config() is now handled by main_app.py or when run standalone
 
-def apply_professional_styling():
-    """Apply professional CSS styling to the app"""
-    # Use centralized CSS with CS5-specific table styling
-    base_css = get_professional_css()
-    cs5_outlier_adjusted_specific_css = """
-    <style>
-        /* CS5 Master Table Styling (optimized for 13 columns) */
-        .cs4-master-table { 
-            width: 100% !important;
-            border-collapse: collapse !important;
-            margin: 20px 0 !important;
-            font-size: 9px !important;  /* Smaller font for 13 columns */
-            font-family: 'Arial', sans-serif !important;
-            table-layout: fixed !important;  /* Fixed layout for better column control */
-        }
-        .cs4-master-table th {
-            background-color: #e6f3ff !important;
-            font-weight: bold !important;
-            text-align: center !important;
-            padding: 6px 4px !important;  /* Reduced padding for more columns */
-            border: 1px solid #ddd !important;
-            font-size: 8px !important;  /* Smaller headers */
-            word-wrap: break-word !important;
-        }
-        .cs4-master-table td {
-            text-align: center !important;
-            padding: 4px 2px !important;  /* Reduced padding */
-            border: 1px solid #ddd !important;
-            font-size: 8px !important;  /* Smaller data font */
-            word-wrap: break-word !important;
-        }
-        .cs4-master-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9 !important;
-        }
-        /* First column (Indicator/Period) wider */
-        .cs4-master-table td:first-child {
-            width: 20% !important;
-            text-align: left !important;
-            font-weight: bold !important;
-            padding-left: 6px !important;
-        }
-        .cs4-master-table th:first-child {
-            width: 20% !important;
-            text-align: center !important;
-        }
-        
-        /* Print Media Queries for PDF Export */
-        @media print {
-            .cs4-master-table { 
-                page-break-inside: avoid !important;
-                font-size: 6px !important;  /* Even smaller for PDF with 13 columns */
-                margin: 10px 0 !important;
-                table-layout: fixed !important;
-            }
-            .cs4-master-table th, .cs4-master-table td {
-                padding: 2px 1px !important;  /* Minimal padding for PDF */
-                font-size: 6px !important;
-            }
-        }
-    </style>
-    """
-    st.markdown(base_css + cs5_outlier_adjusted_specific_css, unsafe_allow_html=True)
+# Professional styling now centralized in shared_utils.styling
+# Call: apply_professional_styling('cs5')
 
 
 def load_capital_controls_data():
@@ -478,8 +419,8 @@ def display_cs5_outlier_adjusted_master_table(df):
 def run_cs5_outlier_adjusted_analysis():
     """Main function to run CS5 analysis"""
     
-    # Apply styling when function is called
-    apply_professional_styling()
+    # Apply styling when function is called (centralized in shared_utils)
+    apply_professional_styling('cs5')
     
     st.title("🛡️ 🌐 Case Study 5: Capital Controls and Exchange Rate Regime Analysis (Outlier-Adjusted)")
     st.markdown("---")

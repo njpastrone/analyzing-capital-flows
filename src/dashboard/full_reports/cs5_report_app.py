@@ -29,102 +29,14 @@ if str(current_file_dir) not in sys.path:
     sys.path.insert(0, str(current_file_dir))
 
 # Import centralized dashboard configuration
-from dashboard_config import COLORBLIND_SAFE, get_data_paths, get_professional_css
+from dashboard_config import COLORBLIND_SAFE, get_data_paths
+from shared_utils import apply_professional_styling
 
 # Page configuration - removed to avoid conflicts when imported into main_app.py
 # st.set_page_config() is now handled by main_app.py or when run standalone
 
-def apply_professional_styling():
-    """Apply professional CSS styling to the app"""
-    # Use centralized CSS with CS5-specific table styling
-    base_css = get_professional_css()
-    cs5_specific_css = """
-    <style>
-        /* CS5 Master Table Styling (optimized for 13 columns - weighted & simple averages) */
-        .cs4-master-table { 
-            width: 100% !important;
-            border-collapse: collapse !important;
-            margin: 20px 0 !important;
-            font-size: 9px !important;  /* Smaller font for 13 columns */
-            font-family: 'Arial', sans-serif !important;
-            table-layout: fixed !important;  /* Fixed layout for better column control */
-        }
-        .cs4-master-table th {
-            background-color: #e6f3ff !important;
-            font-weight: bold !important;
-            text-align: center !important;
-            padding: 6px 3px !important;  /* Reduced padding for more columns */
-            border: 1px solid #ddd !important;
-            font-size: 8px !important;  /* Smaller headers for 13 columns */
-            word-wrap: break-word !important;
-        }
-        .cs4-master-table td {
-            text-align: center !important;
-            padding: 4px 2px !important;  /* Reduced padding for 13 columns */
-            border: 1px solid #ddd !important;
-            font-size: 8px !important;  /* Smaller data font for 13 columns */
-            word-wrap: break-word !important;
-        }
-        .cs4-master-table tbody tr:nth-child(even) {
-            background-color: #f9f9f9 !important;
-        }
-        /* First column (Indicator/Period) optimized for 13-column layout */
-        .cs4-master-table td:first-child {
-            width: 18% !important;  /* Reduced width for 13-column layout */
-            text-align: left !important;
-            font-weight: bold !important;
-            padding-left: 6px !important;
-            font-size: 8px !important;  /* Smaller readable font */
-            white-space: nowrap !important;  /* Prevent text wrapping */
-            word-wrap: normal !important;    /* Override break-word */
-            word-break: normal !important;   /* Prevent character breaking */
-            overflow-wrap: normal !important; /* Additional wrap prevention */
-            min-width: 18% !important;       /* Ensure minimum width */
-        }
-        .cs4-master-table th:first-child {
-            width: 18% !important;  /* Match data column width */
-            text-align: center !important;
-            font-size: 8px !important;  /* Smaller readable font */
-            white-space: nowrap !important;  /* Prevent header text wrapping */
-            word-wrap: normal !important;    /* Override break-word */
-        }
-        /* Data columns optimized for 13-column display */
-        .cs4-master-table td:not(:first-child), .cs4-master-table th:not(:first-child) {
-            width: 6.8% !important;  /* 82% remaining width / 12 columns = ~6.8% each */
-            min-width: 6.8% !important;
-            max-width: 6.8% !important;
-        }
-        
-        /* Print Media Queries for PDF Export */
-        @media print {
-            .cs4-master-table { 
-                page-break-inside: avoid !important;
-                font-size: 7px !important;  /* Very small font for 13-column PDF */
-                margin: 10px 0 !important;
-                table-layout: fixed !important;
-            }
-            .cs4-master-table th, .cs4-master-table td {
-                padding: 3px 1px !important;  /* Minimal padding for 13-column PDF */
-                font-size: 7px !important;
-            }
-            /* First column width for PDF */
-            .cs4-master-table td:first-child, .cs4-master-table th:first-child {
-                width: 18% !important;  /* Maintain readable first column in PDF */
-                font-size: 7px !important;
-                white-space: nowrap !important;  /* Prevent wrapping in PDF */
-                word-wrap: normal !important;    /* Override break-word in PDF */
-                min-width: 18% !important;       /* Ensure minimum width in PDF */
-            }
-            /* Data columns for PDF */
-            .cs4-master-table td:not(:first-child), .cs4-master-table th:not(:first-child) {
-                width: 6.8% !important;
-                min-width: 6.8% !important;
-                max-width: 6.8% !important;
-            }
-        }
-    </style>
-    """
-    st.markdown(base_css + cs5_specific_css, unsafe_allow_html=True)
+# Professional styling now centralized in shared_utils.styling
+# Call: apply_professional_styling('cs5')
 
 
 def load_capital_controls_data():
@@ -507,8 +419,8 @@ def display_cs5_master_table(df):
 def run_cs5_analysis():
     """Main function to run CS5 analysis"""
     
-    # Apply styling when function is called
-    apply_professional_styling()
+    # Apply styling when function is called (centralized in shared_utils)
+    apply_professional_styling('cs5')
     
     st.title("🌐 Case Study 5: Capital Controls and Exchange Rate Regime Analysis")
     st.markdown("---")
