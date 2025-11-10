@@ -222,6 +222,35 @@ def get_investment_type_sort_key(indicator_name: str) -> tuple:
     return (inv_type, disagg, acc_entry)
 
 
+def get_investment_type_order(indicator_name: str) -> int:
+    """
+    Get simple sorting order for investment type (Assets < Liabilities < Net).
+
+    Used for sorting results tables by accounting entry type.
+    Simpler version of get_investment_type_sort_key() for basic table sorting.
+
+    Args:
+        indicator_name: Indicator name (cleaned, without _PGDP suffix)
+
+    Returns:
+        Integer sort key: 0 (Assets), 1 (Liabilities), 2 (Net), 999 (unknown)
+
+    Examples:
+        >>> get_investment_type_order('Assets - Direct investment')
+        0
+        >>> get_investment_type_order('Net - Portfolio investment')
+        2
+    """
+    if indicator_name.startswith('Assets') or indicator_name.startswith('Acquisition'):
+        return 0
+    elif indicator_name.startswith('Liabilities') or indicator_name.startswith('Net incurrence'):
+        return 1
+    elif indicator_name.startswith('Net'):
+        return 2
+    else:
+        return 999
+
+
 def is_crisis_year(year: int) -> bool:
     """
     Check if a given year is a crisis year.
