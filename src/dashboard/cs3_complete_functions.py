@@ -25,6 +25,7 @@ from dashboard_config import get_data_paths
 from config.constants import (
     CRISIS_YEARS_LIST,
     get_indicator_nickname,
+    get_nickname,
     INDICATOR_NICKNAMES,
     sort_indicators_by_type
 )
