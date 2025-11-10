@@ -27,6 +27,7 @@ from config.constants import (
     CRISIS_YEARS_LIST,
     INDICATOR_NICKNAMES,
     get_indicator_nickname,
+    get_nickname,
     get_investment_type_order,
     sort_indicators_by_type
 )

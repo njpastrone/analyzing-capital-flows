@@ -188,6 +188,10 @@ def get_indicator_nickname(indicator_name: str, max_length: int = MAX_INDICATOR_
     return nickname
 
 
+# Alias for backward compatibility (used in CS1/CS3 report files)
+get_nickname = get_indicator_nickname
+
+
 def get_investment_type_sort_key(indicator_name: str) -> tuple:
     """
     Extract sorting key for indicators: Type -> Disaggregation -> Accounting Entry.
