@@ -22,6 +22,10 @@ from statsmodels.tsa.stattools import acf
 sys.path.append(str(Path(__file__).parent.parent.parent))
 from core.cs4_statistical_analysis import CS4AnalysisFramework
 
+# Add dashboard directory for shared utilities
+sys.path.append(str(Path(__file__).parent.parent))
+from shared_utils import apply_professional_styling
+
 # Configure matplotlib for professional PDF export (from commit 8181df5)
 warnings.filterwarnings('ignore')
 plt.style.use('default')
@@ -85,219 +89,7 @@ def get_pdf_optimized_figsize(chart_type, base_width=10, base_height=6):
 # Page configuration - removed to avoid conflicts when imported into main_app.py
 # st.set_page_config() is now handled by main_app.py or when run standalone
 
-def apply_professional_styling():
-    """Apply professional CSS styling with PDF export optimization"""
-    st.markdown("""
-<style>
-    /* PDF Export Optimized Body and Layout */
-    body {
-        font-family: Arial, sans-serif !important;
-        margin: 40px !important;
-        line-height: 1.6 !important;
-    }
-    
-    /* Professional table styling (both dataframe and HTML) */
-    .dataframe {
-        font-size: 12px !important;
-        font-family: 'Arial', sans-serif !important;
-    }
-    .dataframe th {
-        background-color: #e6f3ff !important;
-        font-weight: bold !important;
-        text-align: center !important;
-        padding: 8px !important;
-    }
-    .dataframe td {
-        text-align: center !important;
-        padding: 6px !important;
-    }
-    .dataframe tbody tr:nth-child(even) {
-        background-color: #f9f9f9 !important;
-    }
-    
-    /* HTML Table styling for PDF export */
-    .cs4-master-table {
-        border-collapse: collapse;
-        width: 100%;
-        margin: 15px 0;
-        font-family: Arial, sans-serif !important;
-        font-size: 11px;
-        page-break-inside: avoid;
-    }
-    .cs4-master-table th {
-        background-color: #e6f3ff;
-        font-weight: bold;
-        border: 1px solid #ddd;
-        padding: 6px 8px;
-        text-align: center;
-    }
-    .cs4-master-table td {
-        border: 1px solid #ddd;
-        padding: 4px 6px;
-        text-align: center;
-    }
-    .cs4-master-table tr:nth-child(even) {
-        background-color: #f9f9f9;
-    }
-    
-    /* Table column width constraints for PDF export */
-    .cs4-master-table th:first-child, .cs4-master-table td:first-child {
-        width: 220px !important;
-        max-width: 220px !important;
-        text-align: left !important;
-        font-weight: bold !important;
-    }
-    .cs4-master-table th:not(:first-child), .cs4-master-table td:not(:first-child) {
-        width: 70px !important;
-        max-width: 70px !important;
-    }
-    
-    /* Streamlit app container constraints for PDF */
-    .main .block-container {
-        max-width: none !important;
-        padding: 1rem 2rem !important;
-    }
-    
-    /* Image and chart constraints */
-    img {
-        max-width: 100% !important;
-        height: auto !important;
-        page-break-inside: avoid !important;
-    }
-    
-    /* Creative Hard Margin Constraints for Bulletproof PDF Export */
-    .main .block-container {
-        max-width: 8.5in !important;  /* Standard US letter width */
-        margin: 0 auto !important;
-    }
-    
-    .chart-container { 
-        max-width: 100% !important;
-        overflow: hidden !important;
-        text-align: center !important;
-        margin: 20px 0 !important;
-    }
-    
-    /* Dynamic chart sizing constraints */
-    .pyplot-container {
-        max-width: 7.5in !important;  /* Leave margin for PDF */
-        margin: 0 auto !important;
-    }
-    
-    /* Print Media Queries for PDF Export (enhanced from commit 8181df5) */
-    @media print {
-        body { 
-            font-family: serif !important;
-            margin: 40px !important; 
-            line-height: 1.6 !important;
-            color: black !important;
-        }
-        .stApp { 
-            margin: 40px !important; 
-            max-width: 8.5in !important;
-        }
-        .main .block-container {
-            max-width: none !important;
-            padding: 0 !important;
-        }
-        
-        /* Hard chart constraints for PDF */
-        .chart-container { 
-            max-width: 100% !important;
-            page-break-inside: avoid !important;
-        }
-        .pyplot-container {
-            max-width: 7.5in !important;
-            margin: 0 auto !important;
-        }
-        
-        /* Table print optimizations (from commit 8181df5) */
-        .cs4-master-table { 
-            page-break-inside: avoid !important;
-            font-size: 7px !important;  /* Smaller for PDF */
-            margin: 10px 0 !important;
-        }
-        .cs4-master-table th:first-child, .cs4-master-table td:first-child {
-            width: 140px !important;
-            max-width: 140px !important;
-        }
-        .cs4-master-table th:not(:first-child), .cs4-master-table td:not(:first-child) {
-            width: 50px !important;
-            max-width: 50px !important;
-        }
-        
-        /* Header optimizations */
-        h1, h2, h3 { 
-            page-break-after: avoid !important; 
-            margin-bottom: 10px !important;
-        }
-        
-        /* Image and chart print optimizations */
-        img { 
-            max-width: 7.5in !important;
-            height: auto !important;
-            page-break-inside: avoid !important;
-            display: block !important;
-            margin: 10px auto !important;
-        }
-        
-        /* Remove Streamlit UI elements in print (from commit 8181df5) */
-        .stDeployButton { display: none !important; }
-        .stDecoration { display: none !important; }
-        .stToolbar { display: none !important; }
-        header[data-testid="stHeader"] { display: none !important; }
-        .stSidebar { display: none !important; }
-        
-        /* Optimize spacing for print */
-        .element-container { margin-bottom: 8px !important; }
-        div[data-testid="column"] { page-break-inside: avoid !important; }
-        .stTabs { page-break-inside: avoid !important; }
-        
-        /* Force clean page breaks */
-        .stExpander { page-break-inside: avoid !important; }
-        section[data-testid="stSidebar"] { display: none !important; }
-    }
-    
-    /* Headers styling */
-    h1 {
-        color: #2c3e50 !important;
-        border-bottom: 3px solid #3498db !important;
-        padding-bottom: 10px !important;
-    }
-    h2 {
-        color: #34495e !important;
-        margin-top: 30px !important;
-    }
-    h3 {
-        color: #7f8c8d !important;
-        margin-top: 20px !important;
-    }
-    
-    /* Metric styling */
-    [data-testid="metric-container"] {
-        background-color: #f8f9fa !important;
-        border: 1px solid #dee2e6 !important;
-        padding: 10px !important;
-        border-radius: 5px !important;
-    }
-    
-    /* Button styling */
-    .stDownloadButton button {
-        background-color: #28a745 !important;
-        color: white !important;
-        border: none !important;
-        padding: 8px 16px !important;
-        border-radius: 4px !important;
-    }
-    
-    /* Info box styling */
-    .stInfo {
-        background-color: #d1ecf1 !important;
-        border-color: #bee5eb !important;
-        color: #0c5460 !important;
-    }
-</style>
-    """, unsafe_allow_html=True)
+# Professional styling now centralized in shared_utils.styling
 
 
 def format_table_for_display(df: pd.DataFrame, title: str = "") -> str:
@@ -1223,8 +1015,8 @@ def main(standalone=False):
             layout="wide"
         )
     
-    # Apply styling when function is called
-    apply_professional_styling()
+    # Apply styling when function is called (centralized in shared_utils)
+    apply_professional_styling('cs4')
     
     # Title and description
     st.title("🇮🇸 Case Study 4: Comprehensive Statistical Analysis")

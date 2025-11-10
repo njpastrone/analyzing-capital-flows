@@ -241,10 +241,17 @@ def _load_cs1_data(analysis_type: str, include_crisis_years: bool) -> tuple:
     # Apply standardized indicator naming
     final_data = _standardize_indicator_names(final_data)
 
-    # Update analysis indicators after renaming
-    analysis_indicators = [col.replace('Net (net acquisition', 'Net -')
-                          for col in analysis_indicators
-                          if 'Net (net acquisition' in col]
+    # Update analysis indicators list to match renamed columns
+    # Use the same rename map as _standardize_indicator_names()
+    rename_map = {
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP':
+            'Net - Direct investment, Total financial assets/liabilities_PGDP',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP':
+            'Net - Portfolio investment, Total financial assets/liabilities_PGDP',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP':
+            'Net - Other investment, Total financial assets/liabilities_PGDP'
+    }
+    analysis_indicators = [rename_map.get(col, col) for col in analysis_indicators]
 
     # Sort indicators using centralized sorting function
     analysis_indicators = sort_indicators_by_type(analysis_indicators)
@@ -298,6 +305,17 @@ def _load_cs2_data(analysis_type: str, include_crisis_years: bool) -> tuple:
 
     # Apply standardized indicator naming
     final_data = _standardize_indicator_names(final_data)
+
+    # Update analysis indicators list to match renamed columns
+    rename_map = {
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP':
+            'Net - Direct investment, Total financial assets/liabilities_PGDP',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP':
+            'Net - Portfolio investment, Total financial assets/liabilities_PGDP',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP':
+            'Net - Other investment, Total financial assets/liabilities_PGDP'
+    }
+    analysis_indicators = [rename_map.get(col, col) for col in analysis_indicators]
 
     # Sort indicators
     analysis_indicators = sort_indicators_by_type(analysis_indicators)
@@ -366,6 +384,17 @@ def _load_cs3_data(analysis_type: str, include_crisis_years: bool) -> tuple:
 
     # Apply standardized indicator naming
     cs3_data = _standardize_indicator_names(cs3_data)
+
+    # Update analysis indicators list to match renamed columns
+    rename_map = {
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP':
+            'Net - Direct investment, Total financial assets/liabilities_PGDP',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP':
+            'Net - Portfolio investment, Total financial assets/liabilities_PGDP',
+        'Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP':
+            'Net - Other investment, Total financial assets/liabilities_PGDP'
+    }
+    analysis_indicators = [rename_map.get(col, col) for col in analysis_indicators]
 
     # Sort indicators
     analysis_indicators = sort_indicators_by_type(analysis_indicators)
