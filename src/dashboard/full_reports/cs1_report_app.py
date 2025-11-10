@@ -26,6 +26,7 @@ from dashboard_config import get_data_paths, COLORBLIND_SAFE
 from config.constants import (
     CRISIS_YEARS_LIST,
     get_indicator_nickname,
+    get_investment_type_order,
     sort_indicators_by_type
 )
 from shared_utils.data_loading import (
