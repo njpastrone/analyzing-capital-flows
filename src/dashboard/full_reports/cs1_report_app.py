@@ -980,7 +980,7 @@ def main(context="standalone"):
     results_display = results_display.sort_values('Sort_Key')
     
     # Add nicknames and format for display
-    results_display['Indicator_Nick'] = results_display['Indicator'].apply(get_nickname)
+    results_display['Indicator_Nick'] = results_display['Indicator'].apply(get_indicator_nickname)
     results_display['Significant'] = results_display.apply(
         lambda row: '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else '', 
         axis=1
@@ -2482,7 +2482,7 @@ def case_study_1_main_crisis_excluded(context="standalone"):
     results_display = results_display.sort_values('Sort_Key')
     
     # Add nicknames and format for display
-    results_display['Indicator_Nick'] = results_display['Indicator'].apply(get_nickname)
+    results_display['Indicator_Nick'] = results_display['Indicator'].apply(get_indicator_nickname)
     results_display['Significant'] = results_display.apply(
         lambda row: '***' if row['P_Value'] < 0.001 else '**' if row['P_Value'] < 0.01 else '*' if row['P_Value'] < 0.05 else '', 
         axis=1
