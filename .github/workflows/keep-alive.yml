@@ -1,0 +1,37 @@
+name: Keep Streamlit App Alive
+
+# When this workflow runs
+on:
+  # Run every 10 minutes (GitHub Actions cron syntax: minute hour day month day-of-week)
+  schedule:
+    - cron: '*/10 * * * *'
+
+  # Allow manual triggering from GitHub Actions tab (for testing)
+  workflow_dispatch:
+
+jobs:
+  ping:
+    # Use the latest Ubuntu runner (free tier)
+    runs-on: ubuntu-latest
+
+    steps:
+      # Single step: ping the app with curl
+      - name: Ping Streamlit app
+        # Continue even if curl fails (don't mark workflow as failed)
+        continue-on-error: true
+        run: |
+          # Retry up to 3 times with 5-second delays between attempts
+          # --retry 3: retry up to 3 times if connection fails
+          # --retry-delay 5: wait 5 seconds between retries
+          # --max-time 30: timeout after 30 seconds
+          # --silent: don't show progress bar
+          # --show-error: show error messages
+          # --fail: return non-zero exit code on HTTP errors (4xx, 5xx)
+          curl --retry 3 \
+               --retry-delay 5 \
+               --max-time 30 \
+               --silent \
+               --show-error \
+               --fail \
+               "https://analyzing-capital-flows.streamlit.app/?ping=1" \
+          || echo "Ping failed, but that's okay - workflow continues"
