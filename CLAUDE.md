@@ -2,6 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## CRITICAL: Current Research Pipeline Status
+
+**⚠️ IMPORTANT: Before making any changes to the codebase, read:**
+- `PROJECT_CONTEXT.md` - Critical context about technical debt and verification requirements
+- `RESEARCH_PIPELINE_PLAN.md` - Approved plan for creating traceable research notebooks
+- `TECHNICAL_DEBT.md` - Detailed analysis of code duplication issues
+
+The codebase has significant technical debt with 47,000+ lines and 43% duplication.
+**DO NOT attempt to refactor or "simplify" the existing code.** Instead, follow the notebook
+extraction plan documented in RESEARCH_PIPELINE_PLAN.md to create traceable, verifiable
+analysis notebooks for academic review.
+
+**Current Priority**: Creating transparent Jupyter notebooks for research verification,
+NOT refactoring or optimizing existing code.
+
 ## Project Overview
 
 This is a **capital flows research analysis project** that examines capital flow volatility across different economies, time periods, and policy regimes. The project investigates how monetary policy frameworks, currency unions, exchange rate regimes, and capital controls affect financial stability in small open economies, with Iceland as the primary focus.
