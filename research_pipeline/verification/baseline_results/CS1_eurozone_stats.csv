@@ -1,0 +1,15 @@
+indicator,mean,variance,std,n
+"Assets - Direct investment, Total financial assets/liabilities_PGDP",6.314955850738563,346.3785693528556,18.611248463035885,988
+"Liabilities - Direct investment, Total financial assets/liabilities_PGDP",5.611882359036934,364.778674799228,19.09917995096198,988
+"Net - Direct investment, Total financial assets/liabilities_PGDP",0.703075064768703,96.05775309918725,9.800905728512404,988
+"Assets - Portfolio investment, Total financial assets/liabilities_PGDP",8.48539980292305,545.1569115818681,23.3485954948444,988
+"Liabilities - Portfolio investment, Total financial assets/liabilities_PGDP",8.773909721734583,555.8640046279882,23.576768324517847,988
+"Net - Portfolio investment, Total financial assets/liabilities_PGDP",-0.2885050924234672,253.85910289561545,15.93295650203111,988
+"Assets - Portfolio investment, Debt securities_PGDP",5.245029383584148,348.22456894938824,18.660776215082485,988
+"Liabilities - Portfolio investment, Debt securities_PGDP",4.053233134394907,136.16458833170395,11.668958322476945,984
+"Assets - Portfolio investment, Equity and investment fund shares_PGDP",3.2403674483708547,67.80493589355096,8.23437525824218,988
+"Liabilities - Portfolio investment, Equity and investment fund shares_PGDP",4.727565098148762,330.43749269568997,18.177939726374106,984
+"Net - Other investment, Total financial assets/liabilities_PGDP",-0.0798706008493398,237.38584447805644,15.407330868065904,988
+"Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank_PGDP",2.211203850176877,298.3982781258935,17.274208465973008,926
+"Assets - Other investment, Debt instruments_PGDP",4.235596261201277,504.3754545024625,22.45830480028407,959
+"Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank_PGDP",1.916107874538224,407.14037763546196,20.177719832415704,917

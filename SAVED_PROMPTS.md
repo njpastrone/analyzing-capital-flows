@@ -1,3 +1,106 @@
+#  Next Session Prompt - Research Pipeline Implementation
+
+## Copy and paste this prompt to continue the research pipeline work:
+
+I need to continue implementing the research pipeline for the Capital Flows project. Please:
+
+1. **GET UPDATED ON PROJECT CONTEXT**:
+   - Read `PROJECT_STATUS.md` to understand the overall project state
+   - Read `RESEARCH_PIPELINE_STATUS.md` to see what's been completed in the pipeline
+   - Note: We've reduced the codebase from 47,000+ to 19,506 lines and are now creating transparent notebooks
+
+2. **REVIEW THE RESEARCH PIPELINE PLAN**:
+   - Read `RESEARCH_PIPELINE_PLAN.md` for the implementation blueprint
+   - Review `research_pipeline/lib/stats_core.py` to understand available functions
+   - Check `research_pipeline/verification/baseline_results/` to see what values we need to match
+
+3. **CREATE AN IMPLEMENTATION PLAN FOR THE NEXT STEP**:
+   Based on the status, identify what needs to be done next and create a specific plan. The pipeline status should show:
+   - Which notebooks have been created
+   - What baseline data exists
+   - Current progress percentage
+
+   Then:
+   - If no notebooks exist yet, plan to create CS1_Iceland_vs_Eurozone.ipynb
+   - If CS1 exists, plan to create CS3 (which reuses CS1 logic)
+   - Include specific extraction points from source files
+   - Plan verification steps against baseline
+
+**Important Context**:
+- We're extracting ONLY mathematical calculations from the dashboard
+- Every calculation must be shown transparently with intermediate steps
+- Results must match the baseline within 0.0001 tolerance
+- NO imports from src/dashboard in notebooks
+- Target is ~2,650 total lines (86% reduction from current 19,506)
+
+**Key Files to Review**:
+- `RESEARCH_PIPELINE_STATUS.md` - Current progress tracker
+- `RESEARCH_PIPELINE_PLAN.md` - Implementation blueprint
+- `research_pipeline/verification/baseline_results/CS1_baseline.csv` - Values to match
+
+Please start by reviewing these files and then tell me:
+1. What's already been completed
+2. What the next logical step is
+3. A specific implementation plan for that step
+
+---
+
+## Alternative Shorter Version:
+
+---
+
+Continue the Capital Flows research pipeline implementation. Read these files first:
+- `RESEARCH_PIPELINE_STATUS.md` (current progress)
+- `RESEARCH_PIPELINE_PLAN.md` (blueprint)
+- Check what's in `research_pipeline/notebooks/` and `research_pipeline/verification/baseline_results/`
+
+Then create a plan to implement the next notebook in the sequence. We're extracting pure math from 19,506 lines into ~2,650 lines of transparent notebooks. Each calculation must be shown step-by-step and match the baseline exactly.
+
+What's the next step and how should we implement it?
+
+---
+
+## Context Engineering Notes:
+
+This prompt is designed to:
+
+1. **Restore Context Efficiently**: Points to exactly 2-3 files that contain all necessary context
+2. **Establish Clear Goals**: Specifies the extraction and transparency requirements
+3. **Provide Guardrails**: NO dashboard imports, must match baseline, show all steps
+4. **Enable Progress**: References the status file that tracks what's done
+5. **Set Success Criteria**: 2,650 lines, 0.0001 tolerance, transparent calculations
+
+The prompt assumes:
+- The AI assistant has no memory of previous sessions
+- All context must be loaded from files
+- The status and plan documents are kept updated
+- Baseline results are already extracted
+
+Key phrases that trigger correct behavior:
+- "extracting ONLY mathematical calculations"
+- "must match the baseline within 0.0001"
+- "NO imports from src/dashboard"
+- "every calculation must be shown transparently"
+
+This prompt should work even if a different AI assistant or person picks up the work.
+
+# General Planning Prompt
+
+        "Make a detailed plan to accomplish the [task]. Think hardest.
+
+        How will we implement the only functionality we need right now?
+
+        Identify files that need to be changed.
+
+        Do not include plans for legacy fallback unless required or explicitly requested.
+
+        Write a full overview of what you are about to do.
+
+        Write function names and 1-3 sentences about what they do.
+
+        Write test names and 5-10 words about what they cover."
+
+
 # Implementing Changes from Research Pipeline Plan
 
 "**Make a detailed implementation plan for [TASK DESCRIPTION] described in @[PLAN_DOCUMENT].md CRITICAL: Before planning, review:**

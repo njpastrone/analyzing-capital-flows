@@ -1,365 +1,195 @@
-# Research Pipeline Implementation Plan
+# Research Pipeline Implementation Plan v2
+**Last Updated**: December 4, 2024
+**Goal**: Extract ~500 lines of statistics from 19,506 lines of code
 
-**Created**: December 2024
-**Purpose**: Create traceable, verifiable notebooks for academic review
-**Status**: Planning Phase
+## Quick Summary
 
----
+Extract ONLY the mathematical calculations from the dashboard into transparent Jupyter notebooks. Ignore ALL UI code.
 
-## Executive Summary
-
-This document outlines the plan to create a transparent, traceable research pipeline using Jupyter notebooks. Each case study will have its own comprehensive notebook showing every calculation step, suitable for academic peer review and publication.
-
-## Problem Statement
-
-The current codebase contains:
-- 47,000+ lines of code with 43% duplication
-- Complex Streamlit UI obscuring core calculations
-- 4x duplication across report versions (regular, outlier-adjusted, PDF versions)
-- Difficult to manually verify calculations for research publication
-
-## Solution: Traceable Research Notebooks
-
-### Structure: 5 Comprehensive Notebooks
-
+## File Structure
 ```
 research_pipeline/
+├── lib/
+│   └── stats_core.py              # 150 lines of pure statistics
 ├── notebooks/
 │   ├── CS1_Iceland_vs_Eurozone.ipynb
 │   ├── CS2_Baltic_Euro_Adoption.ipynb
 │   ├── CS3_Small_Open_Economies.ipynb
 │   ├── CS4_Statistical_Framework.ipynb
-│   ├── CS5_Capital_Controls_Regimes.ipynb
-│   └── 00_Data_Pipeline.ipynb          # Optional: Show data cleaning
-├── data/
-│   └── (cleaned CSV files from updated_data/Clean/)
+│   └── CS5_Capital_Controls_Regimes.ipynb
 └── verification/
-    ├── dashboard_screenshots/          # Original results for comparison
-    └── notebook_outputs/               # CSV exports from notebooks
+    ├── extract_baseline.py        # Save dashboard results
+    └── baseline_results/          # For comparison
 ```
 
-## Detailed Notebook Contents
-
-### CS1_Iceland_vs_Eurozone.ipynb
-
-**Research Question**: Does Iceland exhibit significantly higher capital flow volatility compared to Eurozone countries?
-
-**Structure**:
-1. **Introduction & Methodology**
-   - Research context and motivation
-   - Statistical approach (F-tests for variance equality)
-   - Data sources (IMF Balance of Payments, 1999-2024)
-
-2. **Data Loading**
-   ```python
-   # Load pre-cleaned data
-   df = pd.read_csv('../data/comprehensive_df_PGDP_labeled.csv')
-   # Filter for Case Study 1 groups
-   cs1_data = df[df['CS1_GROUP'].notna()]
-   ```
-
-3. **Exploratory Analysis**
-   - Summary statistics by group (Iceland vs Eurozone)
-   - Time series visualization
-   - Distribution analysis
-
-4. **Statistical Tests** (with full transparency)
-   ```python
-   # Example of traceable calculation:
-   # Show formula
-   print("F-test: F = Var(Iceland) / Var(Eurozone)")
-   # Show intermediate values
-   print(f"Iceland variance: {iceland_var:.6f}")
-   print(f"Eurozone variance: {eurozone_var:.6f}")
-   # Calculate and show result
-   f_stat = iceland_var / eurozone_var
-   print(f"F-statistic: {f_stat:.4f}")
-   ```
-
-5. **Results Tables**
-   - Formatted summary table
-   - Export to CSV for verification
-
-6. **Verification**
-   - Compare with dashboard results
-   - Document any differences
-
-### CS2_Baltic_Euro_Adoption.ipynb
-
-**Research Question**: How did Euro adoption affect capital flow volatility in Baltic countries?
-
-**Structure**:
-1. **Introduction**
-   - Estonia (adopted 2011), Latvia (2014), Lithuania (2015)
-   - Before/after methodology
-   - Crisis period handling options
-
-2. **Data Preparation**
-   ```python
-   # Define pre/post Euro periods for each country
-   estonia_pre = data[(data['COUNTRY'] == 'Estonia') & (data['YEAR'] < 2011)]
-   estonia_post = data[(data['COUNTRY'] == 'Estonia') & (data['YEAR'] >= 2011)]
-   ```
-
-3. **Country-by-Country Analysis**
-   - Estonia: pre-2011 vs post-2011 volatility
-   - Latvia: pre-2014 vs post-2014 volatility
-   - Lithuania: pre-2015 vs post-2015 volatility
-
-4. **Statistical Tests**
-   - F-tests for variance changes
-   - Temporal stability tests
-   - Full calculation transparency
-
-5. **Comparative Results**
-   - Cross-country comparison table
-   - Visualization of volatility changes
-
-6. **Export & Verification**
-
-### CS3_Small_Open_Economies.ipynb
-
-**Research Question**: How does Iceland's volatility compare to other small open economies?
-
-**Structure**:
-1. **Introduction**
-   - Iceland vs 6 comparable economies
-   - Selection criteria for comparators
-   - Size-adjusted volatility analysis
-
-2. **Data Loading**
-   ```python
-   # Load CS3 group data
-   cs3_data = df[df['CS3_GROUP'].notna()]
-   countries = cs3_data['COUNTRY'].unique()
-   ```
-
-3. **Comparative Analysis**
-   - Volatility measures for each country
-   - Relative volatility rankings
-   - Size adjustments
-
-4. **Statistical Testing**
-   - Pairwise F-tests
-   - Group comparisons
-   - Full calculation transparency
-
-5. **Results & Verification**
-
-### CS4_Statistical_Framework.ipynb
-
-**Research Question**: Comprehensive statistical analysis using advanced methodologies
-
-**Structure**:
-1. **Advanced Methodologies**
-   - F-tests for variance equality
-   - AR(4) models with impulse response
-   - RMSE prediction analysis
-
-2. **Data Loading**
-   ```python
-   # Import from CS4-specific cleaned data
-   from pathlib import Path
-   cs4_dir = Path('../data/CS4_Statistical_Modeling/')
-   ```
-
-3. **F-Test Analysis**
-   - Iceland vs Eurozone (weighted/simple avg)
-   - Iceland vs Small Open Economies
-   - Iceland vs Baltics
-   - Show all variance calculations
-
-4. **AR(4) Time Series Models**
-   ```python
-   # Model fitting with full transparency
-   from statsmodels.tsa.ar_model import AutoReg
-   model = AutoReg(series, lags=4)
-   results = model.fit()
-   # Show coefficients and diagnostics
-   ```
-
-5. **RMSE Prediction Analysis**
-   - Rolling window predictions
-   - Forecast accuracy metrics
-
-6. **Summary Tables & Verification**
-
-### CS5_Capital_Controls_Regimes.ipynb
-
-**Research Question**: How do capital controls and exchange rate regimes affect volatility?
-
-**Structure**:
-1. **External Data Integration**
-   - Fernández et al. (2016) capital controls database
-   - Ilzetzki-Reinhart-Rogoff (2019) regime classification
-
-2. **Data Merging**
-   ```python
-   # Merge external data with capital flows
-   controls_data = pd.read_csv('../data/capital_controls.csv')
-   merged = pd.merge(flows_data, controls_data, on=['COUNTRY', 'YEAR'])
-   ```
-
-3. **Capital Controls Analysis** (1999-2017)
-   - Correlation with flow volatility
-   - Iceland-specific patterns
-   - Scatter plots with trend lines
-
-4. **Exchange Rate Regime Analysis** (1999-2019)
-   - 6-regime classification system
-   - F-tests by regime type
-   - Regime transition effects
-
-5. **Results & Policy Implications**
-
-## Key Features Across All Notebooks
-
-### 1. Full Transparency
-Every calculation shows:
-- Mathematical formula
-- Intermediate values
-- Final result
-- Statistical interpretation
-
-### 2. Example Traceable Calculation Cell
+## Core Library: stats_core.py
 
 ```python
-# ================================================
-# F-TEST: DIRECT INVESTMENT VOLATILITY
-# ================================================
+"""Minimal statistics extracted from dashboard"""
+import numpy as np
+import pandas as pd
+from scipy import stats
+from statsmodels.tsa.ar_model import AutoReg
 
-# Mathematical Formula
-"""
-F-test for Equality of Variances
-H₀: σ²(Iceland) = σ²(Eurozone)
-H₁: σ²(Iceland) ≠ σ²(Eurozone)
-Test Statistic: F = S₁²/S₂² ~ F(n₁-1, n₂-1)
-"""
+def calculate_f_statistic(group1_data, group2_data):
+    """F-test for variance equality (from cs1_report.py:240-248)"""
+    var1 = group1_data.var()
+    var2 = group2_data.var()
+    f_stat = var1 / var2
+    df1, df2 = len(group1_data) - 1, len(group2_data) - 1
+    p_value = 2 * min(stats.f.cdf(f_stat, df1, df2),
+                      1 - stats.f.cdf(f_stat, df1, df2))
+    return {'f_statistic': f_stat, 'p_value': p_value,
+            'var1': var1, 'var2': var2}
 
-# Step 1: Extract data
-iceland_data = df[df['CS1_GROUP'] == 'Iceland']['Direct_Investment_PGDP'].dropna()
-eurozone_data = df[df['CS1_GROUP'] == 'Eurozone']['Direct_Investment_PGDP'].dropna()
-print(f"Sample sizes: Iceland={len(iceland_data)}, Eurozone={len(eurozone_data)}")
+def fit_ar4_model(series):
+    """AR(4) model (from cs4_statistical_analysis.py:254-294)"""
+    clean = series.dropna()
+    if len(clean) < 8: return None
+    model = AutoReg(clean, lags=4, trend='c')
+    fitted = model.fit()
+    return {'coefficients': fitted.params[1:5].values,
+            'aic': fitted.aic, 'bic': fitted.bic}
 
-# Step 2: Calculate variances
-var_iceland = iceland_data.var(ddof=1)
-var_eurozone = eurozone_data.var(ddof=1)
-print(f"Variances: Iceland={var_iceland:.6f}, Eurozone={var_eurozone:.6f}")
+def calculate_temporal_change(pre_data, post_data):
+    """Before/after for CS2 Baltic analysis"""
+    return {
+        'pre_var': pre_data.var(),
+        'post_var': post_data.var(),
+        'var_ratio': post_data.var() / pre_data.var(),
+        'var_change_pct': ((post_data.var() - pre_data.var()) /
+                           pre_data.var() * 100)
+    }
 
-# Step 3: Calculate F-statistic
-f_stat = var_iceland / var_eurozone
-print(f"F = {var_iceland:.6f} / {var_eurozone:.6f} = {f_stat:.4f}")
+# Euro adoption dates for CS2
+EURO_DATES = {
+    'Estonia, Republic of': 2011,
+    'Latvia, Republic of': 2014,
+    'Lithuania, Republic of': 2015
+}
 
-# Step 4: Calculate p-value
-from scipy.stats import f
-df1, df2 = len(iceland_data) - 1, len(eurozone_data) - 1
-p_value = 2 * min(f.cdf(f_stat, df1, df2), 1 - f.cdf(f_stat, df1, df2))
-print(f"P-value (two-tailed): {p_value:.6f}")
-print(f"Significant at 5%: {'Yes' if p_value < 0.05 else 'No'}")
-
-# Step 5: Save for verification
-results = pd.DataFrame({
-    'indicator': ['Direct_Investment'],
-    'f_statistic': [f_stat],
-    'p_value': [p_value],
-    'var_iceland': [var_iceland],
-    'var_eurozone': [var_eurozone]
-})
-results.to_csv('../verification/notebook_outputs/cs1_f_test.csv', index=False)
+# Crisis years for exclusion
+CRISIS_YEARS = [2008, 2009, 2010, 2020, 2021, 2022]
 ```
 
-### 3. Verification Process
+## Extraction Map
 
-Each notebook includes:
-1. Load original dashboard results
-2. Compare calculated values
-3. Flag any discrepancies
-4. Document differences if any
+### FROM: cs1_report.py (3,333 lines)
+**EXTRACT**: Lines 240-248 (F-test), Lines 152-164 (summary stats)
 
-## Implementation Timeline
+### FROM: cs4_statistical_analysis.py (587 lines)
+**EXTRACT**: Lines 202-216 (F-test), Lines 277-281 (AR4), Lines 296-340 (half-life)
+
+### FROM: cs2_shared_functions.py (312 lines)
+**EXTRACT**: Lines 33-61 (Euro dates), Lines 63-95 (period labels)
+
+## CS1 Notebook Example
+
+```python
+# Cell 1: Setup
+import pandas as pd
+import sys
+sys.path.append('../lib')
+from stats_core import calculate_f_statistic
+
+# Cell 2: Load Data
+df = pd.read_csv('../data/comprehensive_df_PGDP_labeled.csv')
+iceland = df[df['CS1_GROUP'] == 'Iceland']
+eurozone = df[df['CS1_GROUP'] == 'Eurozone']
+
+# Cell 3: F-test with Full Transparency
+indicators = ['Direct_Investment_PGDP', 'Portfolio_Investment_PGDP']
+results = []
+
+for ind in indicators:
+    ice_vals = iceland[ind].dropna()
+    euro_vals = eurozone[ind].dropna()
+
+    print(f"\n{'='*50}")
+    print(f"F-TEST: {ind}")
+    print(f"{'='*50}")
+    print(f"Iceland: n={len(ice_vals)}, var={ice_vals.var():.6f}")
+    print(f"Eurozone: n={len(euro_vals)}, var={euro_vals.var():.6f}")
+
+    result = calculate_f_statistic(ice_vals, euro_vals)
+    print(f"F-statistic: {result['f_statistic']:.4f}")
+    print(f"P-value: {result['p_value']:.6f}")
+    print(f"Significant at 5%: {result['p_value'] < 0.05}")
+
+    results.append({
+        'indicator': ind,
+        'f_stat': result['f_statistic'],
+        'p_value': result['p_value'],
+        'significant': result['p_value'] < 0.05
+    })
+
+# Cell 4: Save Results
+pd.DataFrame(results).to_csv('../outputs/CS1_results.csv', index=False)
+
+# Cell 5: Verify Against Dashboard
+baseline = pd.read_csv('../verification/baseline_results/CS1_baseline.csv')
+# Compare and document any differences
+```
+
+## Baseline Extraction Script
+
+```python
+# verification/extract_baseline.py
+# Run ONCE to save dashboard results
+
+import sys
+sys.path.append('../../src/dashboard/reports')
+from cs1_report import perform_volatility_tests, load_default_data
+
+# CS1 Baseline
+data, indicators, _ = load_default_data()
+cs1_results = perform_volatility_tests(data, indicators)
+cs1_results.to_csv('baseline_results/CS1_baseline.csv', index=False)
+
+# CS2 Baseline
+from cs2_shared_functions import calculate_pre_post_statistics
+# ... extract CS2 results
+
+print("Baselines saved for verification")
+```
+
+## Implementation Order
 
 ### Day 1: Foundation
-- Set up notebook structure
-- CS1 notebook (cleanest case study)
-- CS4 notebook (uses existing clean module)
+1. Create stats_core.py (150 lines)
+2. Create extract_baseline.py (100 lines)
+3. Run baseline extraction
+4. Create CS1 notebook (400 lines)
+5. Verify CS1 results match
 
-### Day 2: Temporal Analysis
-- CS2 Baltic countries notebook
-- CS3 Small Open Economies notebook
+### Day 2: Similar Patterns
+1. CS3 notebook (reuses CS1 logic) (400 lines)
+2. CS4 notebook (uses clean source) (600 lines)
 
-### Day 3: External Data
-- CS5 Capital Controls & Regimes notebook
-- Data pipeline documentation (optional)
+### Day 3: Complex Cases
+1. CS2 notebook (temporal analysis) (500 lines)
+2. CS5 notebook (external data) (500 lines)
 
-### Day 4: Verification & Polish
-- Run all notebooks end-to-end
-- Compare all results with dashboard
-- Document any discrepancies
-- Final adjustments
+### Day 4: Final Verification
+1. Run all notebooks
+2. Compare with baselines
+3. Document discrepancies
 
-## Verification Strategy
-
-### Step 1: Baseline Capture
-1. Run existing dashboard for each case study
-2. Screenshot all results tables
-3. Export data to CSV where possible
-4. Document exact values for key statistics
-
-### Step 2: Notebook Execution
-1. Run each notebook completely
-2. Export all results to CSV
-3. Create summary comparison tables
-
-### Step 3: Comparison
-1. Automated comparison where possible
-2. Manual verification of key statistics
-3. Document any differences with explanations
-
-### Step 4: Sign-off
-1. Confirm all critical values match
-2. Document verification completion
-3. Prepare for academic review
-
-## Benefits of This Approach
-
-✅ **Complete Traceability**: Every calculation visible and documented
-✅ **Academic Standards**: Suitable for peer review and publication
-✅ **Modular Structure**: One notebook per research question
-✅ **Reproducible**: Anyone can re-run and verify results
-✅ **No Code Duplication**: Uses existing cleaned data
-✅ **Manageable Scope**: ~500 lines per notebook vs 47,000 total
-✅ **Version Controlled**: Easy to track changes in git
-
-## Risk Mitigation
-
-### What We're NOT Doing
-❌ Not refactoring existing code
-❌ Not creating parallel implementations
-❌ Not modifying working dashboard
-❌ Not duplicating data cleaning
-
-### What We ARE Doing
-✅ Creating transparent documentation
-✅ Using existing cleaned data
-✅ Showing every calculation step
-✅ Verifying against known results
+## Total Line Count
+- stats_core.py: 150 lines
+- 5 notebooks: ~2,400 lines
+- extract_baseline.py: 100 lines
+- **TOTAL**: ~2,650 lines (vs 19,506 current)
+- **REDUCTION**: 86%
 
 ## Success Criteria
+✅ Every calculation shown step-by-step
+✅ Results match dashboard (tolerance 0.0001)
+✅ No imports from src/dashboard
+✅ Anyone can verify the math
 
-1. **All notebooks run without errors**
-2. **Results match dashboard within tolerance** (< 0.0001 difference)
-3. **Every calculation is traceable**
-4. **Academic reviewer can understand and reproduce**
-5. **No hidden calculations or black boxes**
-
-## Next Steps
-
-1. Create `research_pipeline/` directory structure
-2. Set up first notebook (CS1) as proof of concept
-3. Verify CS1 results match dashboard exactly
-4. Proceed with remaining notebooks
-5. Complete verification documentation
-
----
-
-**Note**: This plan prioritizes transparency and verifiability over code elegance. The goal is to create notebooks that can withstand academic scrutiny while leveraging existing cleaned data and verified calculations.
+## NOT Doing
+❌ Refactoring dashboard code
+❌ Creating abstractions
+❌ Handling UI/visualization
+❌ Optimizing performance
