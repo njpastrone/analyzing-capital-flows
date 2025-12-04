@@ -20,7 +20,6 @@ sys.path.append(str(Path(__file__).parent / "outlier_adjusted_reports"))
 
 # Import consolidated modules from reports subfolder
 from cs1_report import main as case_study_1_main
-from case_study_2_euro_adoption import main as case_study_2_main
 # Import new country-specific CS2 reports
 from cs2_estonia_report import main as cs2_estonia_main
 from cs2_latvia_report import main as cs2_latvia_main
@@ -2518,18 +2517,6 @@ def show_case_study_1():
     
     # Call the consolidated Case Study 1 main function with default parameters (full/interactive)
     case_study_1_main(data_type="full", output_mode="interactive", context="main_app")
-
-def show_case_study_2():
-    """Display Case Study 2 - Euro Adoption Impact (Baltic Countries)"""
-    
-    st.info("📋 **Case Study 2: Euro Adoption Impact Analysis - Baltic Countries**")
-    st.markdown("""
-    This case study examines how Euro adoption affected capital flow volatility through temporal comparison 
-    of pre and post adoption periods for Estonia (2011), Latvia (2014), and Lithuania (2015).
-    """)
-    
-    # Call the Case Study 2 main function
-    case_study_2_main()
 
 def show_case_study_3_restructured():
     """Display restructured Case Study 3 - Iceland vs Small Open Economies with complete sequential structure"""
