@@ -250,7 +250,7 @@ def perform_temporal_volatility_tests(data, country, indicators, period_column='
     return test_results
 
 def load_case_study_2_data(include_crisis_years=True, data_type='full'):
-    """Load Euro adoption analysis data from comprehensive dataset"""
+    """Load Euro adoption analysis data from comprehensive dataset - returns data in long format"""
     try:
         # Load comprehensive dataset based on data type
         data_dir = Path(__file__).parent.parent.parent.parent / "updated_data" / "Clean"
@@ -276,12 +276,38 @@ def load_case_study_2_data(include_crisis_years=True, data_type='full'):
         # Create Euro periods
         data = create_euro_periods(data, include_crisis_years)
 
-        return data
+        # Convert from wide to long format for indicator-level analysis
+        # Get the indicator columns (those ending with _PGDP)
+        indicator_cols = [col for col in data.columns if col.endswith('_PGDP')]
+
+        # Columns to keep as identifiers
+        id_cols = ['COUNTRY', 'YEAR', 'QUARTER', 'DATE']
+        period_col = 'EURO_PERIOD_FULL' if include_crisis_years else 'EURO_PERIOD_CRISIS_EXCLUDED'
+        if period_col in data.columns:
+            id_cols.append(period_col)
+
+        # Melt the data from wide to long format
+        data_long = pd.melt(
+            data,
+            id_vars=id_cols,
+            value_vars=indicator_cols,
+            var_name='INDICATOR',
+            value_name='VALUE'
+        )
+
+        # Clean indicator names (remove _PGDP suffix)
+        data_long['INDICATOR'] = data_long['INDICATOR'].str.replace('_PGDP$', '', regex=True)
+
+        # Drop rows with null values
+        data_long = data_long.dropna(subset=['VALUE'])
+
+        return data_long
 
     except Exception as e:
         print(f"Error loading CS2 data: {str(e)}")
         return pd.DataFrame()
 
 def load_overall_capital_flows_data_cs2(include_crisis_years=True, data_type='full'):
-    """Load data for overall capital flows analysis"""
+    """Load data for overall capital flows analysis - returns data in long format with INDICATOR column"""
+    # Since load_case_study_2_data already returns data in long format, we can just use it directly
     return load_case_study_2_data(include_crisis_years, data_type)
