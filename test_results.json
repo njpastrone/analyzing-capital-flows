@@ -1,0 +1,27 @@
+{
+  "Module Imports": {
+    "success": true,
+    "details": "[('main_app', True, None), ('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "error": null
+  },
+  "Function Signatures": {
+    "success": true,
+    "details": "[('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "error": null
+  },
+  "Configuration Functions": {
+    "success": true,
+    "details": "[('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "error": null
+  },
+  "Parameter Combinations": {
+    "success": true,
+    "details": "[('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "error": null
+  },
+  "Data Paths": {
+    "success": true,
+    "details": "[('Main dataset', True, None), ('Winsorized dataset', True, None), ('CS4 full data', True, None), ('CS4 winsorized data', True, None), ('CS5 capital controls', True, None), ('CS5 regime analysis', True, None)]",
+    "error": null
+  }
+}

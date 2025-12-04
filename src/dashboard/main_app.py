@@ -14,14 +14,17 @@ import io
 
 # Add core modules and dashboard subfolders to path
 sys.path.append(str(Path(__file__).parent.parent))
+sys.path.append(str(Path(__file__).parent / "reports"))  # Add new reports path
 sys.path.append(str(Path(__file__).parent / "full_reports"))
 sys.path.append(str(Path(__file__).parent / "outlier_adjusted_reports"))
 
-# Import case study modules from full_reports subfolder
-from cs1_report_app import main as case_study_1_main
+# Import consolidated modules from reports subfolder
+from cs1_report import main as case_study_1_main
 from case_study_2_euro_adoption import main as case_study_2_main
-from cs4_report_app import main as case_study_4_main
-from cs5_report_app import main as case_study_5_main
+from cs2_report import main as cs2_country_main
+from cs3_report import main as case_study_3_main
+from cs4_report import main as case_study_4_main
+from cs5_report import main as case_study_5_main
 
 # Note: Outlier-adjusted analysis is now handled through individual report files
 # No winsorized data imports needed for main dashboard
@@ -2510,8 +2513,8 @@ def show_case_study_1():
     patterns between Iceland and the Eurozone bloc from 1999-2025.
     """)
     
-    # Call the original Case Study 1 main function (preserved exactly)
-    case_study_1_main(context="main_app")
+    # Call the consolidated Case Study 1 main function with default parameters (full/interactive)
+    case_study_1_main(data_type="full", output_mode="interactive", context="main_app")
 
 def show_case_study_2():
     """Display Case Study 2 - Euro Adoption Impact (Baltic Countries)"""
@@ -2537,7 +2540,7 @@ def show_case_study_3_restructured():
     
     # Call the Case Study 3 main function which contains complete sequential structure (Full → Crisis-Excluded)
     with st.spinner("📊 Loading Small Open Economies comparative analysis: Processing Iceland vs 6 comparable economies with comprehensive volatility metrics..."):
-        case_study_3_main(context="main_app")
+        show_case_study_3_consolidated(context="main_app")
     
     # Download Reports Section
     st.markdown("---")
@@ -2553,22 +2556,10 @@ def show_case_study_3_restructured():
         # Data exports available through individual visualizations
         st.info("📊 **Data Exports**\n\nIndividual charts and data can be exported directly from the analysis sections above.")
 
-def case_study_3_main(context="main_app"):
-    """Display Case Study 3 - Iceland vs Small Open Economies with complete sequential structure"""
-    
-    # Import the CS3 report functions
-    try:
-        from cs3_report_app import case_study_3_main as cs3_main, case_study_3_main_crisis_excluded as cs3_crisis_main
-        
-        # Full Time Period Analysis
-        cs3_main(context=context)
-        
-        # Crisis-Excluded Analysis  
-        cs3_crisis_main(context=context)
-        
-    except ImportError as e:
-        st.error(f"❌ Error importing CS3 functions: {str(e)}")
-        st.info("🚧 **Case Study 3 Implementation**\n\nCS3 analysis functions are being implemented to match CS1 structure.")
+def show_case_study_3_consolidated(context="main_app"):
+    """Display Case Study 3 - Iceland vs Small Open Economies using consolidated report"""
+    # Use the consolidated CS3 report with parameters
+    case_study_3_main(data_type="full", output_mode="interactive", context=context)
 
 def show_comparative_analysis_placeholder():
     """Comprehensive analysis framework across all completed case studies"""
@@ -2818,7 +2809,7 @@ def show_case_study_1_restructured():
     
     # Priority spinner for CS1 - longest loading case study
     with st.spinner("📊 Loading Iceland vs Eurozone analysis: Processing 25+ years of capital flow data and statistical comparisons..."):
-        case_study_1_main(context="main_app")
+        case_study_1_main(data_type="full", output_mode="interactive", context="main_app")
     
     # Professional Reports Available
     st.markdown("---")
@@ -2940,126 +2931,18 @@ def case_study_2_main_filtered(country, include_crisis_years=True):
 # ================================
 def show_case_study_2_estonia_restructured():
     """Show Estonia analysis following Case Study 1 template structure"""
-    st.title("🇪🇪 Estonia Euro Adoption Analysis")
-    st.subheader("Capital Flow Volatility Before and After Euro Adoption (2011)")
-    
-    st.markdown("""
-    **Research Focus:** How did Euro adoption affect Estonia's capital flow volatility?
-    
-    **Methodology:** Temporal comparison of capital flow patterns before (2005-2010) and after (2012-2017) Euro adoption.
-    
-    **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
-    """)
-    
-    # Priority spinner for CS2 Estonia - long loading analysis  
-    with st.spinner("📊 Loading Estonia Euro adoption analysis: Processing pre/post 2011 volatility patterns and temporal comparisons..."):
-        # Full Time Period Section
-        st.markdown("---")
-        st.header("📊 Full Time Period Analysis")
-        st.markdown("*Complete temporal analysis using all available data*")
-        
-        # Overall Capital Flows Analysis
-        st.subheader("📈 Overall Capital Flows Analysis")
-        show_estonia_overall_analysis(include_crisis_years=True)
-        
-        # Indicator-Level Analysis  
-        st.subheader("🔍 Indicator-Level Analysis")
-        show_estonia_indicator_analysis(include_crisis_years=True)
-        
-        # Crisis-Excluded Section
-        st.markdown("---")
-        st.header("🚫 Excluding Financial Crises")
-        st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
-        
-        # Overall Capital Flows Analysis - Crisis Excluded
-        st.subheader("📈 Overall Capital Flows Analysis")
-        show_estonia_overall_analysis(include_crisis_years=False)
-        
-        # Indicator-Level Analysis - Crisis Excluded
-        st.subheader("🔍 Indicator-Level Analysis") 
-        show_estonia_indicator_analysis(include_crisis_years=False)
+    # Use consolidated CS2 with Estonia parameter
+    cs2_country_main(country="Estonia", data_type="full", output_mode="interactive", context="main_app")
 
 def show_case_study_2_latvia_restructured():
     """Show Latvia analysis following Case Study 1 template structure"""
-    st.title("🇱🇻 Latvia Euro Adoption Analysis")
-    st.subheader("Capital Flow Volatility Before and After Euro Adoption (2014)")
-    
-    st.markdown("""
-    **Research Focus:** How did Euro adoption affect Latvia's capital flow volatility?
-    
-    **Methodology:** Temporal comparison of capital flow patterns before (2007-2012) and after (2015-2020) Euro adoption.
-    
-    **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
-    """)
-    
-    # Priority spinner for CS2 Latvia - long loading analysis
-    with st.spinner("📊 Loading Latvia Euro adoption analysis: Processing pre/post 2014 volatility patterns and temporal comparisons..."):
-        # Full Time Period Section
-        st.markdown("---")
-        st.header("📊 Full Time Period Analysis")
-        st.markdown("*Complete temporal analysis using all available data*")
-        
-        # Overall Capital Flows Analysis
-        st.subheader("📈 Overall Capital Flows Analysis")
-        show_latvia_overall_analysis(include_crisis_years=True)
-        
-        # Indicator-Level Analysis  
-        st.subheader("🔍 Indicator-Level Analysis")
-        show_latvia_indicator_analysis(include_crisis_years=True)
-        
-        # Crisis-Excluded Section
-        st.markdown("---")
-        st.header("🚫 Excluding Financial Crises")
-        st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
-        
-        # Overall Capital Flows Analysis - Crisis Excluded
-        st.subheader("📈 Overall Capital Flows Analysis")
-        show_latvia_overall_analysis(include_crisis_years=False)
-        
-        # Indicator-Level Analysis - Crisis Excluded
-        st.subheader("🔍 Indicator-Level Analysis") 
-        show_latvia_indicator_analysis(include_crisis_years=False)
+    # Use consolidated CS2 with Latvia parameter
+    cs2_country_main(country="Latvia", data_type="full", output_mode="interactive", context="main_app")
 
 def show_case_study_2_lithuania_restructured():
     """Show Lithuania analysis following Case Study 1 template structure"""
-    st.title("🇱🇹 Lithuania Euro Adoption Analysis")
-    st.subheader("Capital Flow Volatility Before and After Euro Adoption (2015)")
-    
-    st.markdown("""
-    **Research Focus:** How did Euro adoption affect Lithuania's capital flow volatility?
-    
-    **Methodology:** Temporal comparison of capital flow patterns before (2008-2013) and after (2016-2021) Euro adoption.
-    
-    **Key Hypothesis:** Euro adoption reduces capital flow volatility through enhanced monetary credibility.
-    """)
-    
-    # Priority spinner for CS2 Lithuania - long loading analysis  
-    with st.spinner("📊 Loading Lithuania Euro adoption analysis: Processing pre/post 2015 volatility patterns and temporal comparisons..."):
-        # Full Time Period Section
-        st.markdown("---")
-        st.header("📊 Full Time Period Analysis")
-        st.markdown("*Complete temporal analysis using all available data*")
-        
-        # Overall Capital Flows Analysis
-        st.subheader("📈 Overall Capital Flows Analysis")
-        show_lithuania_overall_analysis(include_crisis_years=True)
-        
-        # Indicator-Level Analysis  
-        st.subheader("🔍 Indicator-Level Analysis")
-        show_lithuania_indicator_analysis(include_crisis_years=True)
-        
-        # Crisis-Excluded Section
-        st.markdown("---")
-        st.header("🚫 Excluding Financial Crises")
-        st.markdown("*Analysis excluding Global Financial Crisis (2008-2010) and COVID-19 (2020-2022) periods*")
-        
-        # Overall Capital Flows Analysis - Crisis Excluded
-        st.subheader("📈 Overall Capital Flows Analysis")
-        show_lithuania_overall_analysis(include_crisis_years=False)
-        
-        # Indicator-Level Analysis - Crisis Excluded
-        st.subheader("🔍 Indicator-Level Analysis") 
-        show_lithuania_indicator_analysis(include_crisis_years=False)
+    # Use consolidated CS2 with Lithuania parameter
+    cs2_country_main(country="Lithuania", data_type="full", output_mode="interactive", context="main_app")
 
 def show_case_study_4_restructured():
     """Display Case Study 4 - Comprehensive Statistical Analysis with new indicator-specific format"""
@@ -3069,7 +2952,7 @@ def show_case_study_4_restructured():
     
     # Call the Case Study 4 main function
     with st.spinner("📊 Loading Comprehensive Statistical Analysis: Running F-tests, AR(4) models, and RMSE predictions across multiple indicator groups..."):
-        case_study_4_main()
+        case_study_4_main(data_type="full", output_mode="interactive", context="main_app")
 
 
 def show_case_study_5_restructured():
@@ -3080,7 +2963,7 @@ def show_case_study_5_restructured():
     
     # Call the CS5 analysis function
     with st.spinner("🌐 Loading Capital Controls & Exchange Rate Regime Analysis: Processing external datasets and correlating with capital flow volatility patterns..."):
-        case_study_5_main()
+        case_study_5_main(data_type="full", output_mode="interactive", context="main_app")
 
 # Country-specific analysis functions
 def show_estonia_overall_analysis(include_crisis_years=True):
