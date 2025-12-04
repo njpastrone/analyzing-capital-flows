@@ -21,7 +21,10 @@ sys.path.append(str(Path(__file__).parent / "outlier_adjusted_reports"))
 # Import consolidated modules from reports subfolder
 from cs1_report import main as case_study_1_main
 from case_study_2_euro_adoption import main as case_study_2_main
-from cs2_report import main as cs2_country_main
+# Import new country-specific CS2 reports
+from cs2_estonia_report import main as cs2_estonia_main
+from cs2_latvia_report import main as cs2_latvia_main
+from cs2_lithuania_report import main as cs2_lithuania_main
 from cs3_report import main as case_study_3_main
 from cs4_report import main as case_study_4_main
 from cs5_report import main as case_study_5_main
@@ -2930,19 +2933,19 @@ def case_study_2_main_filtered(country, include_crisis_years=True):
 
 # ================================
 def show_case_study_2_estonia_restructured():
-    """Show Estonia analysis following Case Study 1 template structure"""
-    # Use consolidated CS2 with Estonia parameter
-    cs2_country_main(country="Estonia", data_type="full", output_mode="interactive", context="main_app")
+    """Show Estonia analysis using country-specific report"""
+    # Use new Estonia-specific report
+    cs2_estonia_main(data_type="full", output_mode="interactive", context="main_app")
 
 def show_case_study_2_latvia_restructured():
-    """Show Latvia analysis following Case Study 1 template structure"""
-    # Use consolidated CS2 with Latvia parameter
-    cs2_country_main(country="Latvia", data_type="full", output_mode="interactive", context="main_app")
+    """Show Latvia analysis using country-specific report"""
+    # Use new Latvia-specific report
+    cs2_latvia_main(data_type="full", output_mode="interactive", context="main_app")
 
 def show_case_study_2_lithuania_restructured():
-    """Show Lithuania analysis following Case Study 1 template structure"""
-    # Use consolidated CS2 with Lithuania parameter
-    cs2_country_main(country="Lithuania", data_type="full", output_mode="interactive", context="main_app")
+    """Show Lithuania analysis using country-specific report"""
+    # Use new Lithuania-specific report
+    cs2_lithuania_main(data_type="full", output_mode="interactive", context="main_app")
 
 def show_case_study_4_restructured():
     """Display Case Study 4 - Comprehensive Statistical Analysis with new indicator-specific format"""
