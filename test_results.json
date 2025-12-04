@@ -1,22 +1,22 @@
 {
   "Module Imports": {
-    "success": true,
-    "details": "[('main_app', True, None), ('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "success": false,
+    "details": "[('main_app', True, None), ('cs1_report', True, None), ('cs2_report', False, \"No module named 'src.dashboard.reports.cs2_report'\"), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
     "error": null
   },
   "Function Signatures": {
-    "success": true,
-    "details": "[('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "success": false,
+    "details": "[('cs1_report', True, None), ('cs2_report', False, \"No module named 'src.dashboard.reports.cs2_report'\"), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
     "error": null
   },
   "Configuration Functions": {
-    "success": true,
-    "details": "[('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "success": false,
+    "details": "[('cs1_report', True, None), ('cs2_report', False, \"No module named 'src.dashboard.reports.cs2_report'\"), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
     "error": null
   },
   "Parameter Combinations": {
-    "success": true,
-    "details": "[('cs1_report', True, None), ('cs2_report', True, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
+    "success": false,
+    "details": "[('cs1_report', True, None), ('cs2_report', False, None), ('cs3_report', True, None), ('cs4_report', True, None), ('cs5_report', True, None)]",
     "error": null
   },
   "Data Paths": {
