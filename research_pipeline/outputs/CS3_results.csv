@@ -1,0 +1,15 @@
+Indicator,F_Statistic,P_Value,Iceland_Variance,SOE_Variance,Iceland_N,SOE_N,Iceland_Higher_Volatility,Significant_5pct,Significant_1pct,Significance
+"Assets - Direct investment, Total financial assets/liabilities",0.059788866458059475,4.47359092964802e-42,531.1141442560507,8883.16129272354,105,482,False,True,True,***
+"Liabilities - Direct investment, Total financial assets/liabilities",0.02273057280524354,3.140973749098612e-63,246.75430795369863,10855.613277672299,105,567,False,True,True,***
+"Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities",0.13722710120694778,1.2855686590568854e-25,325.4284994453493,2371.4594025751594,105,583,False,True,True,***
+"Assets - Portfolio investment, Total financial assets/liabilities",0.13271042502289515,3.339113570214245e-26,340.44327245507634,2565.3091864964126,105,559,False,True,True,***
+"Liabilities - Portfolio investment, Total financial assets/liabilities",2.1729050358033346,5.355502530335343e-08,1147.8412150431998,528.2519006261297,105,439,True,True,True,***
+"Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities",0.4094433356942262,1.2210579825868919e-07,968.1633486865278,2364.584459641946,105,559,False,True,True,***
+"Assets - Portfolio investment, Debt securities",0.3954382610174554,4.8050671950857854e-08,168.05447613521295,424.982842335013,105,523,False,True,True,***
+"Liabilities - Portfolio investment, Debt securities",9.044147417833232,2.220446049250313e-16,1079.1237573191315,119.3173560164795,105,427,True,True,True,***
+"Assets - Portfolio investment, Equity and investment fund shares",0.05013822554801658,5.729804681822021e-46,98.57566916714244,1966.078138779325,105,531,False,True,True,***
+"Liabilities - Portfolio investment, Equity and investment fund shares",0.047038394185088477,9.364286942799846e-47,17.79925508249814,378.3984421845046,105,397,False,True,True,***
+"Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities",0.8069531176538596,0.17606413602924093,1013.6513649397602,1256.1465378395915,105,583,False,False,False,
+"Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank",0.03335005205970623,6.776304513106347e-55,841.5605861810598,25234.16109439419,105,583,False,True,True,***
+"Assets - Other investment, Debt instruments",0.04594787423717225,5.512161116398023e-48,1209.1876310515577,26316.508676984973,105,583,False,True,True,***
+"Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank",0.04337615525798248,3.2147802564299162e-49,1099.2138085443873,25341.4301476639,105,583,False,True,True,***

@@ -1,46 +1,48 @@
-# Next Session Prompt - Verification Phase
+# Next Session Prompt - Notebook Independence Phase
 
-## 🎉 Research Pipeline 100% COMPLETE
+## 🎉 Research Pipeline 100% COMPLETE & REVIEWED
 
-**Achievement**: All 5 case study notebooks created with 84.7% code reduction (19,506 → 2,982 lines)
+**Achievement**: All 5 case study notebooks created, reviewed, and verified with 84.7% code reduction (19,506 → 2,982 lines)
+**Review Date**: December 9, 2024
+**Next Priority**: Make notebooks self-contained for publication
 
-## Copy and paste this prompt to continue with verification:
+## Copy and paste this prompt to continue:
 
 ---
 
-The Capital Flows research pipeline is now **100% COMPLETE**. I need to move to the verification phase. Please:
+The Capital Flows research pipeline is now **100% COMPLETE & REVIEWED**. All notebooks have been manually reviewed and verified (Dec 9, 2024). I need to make them self-contained for academic publication. Please:
 
-1. **GET UPDATED ON COMPLETION STATUS**:
-   - Read `PROJECT_STATUS.md` to see the full achievement
-   - Read `RESEARCH_PIPELINE_STATUS.md` to confirm all 5 notebooks are complete
-   - Note: We've achieved 84.7% code reduction with all notebooks created
+1. **GET UPDATED ON CURRENT STATUS**:
+   - Read `PROJECT_STATUS.md` to see we're in Publication Preparation phase
+   - Read `research_pipeline/FUTURE_IMPROVEMENTS.md` for the independence plan
+   - Note: Manual review is complete with CS1 and CS3 fixes applied
 
-2. **REVIEW WHAT WAS CREATED**:
-   - Check `research_pipeline/notebooks/` directory (5 notebooks, 2,682 lines total)
-   - Review `research_pipeline/lib/stats_core.py` (200 lines)
-   - Examine `research_pipeline/verification/baseline_results/` (baseline values for comparison)
+2. **UNDERSTAND THE DEPENDENCY ISSUE**:
+   - All notebooks currently depend on `research_pipeline/lib/stats_core.py`
+   - They use `sys.path.append('../lib')` and import from stats_core
+   - This prevents notebooks from being truly portable
 
-3. **CREATE A VERIFICATION PLAN**:
-   The next phase is to verify that all notebook calculations match the dashboard results. Please:
-   - Create a plan to run all 5 notebooks end-to-end
-   - Design a systematic comparison with baseline results
-   - Set up automated verification where possible
-   - Document any discrepancies (expected tolerance: <0.0001)
+3. **MAKE NOTEBOOKS SELF-CONTAINED**:
+   The priority is to embed all functions directly in notebooks. Please:
+   - Copy functions from stats_core.py into each notebook
+   - Remove sys.path.append and import statements
+   - Test each notebook runs in isolation
+   - Verify outputs remain unchanged
 
-**Completed Notebooks**:
-- ✅ CS1_Iceland_vs_Eurozone.ipynb (309 lines)
-- ✅ CS2_Baltic_Euro_Adoption.ipynb (688 lines)
-- ✅ CS3_Small_Open_Economies.ipynb (414 lines)
-- ✅ CS4_Statistical_Framework.ipynb (661 lines)
-- ✅ CS5_Capital_Controls_Regimes.ipynb (610 lines)
+**Completed Notebooks** (All Reviewed):
+- ✅ CS1_Iceland_vs_Eurozone.ipynb (309 lines) - Fixed Date column
+- ✅ CS2_Baltic_Euro_Adoption.ipynb (688 lines) - Reviewed & working
+- ✅ CS3_Small_Open_Economies.ipynb (414 lines) - F-test standardized
+- ✅ CS4_Statistical_Framework.ipynb (661 lines) - Reviewed & working
+- ✅ CS5_Capital_Controls_Regimes.ipynb (610 lines) - Reviewed & working
 
-**Next Steps (Verification Phase)**:
-1. Run each notebook and capture outputs
-2. Compare F-statistics, p-values, and summary statistics with baseline
-3. Document verification results
-4. Prepare notebooks for academic publication
-5. Create requirements.txt for reproducibility
-6. Test on clean environment
+**Next Steps (Independence Phase)**:
+1. Embed statistical functions from stats_core.py
+2. Remove external dependencies
+3. Test each notebook in fresh environment
+4. Create minimal requirements.txt
+5. Generate PDF versions with outputs
+6. Prepare as supplementary materials
 
 **Success Criteria**:
 - All notebooks run without errors
@@ -56,17 +58,17 @@ Please start by reviewing the completed work and then create a detailed verifica
 
 ---
 
-Research pipeline is **100% COMPLETE** (all 5 notebooks created, 84.7% code reduction achieved).
+Research pipeline is **100% COMPLETE & REVIEWED** (all 5 notebooks created and verified, 84.7% code reduction achieved).
 
-Next phase: **Verification**
+Next phase: **Make Notebooks Self-Contained**
 
 Please:
-1. Read `RESEARCH_PIPELINE_STATUS.md` to see what was completed
-2. Review the 5 notebooks in `research_pipeline/notebooks/`
-3. Create a plan to verify all calculations match baseline results
-4. Prepare notebooks for academic publication
+1. Read `research_pipeline/FUTURE_IMPROVEMENTS.md` for the plan
+2. Review `research_pipeline/lib/stats_core.py` for functions to embed
+3. Update each notebook to include functions directly (no external dependencies)
+4. Test notebooks run in isolation
 
-The implementation phase is done. Now we need to verify correctness and prepare for peer review.
+The review phase is done. Now we need to make notebooks portable for publication.
 
 ---
 

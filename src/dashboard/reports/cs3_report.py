@@ -856,7 +856,7 @@ def case_study_3_main(data_type, ui_config, data_config, context="standalone"):
     for _, row in results_display.iterrows():
         test_table_data.append({
             'Indicator': row['Indicator_Nick'],
-            'F-Statistic': f"{row['F_Statistic']:.2f}",
+            'F-Statistic': f"{row['F_Statistic']:.3f}",
             'P-Value': f"{row['P_Value']:.4f}",
             'Significance': row['Significant'],
             'More Volatile': row['More Volatile']

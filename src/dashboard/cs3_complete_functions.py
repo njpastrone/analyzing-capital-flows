@@ -179,15 +179,11 @@ def perform_volatility_tests(data, indicators):
                 # Perform F-test for equality of variances
                 iceland_var = np.var(iceland_data, ddof=1)
                 soe_var = np.var(soe_data, ddof=1)
-                
-                # F-statistic (larger variance in numerator)
-                if iceland_var >= soe_var:
-                    f_stat = iceland_var / soe_var
-                    df1, df2 = len(iceland_data) - 1, len(soe_data) - 1
-                else:
-                    f_stat = soe_var / iceland_var
-                    df1, df2 = len(soe_data) - 1, len(iceland_data) - 1
-                
+
+                # F-statistic (matching CS1 methodology: iceland_var / soe_var)
+                f_stat = iceland_var / soe_var if soe_var != 0 else np.inf
+                df1, df2 = len(iceland_data) - 1, len(soe_data) - 1
+
                 # Two-tailed p-value
                 p_value = 2 * min(stats.f.cdf(f_stat, df1, df2), 1 - stats.f.cdf(f_stat, df1, df2))
                 
@@ -195,7 +191,7 @@ def perform_volatility_tests(data, indicators):
                     'Indicator': indicator.replace('_PGDP', ''),
                     'Iceland_Std': np.std(iceland_data, ddof=1),
                     'SOE_Std': np.std(soe_data, ddof=1),
-                    'F_Statistic': f_stat,
+                    'F_Statistic': round(f_stat, 3),
                     'P_Value': p_value,
                     'Significant_5pct': p_value < 0.05,
                     'Significant_1pct': p_value < 0.01,

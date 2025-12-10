@@ -1,0 +1,15 @@
+Indicator,F_Statistic,P_Value,Iceland_Higher_Volatility,Significant_5pct,Significant_1pct
+"Assets - Direct investment, Total financial assets/liabilities_PGDP",1.5333343088989004,0.0016727003235665894,True,True,True
+"Liabilities - Direct investment, Total financial assets/liabilities_PGDP",0.6764493787623708,0.012314897013146881,False,True,False
+"Net (net acquisition of financial assets less net incurrence of liabilities) - Direct investment, Total financial assets/liabilities_PGDP",3.3878420944254084,2.220446049250313e-16,True,True,True
+"Assets - Portfolio investment, Total financial assets/liabilities_PGDP",0.6244867582568487,0.002783520197319158,False,True,True
+"Liabilities - Portfolio investment, Total financial assets/liabilities_PGDP",2.0649676998088626,3.412024129900715e-08,True,True,True
+"Net (net acquisition of financial assets less net incurrence of liabilities) - Portfolio investment, Total financial assets/liabilities_PGDP",3.8137822817589795,2.220446049250313e-16,True,True,True
+"Assets - Portfolio investment, Debt securities_PGDP",0.4826037308115338,6.975348104589267e-06,False,True,True
+"Liabilities - Portfolio investment, Debt securities_PGDP",7.925142436375091,2.220446049250313e-16,True,True,True
+"Assets - Portfolio investment, Equity and investment fund shares_PGDP",1.45381258558963,0.006204564261547141,True,True,True
+"Liabilities - Portfolio investment, Equity and investment fund shares_PGDP",0.05386572491303225,2.966140780593711e-45,False,True,True
+"Net (net acquisition of financial assets less net incurrence of liabilities) - Other investment, Total financial assets/liabilities_PGDP",4.270058171195884,2.220446049250313e-16,True,True,True
+"Assets - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank_PGDP",2.8202595251773115,4.440892098500626e-16,True,True,True
+"Assets - Other investment, Debt instruments_PGDP",2.397395869004672,1.3625101047409771e-11,True,True,True
+"Liabilities - Other investment, Debt instruments, Deposit taking corporations, except the Central Bank_PGDP",2.6998398314808796,8.43769498715119e-15,True,True,True

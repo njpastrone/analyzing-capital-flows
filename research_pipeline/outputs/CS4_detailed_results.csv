@@ -1,0 +1,37 @@
+Indicator,Comparator,Group_Code,F_Statistic,P_Value,Significance,Iceland_Higher,AR4_Coefficients,AR4_AIC,AR4_BIC,Half_Life,RMSE_Iceland
+Net Direct Investment,Eurozone Weighted Avg,eurozone_pgdp_weighted,63.061969686413065,2.220446049250313e-16,***,True,"[0.16937882600023738, 0.05675582789000524, 0.19384839681872185, -0.21907942243868359]",875.1745329167316,890.8652560177791,1.0,15.334450461798918
+Net Direct Investment,Eurozone Simple Avg,eurozone_pgdp_simple,25.38165359456024,2.220446049250313e-16,***,True,,,,,
+Net Direct Investment,SOE Weighted Avg,soe_pgdp_weighted,1.6623384379999975,0.010124464127694521,**,False,,,,,
+Net Direct Investment,SOE Simple Avg,soe_pgdp_simple,1.0944795161571101,0.6461257282040451,,False,,,,,
+Net Direct Investment,Baltics Weighted Avg,baltics_pgdp_weighted,38.684757263301485,2.220446049250313e-16,***,True,,,,,
+Net Direct Investment,Baltics Simple Avg,baltics_pgdp_simple,30.874187327385883,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment,Eurozone Weighted Avg,eurozone_pgdp_weighted,66.12749875437486,2.220446049250313e-16,***,True,"[0.46645072735758947, 0.16075651515352002, -0.3127274920300421, 0.3119579128917155]",956.1934948874741,971.8842179885216,1.0,15.129462861650946
+Net Portfolio Investment,Eurozone Simple Avg,eurozone_pgdp_simple,30.85301125466405,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment,SOE Weighted Avg,soe_pgdp_weighted,2.1233936729664724,0.00015268107981736279,***,True,,,,,
+Net Portfolio Investment,SOE Simple Avg,soe_pgdp_simple,3.172211833072895,1.0599638944341905e-08,***,True,,,,,
+Net Portfolio Investment,Baltics Weighted Avg,baltics_pgdp_weighted,42.97506851881081,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment,Baltics Simple Avg,baltics_pgdp_simple,38.0782530369098,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment - Debt Securities,Eurozone Weighted Avg,eurozone_pgdp_weighted,72.84794734945017,2.220446049250313e-16,***,True,"[0.4378165411850198, 0.34876870178934444, -0.19408632321121452, 0.13450563907580548]",934.9092974682724,950.6000205693199,1.0,13.22691698902882
+Net Portfolio Investment - Debt Securities,Eurozone Simple Avg,eurozone_pgdp_simple,27.376407476570588,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment - Debt Securities,SOE Weighted Avg,soe_pgdp_weighted,7.133987760346238,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment - Debt Securities,SOE Simple Avg,soe_pgdp_simple,4.0858868184969355,5.425881965948065e-12,***,True,,,,,
+Net Portfolio Investment - Debt Securities,Baltics Weighted Avg,baltics_pgdp_weighted,45.62319593792833,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment - Debt Securities,Baltics Simple Avg,baltics_pgdp_simple,41.5182860989189,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment - Equity & Investment Fund Shares,Eurozone Weighted Avg,eurozone_pgdp_weighted,23.91265824104813,2.220446049250313e-16,***,True,"[0.1962645026899571, -0.2284183159054359, -0.02143722622023607, -0.06396828375127732]",772.4241426620612,788.1148657631087,1.0,7.337777383242624
+Net Portfolio Investment - Equity & Investment Fund Shares,Eurozone Simple Avg,eurozone_pgdp_simple,7.124370764923723,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment - Equity & Investment Fund Shares,SOE Weighted Avg,soe_pgdp_weighted,2.285199723585245,3.3760090501155915e-05,***,False,,,,,
+Net Portfolio Investment - Equity & Investment Fund Shares,SOE Simple Avg,soe_pgdp_simple,4.395832851829436,4.996003610813204e-13,***,False,,,,,
+Net Portfolio Investment - Equity & Investment Fund Shares,Baltics Weighted Avg,baltics_pgdp_weighted,53.604169409552746,2.220446049250313e-16,***,True,,,,,
+Net Portfolio Investment - Equity & Investment Fund Shares,Baltics Simple Avg,baltics_pgdp_simple,37.03907657673442,2.220446049250313e-16,***,True,,,,,
+Net Other Investment,Eurozone Weighted Avg,eurozone_pgdp_weighted,76.25499820580107,2.220446049250313e-16,***,True,"[0.21867561882783415, 0.1275315034125592, -0.15408862780370639, 0.08770896586298697]",991.503705349653,1007.1944284507006,1.0,4.954051351053666
+Net Other Investment,Eurozone Simple Avg,eurozone_pgdp_simple,31.640224383075072,2.220446049250313e-16,***,True,,,,,
+Net Other Investment,SOE Weighted Avg,soe_pgdp_weighted,2.828576565842534,2.2550461720172166e-07,***,True,,,,,
+Net Other Investment,SOE Simple Avg,soe_pgdp_simple,5.189629996754733,1.5543122344752192e-15,***,True,,,,,
+Net Other Investment,Baltics Weighted Avg,baltics_pgdp_weighted,13.396840769172062,2.220446049250313e-16,***,True,,,,,
+Net Other Investment,Baltics Simple Avg,baltics_pgdp_simple,12.962480278656441,2.220446049250313e-16,***,True,,,,,
+Net Capital Flows,Eurozone Weighted Avg,eurozone_pgdp_weighted,175.47498348467755,2.220446049250313e-16,***,True,"[0.23547725966726352, 0.1962346283373224, 0.237240784493306, -0.30796618262576875]",954.6272983693234,970.3180214703709,1.0,7.606226616989726
+Net Capital Flows,Eurozone Simple Avg,eurozone_pgdp_simple,87.19020983946638,2.220446049250313e-16,***,True,,,,,
+Net Capital Flows,SOE Weighted Avg,soe_pgdp_weighted,3.125581501828332,1.5950020193500336e-08,***,True,,,,,
+Net Capital Flows,SOE Simple Avg,soe_pgdp_simple,4.704840435062789,5.062616992290714e-14,***,True,,,,,
+Net Capital Flows,Baltics Weighted Avg,baltics_pgdp_weighted,12.557010909979592,2.220446049250313e-16,***,True,,,,,
+Net Capital Flows,Baltics Simple Avg,baltics_pgdp_simple,12.306782381649514,2.220446049250313e-16,***,True,,,,,
